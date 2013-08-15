@@ -1,0 +1,14 @@
+JADE++ is a high performance implementation of adaptive differential
+evolution optimization algorithm from Jingqiao Zhang and Arthur
+C. Sanderson book 'Adaptive Differential Evolution. A Robust Approach
+to Multimodal Problem Optimization' Springer, 2009.  JADE++ is
+designed to run efficiently in parallel on multicore processors,
+multiprocessor systems, clusters and supercomputers with help of MPI.
+
+JADE++ needs MPI and Cmake installed to compile and run. 
+
+For Debian/Ubuntu systems single line install with
+# apt-get install openmpi-bin openmpi-doc libopenmpi-dev cmake
+ 
+./go.sh normaly should compile JADE++ and run tests, edit it
+to run JADE++ on your number of processes.
