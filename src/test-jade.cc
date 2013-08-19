@@ -23,8 +23,7 @@
 /// @brief  Test of JADE++ lib, Doxygen mainpage description.
 #include <mpi.h>
 #include <cstdio>
-#include "common.h"
-//#include "mpi-decomposition/halo-exchange-process.h"
+#include "./jade.h"
 /// @brief Run tests of JADE++.
 ///
 /// @param argc
@@ -34,7 +33,10 @@
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int done_status = jade::kDone;
-  printf("Test!\n");
+  jade::SubPopulation sub_population;
+  // Settings for optimization algorithm;
+  // int total_population = 10;  // Total number of individuals in population.
+  sub_population.Init();
   // while (1) {  // use break to report error with done_status.
   //   done_status = halo_exchange_process.Init(argc, argv);
   //   if (done_status != jade::kDone) break;
@@ -48,8 +50,9 @@ int main(int argc, char *argv[]) {
   //   done_status = halo_exchange_process.RunSimulation();
   //   break;
   // }  // end of while breaked with errors
-  // if (done_status != jade::kDone && done_status != jade::kErrorProcessNotInGrid)
-  //   MPI_Abort(MPI_COMM_WORLD, done_status);  
+  // if (done_status != jade::kDone
+  //     && done_status != jade::kErrorProcessNotInGrid)
+  //   MPI_Abort(MPI_COMM_WORLD, done_status);
   MPI_Finalize();
   return done_status;
 }  // end of main
@@ -71,11 +74,11 @@ int main(int argc, char *argv[]) {
 ///
 /// #Parallel adaptive differential evolution software
 ///
-///JADE++ is a free (GPLv3+) high performance implementation of
-///adaptive differential evolution optimization algorithm from
-///Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
-///Evolution. A Robust Approach to Multimodal Problem Optimization'
-///Springer, 2009.
+/// JADE++ is a free (GPLv3+) high performance implementation of
+/// adaptive differential evolution optimization algorithm from
+/// Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
+/// Evolution. A Robust Approach to Multimodal Problem Optimization'
+/// Springer, 2009.
 ///
 /// JADE++ was designed to run efficiently with:
 /// - multi-core processors

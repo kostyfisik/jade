@@ -61,7 +61,7 @@ compiler_gcc="gcc";
 usedCompiler=$compiler_gcc # or clang
 #useGCC47=$yes  # use gcc 4.7 if it is available in build area of scripts folder
 isNew=$yes;
-#       isTest=$no ;  isProfile=$no ; isPGO=$no
+isTest=$no ;  isProfile=$no ; isPGO=$no
 isBuildOnly=$no;
 # if [[ $mode = $mode_build || $config_file = $mode_build ]]; then
 #     isBuildOnly=$yes    
@@ -197,8 +197,10 @@ fi
 if [[ $mode = $mode_new1 || $mode = $mode_old1 ]]; then
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
-    export OMPI_CC=clang
-    export OMPI_CXX=clang++
+    #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
+    path_clang33=/home/mmedia/soft/clang/clang33
+    export OMPI_CC=$path_clang33/bin/clang
+    export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include"
 else
     path_gcc47=$path_jade/scripts/build-additional-soft/gcc-4.7/output/bin/
     if [[ -a $path_gcc47/gcc-4.7 && $useGCC47 = $yes ]]; then
@@ -213,9 +215,10 @@ else
     fi
 fi 
 # Select OMPI_CXXFLAGS
-flags_O2="-O2 -ftemplate-depth-30 -Wall"
-flags_debug="-ftemplate-depth-30 -Wall"
-flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall" 
+flags_O2="-O2 -Wall -std=c++11"
+#flags_O2="-O2 -ftemplate-depth-30 -Wall -std=c++11"
+flags_debug="-ftemplate-depth-30 -Wall -std=c++11 -stdlib=libc++"
+flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall  -std=c++11 -stdlib=libc++" 
 # TODO option -flto   -- Do we need it?
 export OMPI_CXXFLAGS=$flags_O2
 if [[ $mode = $mode_debug ]]; then
@@ -249,7 +252,8 @@ function BuildJADE {
         echo $PWD
         echo "Doing new build.."
         CC=mpicc CXX=mpic++ VERBOSE=1 cmake $path_jade \
-            -DCMAKE_INSTALL_PREFIX="$path_bin" $flag_cmake
+            -DCMAKE_INSTALL_PREFIX="$path_bin" \
+            $flag_cmake
     fi
     make -j4 
     make install
@@ -331,99 +335,91 @@ if [[ $isTest = $no ]]; then
         RunJADE 
     fi
 fi  # end of if [[ $isTest = $no ]]
-if [[ $isProfile = $yes ]]; then 
-    gprof  $jade_bin gmon.out* | grep '^index'
-    for file in gmon.out*;
-    do
-        echo $file
-        gprof  $jade_bin $file | grep 'DoBorderStep' | grep '^\['
-        gprof  $jade_bin $file | grep 'DoStep' | grep '^\['
-    done
-    echo Average
-    gprof  $jade_bin gmon.out* | grep 'DoBorderStep' | grep '^\['
-    gprof  $jade_bin gmon.out* | grep 'DoStep' | grep '^\['
-    gprof --no-flat-profile $jade_bin gmon.out* > average-profile
-    gprof $jade_bin gmon.out* > flat-average-profile
-    rm gmon.out*
-fi  # end of if isProfile
-if [[ $isTest = $yes ]]; then
-    echo "Prepare files for tests ..."
-    cd $path_bin
-    for test in $tests; do
-        # For each test make dir, copy config and binary to it, run.
-        cd $path_bin
-        mkdir $test
-        test_name=${test//-/_}
-        #path_test_config="path_${test_name}_config"
-        path_test="$path_bin/$test"  
-        #path_test_config="path_${test}_config"
-        #cp ${!path_test_config} ${path_test}/jade.config
-        cp $jade_bin $path_test
-        cd $path_test
-        backup_JADE_MPI_size=$JADE_MPI_size
-        backup_JADE_MPI_nodes=$JADE_MPI_nodes
-        if [[ $test = "self-test-X1D-zero" ]]; then
-            JADE_MPI_size=2
-            JADE_MPI_nodes=1
-        fi
-        echo "============ Running test $test ============="
-        if [[ $HOST == "head.phoif.ifmo.ru" ]]; then
-            echo "Waiting for shared file system to distibute files..."
-            sleep 2
-            if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=16; fi
-            if [[ $JADE_MPI_nodes = "unset" ]]; then JADE_MPI_nodes=8; fi
-            echo "(1) Nodes $JADE_MPI_nodes procs $JADE_MPI_size"
-            salloc -N $JADE_MPI_nodes -n $JADE_MPI_size -p max1hour \
-                mpirun $MPI_options ./$jade_bin #jade.config
-            if [[ $test = "self-test-TMz2D-speedup" ]]; then
-                echo "(*******) Nodes 16 procs 128 (1024 x 1024, step 1000, ~15.4s)"
-                salloc -N 16 -n 128 -p max1hour \
-                    mpirun $MPI_options ./$jade_bin #jade.config
-                echo "(*******) Nodes 16 procs 16 (1024 x 1024, step 1000, ~7s)"
-                salloc -N 16 -n 16 -p max1hour \
-                    mpirun $MPI_options ./$jade_bin #jade.config
-                echo "(*******) Nodes 1 procs 8 (1024 x 1024, step 1000, ~30.2s)"
-                salloc -N 1 -n 8 -p max1hour \
-                    mpirun $MPI_options ./$jade_bin #jade.config
-                echo "(*******) Nodes 1 procs 1 (1024 x 1024, step 1000, ~47.6s)"
-                salloc -N 1 -n 1 -p max1hour \
-                    mpirun $MPI_options ./$jade_bin #jade.config
-            fi
+# if [[ $isProfile = $yes ]]; then 
+#     gprof  $jade_bin gmon.out* | grep '^index'
+#     for file in gmon.out*;
+#     do
+#         echo $file
+#         gprof  $jade_bin $file | grep 'DoBorderStep' | grep '^\['
+#         gprof  $jade_bin $file | grep 'DoStep' | grep '^\['
+#     done
+#     echo Average
+#     gprof  $jade_bin gmon.out* | grep 'DoBorderStep' | grep '^\['
+#     gprof  $jade_bin gmon.out* | grep 'DoStep' | grep '^\['
+#     gprof --no-flat-profile $jade_bin gmon.out* > average-profile
+#     gprof $jade_bin gmon.out* > flat-average-profile
+#     rm gmon.out*
+# fi  # end of if isProfile
+# if [[ $isTest = $yes ]]; then
+#     echo "Prepare files for tests ..."
+#     cd $path_bin
+#     for test in $tests; do
+#         # For each test make dir, copy config and binary to it, run.
+#         cd $path_bin
+#         mkdir $test
+#         test_name=${test//-/_}
+#         #path_test_config="path_${test_name}_config"
+#         path_test="$path_bin/$test"  
+#         #path_test_config="path_${test}_config"
+#         #cp ${!path_test_config} ${path_test}/jade.config
+#         cp $jade_bin $path_test
+#         cd $path_test
+#         backup_JADE_MPI_size=$JADE_MPI_size
+#         backup_JADE_MPI_nodes=$JADE_MPI_nodes
+#         if [[ $test = "self-test-X1D-zero" ]]; then
+#             JADE_MPI_size=2
+#             JADE_MPI_nodes=1
+#         fi
+#         echo "============ Running test $test ============="
+#         if [[ $HOST == "head.phoif.ifmo.ru" ]]; then
+#             echo "Waiting for shared file system to distibute files..."
+#             sleep 2
+#             if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=16; fi
+#             if [[ $JADE_MPI_nodes = "unset" ]]; then JADE_MPI_nodes=8; fi
+#             echo "(1) Nodes $JADE_MPI_nodes procs $JADE_MPI_size"
+#             salloc -N $JADE_MPI_nodes -n $JADE_MPI_size -p max1hour \
+#                 mpirun $MPI_options ./$jade_bin #jade.config
+#             if [[ $test = "self-test-TMz2D-speedup" ]]; then
+#                 echo "(*******) Nodes 16 procs 128 (1024 x 1024, step 1000, ~15.4s)"
+#                 salloc -N 16 -n 128 -p max1hour \
+#                     mpirun $MPI_options ./$jade_bin #jade.config
+#                 echo "(*******) Nodes 16 procs 16 (1024 x 1024, step 1000, ~7s)"
+#                 salloc -N 16 -n 16 -p max1hour \
+#                     mpirun $MPI_options ./$jade_bin #jade.config
+#                 echo "(*******) Nodes 1 procs 8 (1024 x 1024, step 1000, ~30.2s)"
+#                 salloc -N 1 -n 8 -p max1hour \
+#                     mpirun $MPI_options ./$jade_bin #jade.config
+#                 echo "(*******) Nodes 1 procs 1 (1024 x 1024, step 1000, ~47.6s)"
+#                 salloc -N 1 -n 1 -p max1hour \
+#                     mpirun $MPI_options ./$jade_bin #jade.config
+#             fi
 
-        elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
-            echo "(*******) Procs 1"
-            mpirun -np 1 $MPI_options ./$jade_bin #jade.config
-            echo "(*******) Procs 2"
-            mpirun -np 2 $MPI_options ./$jade_bin #jade.config
-            echo "(*******) Procs 4"
-            mpirun -np 4 $MPI_options ./$jade_bin #jade.config
-        else
-            if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=2; fi
-            echo "(1) Nodes 1  procs $JADE_MPI_size"
-            mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
-        fi
-        if [[ $test = "self-test-X1D-zero" ]]; then
-            echo "Prepare *.png from gnuplot ..."
-            cp $path_jade/data/gnuplot/* ./
-            ./gnuplot-all.sh >/dev/null  2>&1
-            cp *.png $path_bin/
-            # cp *02??-*.png $path_bin/
-            rm *.png
-        fi
-        JADE_MPI_size=$backup_JADE_MPI_size
-        JADE_MPI_nodes=$backup_JADE_MPI_nodes
-        rm *.jade  >/dev/null  2>&1
-    done  # end of for test in $tests; do
-fi  # end of if [[ $isTest = $yes ]]
-if [[ $config_file = $path_self_test_X1D_zero_config ]]; then
-    echo "Prepare *.png from gnuplot ..."
-    cp $path_jade/data/gnuplot/* ./
-    ./gnuplot-all.sh >/dev/null  2>&1
-    # mkdir tmpdir
-    # cp *0241-* $path_bin/tmpdir
-    # rm $path_bin/*    
-    # cp $path_bin/tmpdir/* ./
-    # rm -r $path_bin/tmpdir
-fi
+#         elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
+#             echo "(*******) Procs 1"
+#             mpirun -np 1 $MPI_options ./$jade_bin #jade.config
+#             echo "(*******) Procs 2"
+#             mpirun -np 2 $MPI_options ./$jade_bin #jade.config
+#             echo "(*******) Procs 4"
+#             mpirun -np 4 $MPI_options ./$jade_bin #jade.config
+#         else
+#             if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=2; fi
+#             echo "(1) Nodes 1  procs $JADE_MPI_size"
+#             mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
+#         fi
+#         JADE_MPI_size=$backup_JADE_MPI_size
+#         JADE_MPI_nodes=$backup_JADE_MPI_nodes
+#         rm *.jade  >/dev/null  2>&1
+#     done  # end of for test in $tests; do
+# fi  # end of if [[ $isTest = $yes ]]
+# if [[ $config_file = $path_self_test_X1D_zero_config ]]; then
+#     echo "Prepare *.png from gnuplot ..."
+#     cp $path_jade/data/gnuplot/* ./
+#     ./gnuplot-all.sh >/dev/null  2>&1
+#     # mkdir tmpdir
+#     # cp *0241-* $path_bin/tmpdir
+#     # rm $path_bin/*    
+#     # cp $path_bin/tmpdir/* ./
+#     # rm -r $path_bin/tmpdir
+# fi
 #rm *.jade  >/dev/null  2>&1
     

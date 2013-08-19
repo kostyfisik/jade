@@ -32,7 +32,7 @@ namespace jade {
   const int kOutput = 0;
   /// @brief Error codes
   ///
-  /// Error codes used with onza.
+  /// Error codes used with jade
   enum Errors {
     /// no error
     kDone = 0,
@@ -253,5 +253,5 @@ namespace jade {
     sstr << value;
     return sstr.str();
   }
-}  // end of namespace onza
+}  // end of namespace jade
 #endif  // SRC_COMMON_H_
