@@ -35,8 +35,10 @@ int main(int argc, char *argv[]) {
   int done_status = jade::kDone;
   jade::SubPopulation sub_population;
   // Settings for optimization algorithm;
-  // int total_population = 10;  // Total number of individuals in population.
-  sub_population.Init();
+  int total_population = 10;  // Total number of individuals in population.
+  if (sub_population.Init(total_population) == jade::kDone) {
+    printf("Optimize\n");
+  }
   // while (1) {  // use break to report error with done_status.
   //   done_status = halo_exchange_process.Init(argc, argv);
   //   if (done_status != jade::kDone) break;

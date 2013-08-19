@@ -34,8 +34,9 @@ namespace jade {
   /// @brief Population controlled by single MPI process.
   class SubPopulation {
    public:
+    /// @brief Vizualize used random distributions (to do manual check).
     void CheckRandom();
-    void Init();
+    int Init(int population);
     void SetTotalPopulation(int population) {
       total_population_ = population;
     };
@@ -44,9 +45,19 @@ namespace jade {
     /// @brief Fast access (without MPI call) to process rank of
     /// containing object. Should be set in init()
     int process_rank_;
+    int number_of_processes_;
     /// @brief Total number of individuals in population (sum of all
     /// sub-pupulations)
-    int total_population_;
+    /// @name Population and individuals.
+    // @{
+    /// @brief Total number of individuals in all subpopulations.
+    int total_population_ = 0;
+    /// @brief Number of individuals in subpopulation
+    int subpopulation_ = 0;
+    /// @brief All individuals are indexed. First and last index of
+    /// individuals in subpopulations.
+    long long index_first_ = -1, index_last_ = -1;
+    // @}
     /// @name Random generation
     /// Names are in notation from Jingqiao Zhang and Arthur C. Sanderson book.
     // @{

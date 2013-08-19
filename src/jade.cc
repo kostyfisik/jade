@@ -35,6 +35,79 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  int SubPopulation::Init(int population) {
+    MPI_Comm_rank(MPI_COMM_WORLD, &process_rank_);
+    MPI_Comm_size(MPI_COMM_WORLD,&number_of_processes_);
+    std::random_device rd;
+    generator_.seed(rd());
+    //CheckRandom();
+    SetTotalPopulation(population);
+    if (number_of_processes_ > total_population_) return kError;
+    if (number_of_processes_ == total_population_) subpopulation_ = 1;
+    // //Debug section
+    // if (process_rank_ == 0) {
+    //   for (long long popul = 1; popul < 10000; popul++) {
+    //     total_population_ = popul;
+    //     for (int procs = 1; procs < 300; procs++) {
+    //       if (procs >= popul) break;
+    //       number_of_processes_ = procs;
+    //       long long popul_eval = 0;
+    //       for (int rank = 0; rank < procs; rank++) {
+    //         process_rank_ = rank;
+    // //End of debug section
+    double subpopulation_size = static_cast <double> (total_population_)
+      / static_cast<double>(number_of_processes_);
+    double subpopulation_start = static_cast<double>(process_rank_) * subpopulation_size;
+    double subpopulation_finish = static_cast<double>(process_rank_ + 1) * subpopulation_size;
+    // Evaluate index!
+    index_first_ = ceil(subpopulation_start);
+    index_last_ = ceil(subpopulation_finish) - 1;
+    // HACK! try to deal with double rounding unstability.
+    if (process_rank_ + 1 == number_of_processes_)
+      index_last_ = total_population_ - 1;
+    // //Debug section
+    //         printf("%lli-%lli ", index_first_, index_last_);
+    //         popul_eval += index_last_ - index_first_ + 1;
+    //       }
+    //       if (popul != popul_eval)
+    //         printf("procs %i for popul %lli (%lli)\n", procs, popul, popul_eval);
+    //     }
+    //   }
+    // }
+    // //End of debug section
+    return kDone;
+  }  // End of void SubPopulation::Test()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  double SubPopulation::randn(double mean, double stddev) {
+    std::normal_distribution<double> distribution(mean, stddev);
+    return distribution(generator_);
+  }  // End of double SubPopulation::randn(double mean, double stddev)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  double SubPopulation::randc(double location, double scale) {
+    std::cauchy_distribution<double> distribution(location, scale);
+    return distribution(generator_);
+  }  // End of double SubPopulation::randc(double location, double scale)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  long long SubPopulation::randint(long long lbound, long long ubound) {
+    std::uniform_int_distribution<long long> distribution(lbound, ubound);
+    return distribution(generator_);
+  }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  double SubPopulation::rand(double lbound, double ubound) {
+    std::uniform_real_distribution<double> distribution(lbound, ubound);
+    return distribution(generator_);
+  }  // End of double rand(double lbound, double ubound)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   void SubPopulation::CheckRandom() {
     std::map<int, int> hist_n, hist_c, hist_int, hist;
     int factor = 1000;
@@ -67,43 +140,6 @@ namespace jade {
       }  // end of for p in hist
     }  //  end of if current process_rank_ == 0
   }
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  void SubPopulation::Init() {
-    MPI_Comm_rank(MPI_COMM_WORLD, &process_rank_);
-    std::random_device rd;
-    generator_.seed(rd());
-    CheckRandom();
-  }  // End of void SubPopulation::Test()
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  double SubPopulation::randn(double mean, double stddev) {
-    std::normal_distribution<double> distribution(mean, stddev);
-    return distribution(generator_);
-  }  // End of double SubPopulation::randn(double mean, double stddev)
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  double SubPopulation::randc(double location, double scale) {
-    std::cauchy_distribution<double> distribution(location, scale);
-    return distribution(generator_);
-  }  // End of double SubPopulation::randc(double location, double scale)
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  long long SubPopulation::randint(long long lbound, long long ubound) {
-    std::uniform_int_distribution<long long> distribution(lbound, ubound);
-    return distribution(generator_);
-  }
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  double SubPopulation::rand(double lbound, double ubound) {
-    std::uniform_real_distribution<double> distribution(lbound, ubound);
-    return distribution(generator_);
-  }  // End of double rand(double lbound, double ubound)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
