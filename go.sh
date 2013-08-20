@@ -39,6 +39,7 @@ MPI_options="--bind-to-core"
 #   Parse input parameters   
 #############################################################################
 mode=$1; config_file=$2; wrong_params=$3
+HOST=`cat /etc/hostname`
 if [[ $config_file ]]; then
     echo ================ !ERROR! =================
     echo Should be no more than single  input parameter
@@ -198,6 +199,15 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 ]]; then
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
     #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
+    if [[ $HOST == "head.phoif.ifmo.ru" ]]; then
+        path_clang33=/home/nfs-shared/tig/clang
+    elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
+        path_clang33=
+    elif  [[ $HOST == "tig-laptop2" ]]; then
+        path_clang33=/home/mmedia/soft/clang/clang33        
+    else
+        path_clang33=
+    fi
     path_clang33=/home/mmedia/soft/clang/clang33
     export OMPI_CC=$path_clang33/bin/clang
     export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include"
@@ -263,13 +273,12 @@ BuildJADE
 #############################################################################
 #   Run
 #############################################################################
+echo "Executing on host -> $HOST <-"
 if [[ $isBuildOnly = $yes ]]; then
     cd $path_bin
     mv run-jade-fdtd jade-fdtd.bin
     exit 0; 
 fi
-HOST=`cat /etc/hostname`
-echo "Executing on host -> $HOST <-"
 if [[ $mode = $mode_test ]]; then isTest=$yes; fi
 if [[ $isProfile = $yes ]]; then 
     # Grpof output for each process in separate file
