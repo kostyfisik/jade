@@ -208,7 +208,7 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 ]]; then
     else
         path_clang33=
     fi
-    path_clang33=/home/mmedia/soft/clang/clang33
+    echo path_clang: $path_clang33
     export OMPI_CC=$path_clang33/bin/clang
     export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include"
 else
