@@ -22,8 +22,19 @@
 /// @date   Wed Aug 14 13:40:37 2013
 /// @brief  Test of JADE++ lib, Doxygen mainpage description.
 #include <mpi.h>
+#include <vector>
 #include <cstdio>
 #include "./jade.h"
+/// @brief Fitness test function for benchmarks
+///
+/// @param x Position vector to check
+///
+/// @return Value to be minimized by changing x
+double f1(std::vector<double> x) {
+  double accumed = 0;
+  for (auto component : x) accumed += component*component;
+  return accumed;
+}
 /// @brief Run tests of JADE++.
 ///
 /// @param argc
@@ -34,10 +45,18 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int done_status = jade::kDone;
   jade::SubPopulation sub_population;
-  // Settings for optimization algorithm;
-  int total_population = 10;  // Total number of individuals in population.
-  if (sub_population.Init(total_population) == jade::kDone) {
+  /// Settings for optimization algorithm;
+  int total_population = 5;  /// Total number of individuals in population.
+  int dimenstion = 10;  /// Number of parameters to optimize.
+  if (sub_population.Init(total_population,dimenstion) == jade::kDone) {
+    sub_population.fitness_function = &f1;
+    /// Low and upper bound for all dimenstions;
+    double lbound = -100, ubound = 100;
+    sub_population.SetAllBounds(lbound, ubound);
+    sub_population.CreateInitialPopulation();
     printf("Optimize\n");
+  } else {
+    printf("Some error!\n");
   }
   // while (1) {  // use break to report error with done_status.
   //   done_status = halo_exchange_process.Init(argc, argv);

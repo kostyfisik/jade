@@ -26,7 +26,9 @@
 /// Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
 /// Springer, 2009.
-#include<random>
+#include <list>
+#include <random>
+#include <vector>
 namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
@@ -34,29 +36,41 @@ namespace jade {
   /// @brief Population controlled by single MPI process.
   class SubPopulation {
    public:
+    int CreateInitialPopulation();
     /// @brief Vizualize used random distributions (to do manual check).
+    double (*fitness_function)(std::vector<double> x) = nullptr;
     void CheckRandom();
-    int Init(int population);
-    void SetTotalPopulation(int population) {
-      total_population_ = population;
-    };
-
+    int Init(long long total_population, long long dimension);
+    int SetAllBounds(double lbound, double ubound);
    private:
-    /// @brief Fast access (without MPI call) to process rank of
-    /// containing object. Should be set in init()
-    int process_rank_;
-    int number_of_processes_;
-    /// @brief Total number of individuals in population (sum of all
-    /// sub-pupulations)
-    /// @name Population and individuals.
+    /// @name Population, individuals and algorithm .
     // @{
     /// @brief Total number of individuals in all subpopulations.
-    int total_population_ = 0;
+    long long total_population_ = 0;
     /// @brief Number of individuals in subpopulation
-    int subpopulation_ = 0;
+    long long subpopulation_ = 0;
     /// @brief All individuals are indexed. First and last index of
     /// individuals in subpopulations.
     long long index_first_ = -1, index_last_ = -1;
+    /// @brief Dimension of the optimization task (number of variables to optimize).
+    long long dimension_ = -1;
+    /// @brief Current generation of evalution process;
+    long long current_generation_ = -1;
+    /// @brief Current state vectors of all individuals in subpopulation.
+    std::vector<std::vector<double> > x_current_vectors_;
+    /// @brief Archived best solutions (state vactors)
+    std::list<std::vector<double> > archived_best_;
+    /// @brief Low and upper bounds for x vectors.
+    std::vector<double> x_lbound_;
+    std::vector<double> x_ubound_;
+    /// @brief JADE+ adaption parameter for mutation factor
+    double adaptor_mutation_mu_F_ = 0.5;
+    /// @brief JADE+ adaption parameter for crossover probability
+    double adaptor_crossover_mu_CR_ = 0.5;
+    /// @brief Individual mutation and crossover parameters for each individual.
+    std::vector<double> mutation_F_, crossover_CR_;
+    std::list<double> successful_mutation_parameters_S_F_;
+    std::list<double> successful_crossover_parameters_S_CR_;
     // @}
     /// @name Random generation
     /// Names are in notation from Jingqiao Zhang and Arthur C. Sanderson book.
@@ -75,7 +89,9 @@ namespace jade {
     /// @brief rand(a, b) is an uniform random number chosen from a to b
     double rand(double lbound, double ubound);
     // @}
-  };  // End of class SubPopulation
+    int process_rank_;
+    int number_of_processes_;
+  };  // end of class SubPopulation
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -87,9 +103,9 @@ namespace jade {
     kDone = 0,
     /// Unspecified (pending to be described).
     kError
-  };  // End of enum Errors
+  };  // end of enum Errors
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-}  // End of namespace jade
+}  // end of namespace jade
 #endif  // SRC_JADE_H_

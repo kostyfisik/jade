@@ -26,25 +26,32 @@
 /// Springer, 2009.
 #include "./jade.h"
 #include <mpi.h>
-#include <random>
 #include <map>
-#include <cstdio>
+#include <random>
 #include <string>
+#include <cstdio>
 #include <cmath>
 namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::Init(int population) {
+  /// %todo Change returned kError to meangfull error code.
+  int SubPopulation::Init(long long total_population, long long dimension) {
+    total_population_  = total_population;    
+    if (total_population_ < 1) return kError;
+    dimension_ = dimension;
+    if (dimension_ < 1) return kError;
     MPI_Comm_rank(MPI_COMM_WORLD, &process_rank_);
     MPI_Comm_size(MPI_COMM_WORLD,&number_of_processes_);
+    if (process_rank_ < 0) return kError;
+    if (number_of_processes_ < 1) return kError;
     std::random_device rd;
     generator_.seed(rd());
-    //CheckRandom();
-    SetTotalPopulation(population);
+    // //debug
+    // CheckRandom();
     if (number_of_processes_ > total_population_) return kError;
     if (number_of_processes_ == total_population_) subpopulation_ = 1;
-    // //Debug section
+    // //debug section
     // if (process_rank_ == 0) {
     //   for (long long popul = 1; popul < 10000; popul++) {
     //     total_population_ = popul;
@@ -54,7 +61,7 @@ namespace jade {
     //       long long popul_eval = 0;
     //       for (int rank = 0; rank < procs; rank++) {
     //         process_rank_ = rank;
-    // //End of debug section
+    // //end of debug section
     double subpopulation_size = static_cast <double> (total_population_)
       / static_cast<double>(number_of_processes_);
     double subpopulation_start = static_cast<double>(process_rank_) * subpopulation_size;
@@ -65,7 +72,9 @@ namespace jade {
     // HACK! try to deal with double rounding unstability.
     if (process_rank_ + 1 == number_of_processes_)
       index_last_ = total_population_ - 1;
-    // //Debug section
+    subpopulation_ = index_last_ - index_first_ + 1;
+    if (subpopulation_ == 0) return kError;
+    // //debug section
     //         printf("%lli-%lli ", index_first_, index_last_);
     //         popul_eval += index_last_ - index_first_ + 1;
     //       }
@@ -74,23 +83,51 @@ namespace jade {
     //     }
     //   }
     // }
-    // //End of debug section
+    // //end of debug section
+    current_generation_ = 0;
+    x_current_vectors_.resize(subpopulation_);
+    for (auto &x : x_current_vectors_) x.resize(dimension_);
+    // //debug
+    // printf("%i, x1 size = %li \n", process_rank_, x_current_vectors_.size());
+    x_lbound_.resize(dimension_);
+    x_ubound_.resize(dimension_);
+    mutation_F_.resize(subpopulation_);
+    crossover_CR_.resize(subpopulation_);
     return kDone;
-  }  // End of void SubPopulation::Test()
+  }  // end of void SubPopulation::Test()
+  int SubPopulation::CreateInitialPopulation() {
+    for (auto &x : x_current_vectors_) 
+      for (int i = 0; i < dimension_; ++i) {
+        if (x_lbound_[i] > x_ubound_[i]) return kError;
+        x[i] = rand(x_lbound_[i], x_ubound_[i]);
+      }
+    // //debug
+    // for (auto x : x_current_vectors_[0]) printf("%g ",x);
+    return kDone;
+  }  // end of int SubPopulation::CreateInitialPopulation()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::SetAllBounds(double lbound, double ubound) {
+    if (lbound >= ubound) return kError;
+    for (auto &x : x_lbound_) x = lbound;
+    for (auto &x : x_ubound_) x = ubound;
+    return kDone;
+  }  // end of int SubPopulation::SetAllBounds(double lbound, double ubound)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   double SubPopulation::randn(double mean, double stddev) {
     std::normal_distribution<double> distribution(mean, stddev);
     return distribution(generator_);
-  }  // End of double SubPopulation::randn(double mean, double stddev)
+  }  // end of double SubPopulation::randn(double mean, double stddev)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   double SubPopulation::randc(double location, double scale) {
     std::cauchy_distribution<double> distribution(location, scale);
     return distribution(generator_);
-  }  // End of double SubPopulation::randc(double location, double scale)
+  }  // end of double SubPopulation::randc(double location, double scale)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -104,7 +141,7 @@ namespace jade {
   double SubPopulation::rand(double lbound, double ubound) {
     std::uniform_real_distribution<double> distribution(lbound, ubound);
     return distribution(generator_);
-  }  // End of double rand(double lbound, double ubound)
+  }  // end of double rand(double lbound, double ubound)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -144,4 +181,4 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
 
-}  // End of namespace jade
+}  // end of namespace jade
