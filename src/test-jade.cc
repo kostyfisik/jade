@@ -46,15 +46,17 @@ int main(int argc, char *argv[]) {
   int done_status = jade::kDone;
   jade::SubPopulation sub_population;
   /// Settings for optimization algorithm;
-  int total_population = 5;  /// Total number of individuals in population.
+  int total_population = 10;  /// Total number of individuals in population.
   int dimenstion = 10;  /// Number of parameters to optimize.
-  if (sub_population.Init(total_population,dimenstion) == jade::kDone) {
-    sub_population.fitness_function = &f1;
+  if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
+    sub_population.FitnessFunction = &f1;
     /// Low and upper bound for all dimenstions;
     double lbound = -100, ubound = 100;
     sub_population.SetAllBounds(lbound, ubound);
-    sub_population.CreateInitialPopulation();
-    printf("Optimize\n");
+    sub_population.SetTargetToMinimum();
+    // sub_population.SetTargetToMaximum();
+    sub_population.SetTotalGenerationsMax(10);
+    sub_population.RunOptimization();
   } else {
     printf("Some error!\n");
   }

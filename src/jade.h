@@ -26,8 +26,9 @@
 /// Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
 /// Springer, 2009.
-#include <list>
 #include <random>
+#include <utility>
+#include <list>
 #include <vector>
 namespace jade {
   // ********************************************************************** //
@@ -36,30 +37,55 @@ namespace jade {
   /// @brief Population controlled by single MPI process.
   class SubPopulation {
    public:
-    int CreateInitialPopulation();
+    /// @brief Externaly defined fitness function, used by pointer.
+    double (*FitnessFunction)(std::vector<double> x) = nullptr;
     /// @brief Vizualize used random distributions (to do manual check).
-    double (*fitness_function)(std::vector<double> x) = nullptr;
     void CheckRandom();
-    int Init(long long total_population, long long dimension);
+    /// @brief Class initialization.
+    int Init(long long total_population, long long dimension);              // NOLINT
+    /// @brief Find optimum value of fitness function.
+    int RunOptimization();
+    /// @brief Set maximum number of generations used for optimization.
+    void SetTotalGenerationsMax(long long gen) {total_generations_max_ = gen;} // NOLINT
+    /// @brief Select if to find global minimum or maximum of fitness function.
+    void SetTargetToMinimum() {find_minimum_ = true;}
+    void SetTargetToMaximum() {find_minimum_ = false;}
+    /// @brief Set same search bounds for all components of fitness
+    /// function input vector.
     int SetAllBounds(double lbound, double ubound);
+
    private:
+    int CreateInitialPopulation();
+    int EvaluateCurrentVectors();
     /// @name Population, individuals and algorithm .
     // @{
+    /// @brief Search minimum or maximum of fitness function.
+    bool find_minimum_ = true;
+    /// @brief Maximum number of generations used for optimization.
+    long long total_generations_max_ = 0;                                   // NOLINT
     /// @brief Total number of individuals in all subpopulations.
-    long long total_population_ = 0;
+    long long total_population_ = 0;                                        // NOLINT
     /// @brief Number of individuals in subpopulation
-    long long subpopulation_ = 0;
+    long long subpopulation_ = 0;                                           // NOLINT
     /// @brief All individuals are indexed. First and last index of
     /// individuals in subpopulations.
-    long long index_first_ = -1, index_last_ = -1;
-    /// @brief Dimension of the optimization task (number of variables to optimize).
-    long long dimension_ = -1;
+    long long index_first_ = -1, index_last_ = -1;                          // NOLINT
+    /// @brief Dimension of the optimization task (number of variables
+    /// to optimize).
+    long long dimension_ = -1;                                              // NOLINT
     /// @brief Current generation of evalution process;
-    long long current_generation_ = -1;
+    long long current_generation_ = -1;                                     // NOLINT
     /// @brief Current state vectors of all individuals in subpopulation.
     std::vector<std::vector<double> > x_current_vectors_;
+    /// @brief Sometimes sorted list of evaluated fitness function.
+    std::list<std::pair<double, long long> >                                // NOLINT
+        evaluated_fitness_for_current_vectors_;
     /// @brief Archived best solutions (state vactors)
-    std::list<std::vector<double> > archived_best_;
+    std::list<std::vector<double> > archived_best_A_;
+    /// @brief Sometimes sorted list of evaluated fitness function for
+    /// best vectors.
+    std::list<std::pair<double, long long> >                                // NOLINT
+        evaluated_fitness_for_archived_best_;
     /// @brief Low and upper bounds for x vectors.
     std::vector<double> x_lbound_;
     std::vector<double> x_ubound_;
@@ -85,9 +111,9 @@ namespace jade {
     /// with location and scale parameters \mu and \delta
     double randc(double location, double scale);
     /// @brief randint(1, D) is an integer randomly chosen from 1 to D
-    long long randint(long long lbound, long long ubound);
+    long long randint(long long lbound, long long ubound);                  // NOLINT
     /// @brief rand(a, b) is an uniform random number chosen from a to b
-    double rand(double lbound, double ubound);
+    double rand(double lbound, double ubound);                              // NOLINT
     // @}
     int process_rank_;
     int number_of_processes_;
