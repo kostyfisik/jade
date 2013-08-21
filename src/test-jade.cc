@@ -1,64 +1,64 @@
-// Using Doxygen 1.8.0 (with Markdown)
-///
-/// @file   test-jade.cc
-/// @author Ladutenko Konstantin <kostyfisik at gmail (.) com>
-/// @copyright 2013 Ladutenko Konstantin
-/// @section LICENSE
-/// This file is part of JADE++.
-///
-/// JADE++ is free software: you can redistribute it and/or modify
-/// it under the terms of the GNU General Public License as published by
-/// the Free Software Foundation, either version 3 of the License, or
-/// (at your option) any later version.
-///
-/// JADE++ is distributed in the hope that it will be useful,
-/// but WITHOUT ANY WARRANTY; without even the implied warranty of
-/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-/// GNU General Public License for more details.
-///
-/// You should have received a copy of the GNU General Public License
-/// along with JADE++.  If not, see <http://www.gnu.org/licenses/>.
-///
-/// @date   Wed Aug 14 13:40:37 2013
-/// @brief  Test of JADE++ lib, Doxygen mainpage description.
-#include <mpi.h>
-#include <vector>
-#include <cstdio>
-#include "./jade.h"
-/// @brief Fitness test function for benchmarks
-///
-/// @param x Position vector to check
-///
-/// @return Value to be minimized by changing x
-double f1(std::vector<double> x) {
-  double accumed = 0;
-  for (auto component : x) accumed += component*component;
-  return accumed;
-}
-/// @brief Run tests of JADE++.
-///
-/// @param argc
-/// @param argv well known input parameters.
-///
-/// @return Zero by default.
-int main(int argc, char *argv[]) {
-  MPI_Init(&argc, &argv);
-  int done_status = jade::kDone;
-  jade::SubPopulation sub_population;
-  /// Settings for optimization algorithm;
-  int total_population = 10;  /// Total number of individuals in population.
-  int dimenstion = 10;  /// Number of parameters to optimize.
-  if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
-    sub_population.FitnessFunction = &f1;
-    /// Low and upper bound for all dimenstions;
-    double lbound = -100, ubound = 100;
-    sub_population.SetAllBounds(lbound, ubound);
-    sub_population.SetTargetToMinimum();
-    // sub_population.SetTargetToMaximum();
-    sub_population.SetTotalGenerationsMax(10);
-    sub_population.RunOptimization();
-  } else {
-    printf("Some error!\n");
+ // Using Doxygen 1.8.0 (with Markdown)
+ ///
+ /// @file   test-jade.cc
+ /// @author Ladutenko Konstantin <kostyfisik at gmail (.) com>
+ /// @copyright 2013 Ladutenko Konstantin
+ /// @section LICENSE
+ /// This file is part of JADE++.
+ ///
+ /// JADE++ is free software: you can redistribute it and/or modify
+ /// it under the terms of the GNU General Public License as published by
+ /// the Free Software Foundation, either version 3 of the License, or
+ /// (at your option) any later version.
+ ///
+ /// JADE++ is distributed in the hope that it will be useful,
+ /// but WITHOUT ANY WARRANTY; without even the implied warranty of
+ /// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ /// GNU General Public License for more details.
+ ///
+ /// You should have received a copy of the GNU General Public License
+ /// along with JADE++.  If not, see <http://www.gnu.org/licenses/>.
+ ///
+ /// @date   Wed Aug 14 13:40:37 2013
+ /// @brief  Test of JADE++ lib, Doxygen mainpage description.
+ #include <mpi.h>
+ #include <vector>
+ #include <cstdio>
+ #include "./jade.h"
+ /// @brief Fitness test function for benchmarks
+ ///
+ /// @param x Position vector to check
+ ///
+ /// @return Value to be minimized by changing x
+ double f1(std::vector<double> x) {
+   double accumed = 0;
+   for (auto component : x) accumed += component*component;
+   return accumed;
+ }
+ /// @brief Run tests of JADE++.
+ ///
+ /// @param argc
+ /// @param argv well known input parameters.
+ ///
+ /// @return Zero by default.
+ int main(int argc, char *argv[]) {
+   MPI_Init(&argc, &argv);
+   int done_status = jade::kDone;
+   jade::SubPopulation sub_population;
+   /// Settings for optimization algorithm;
+   int total_population = 4;  /// Total number of individuals in population.
+   int dimenstion = 2;  /// Number of parameters to optimize.
+   if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
+     sub_population.FitnessFunction = &f1;
+     /// Low and upper bound for all dimenstions;
+     double lbound = -1, ubound = 1;
+     sub_population.SetAllBounds(lbound, ubound);
+     sub_population.SetTargetToMinimum();
+     // sub_population.SetTargetToMaximum();
+     sub_population.SetTotalGenerationsMax(3);
+     sub_population.RunOptimization();
+   } else {
+     printf("Some error!\n");
   }
   MPI_Finalize();
   return done_status;

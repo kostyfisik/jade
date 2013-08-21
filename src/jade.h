@@ -39,10 +39,10 @@ namespace jade {
    public:
     /// @brief Externaly defined fitness function, used by pointer.
     double (*FitnessFunction)(std::vector<double> x) = nullptr;
-    /// @brief Vizualize used random distributions (to do manual check).
-    void CheckRandom();
     /// @brief Class initialization.
     int Init(long long total_population, long long dimension);              // NOLINT
+    /// @brief Vizualize used random distributions (to do manual check).
+    void CheckRandom();
     /// @brief Find optimum value of fitness function.
     int RunOptimization();
     /// @brief Set maximum number of generations used for optimization.
@@ -62,11 +62,17 @@ namespace jade {
     int SetCRiFi(long long i);
     /// @name Main algorithm steps.
     // @{
-    std::vector<double> Mutation();
-    std::vector<double> Crossover(std::vector<double> mutated_v);
     int Selection(std::vector<double> crossover_u);
     int ArchiveCleanUp();
     int Adaption();
+    std::vector<double> Mutation();
+    std::vector<double> Crossover(std::vector<double> mutated_v);
+    // @}
+    /// @name Other algorithm steps.
+    // @{
+    std::vector<double> GetXBestCurrent();
+    std::vector<double> GetXRandomCurrent();
+    std::vector<double> GetXRandomArchiveAndCurrent();
     // @}
     /// @name Population, individuals and algorithm .
     // @{
@@ -153,5 +159,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  const int kOutput = 0; /// Process rank to do output with printf
 }  // end of namespace jade
 #endif  // SRC_JADE_H_
