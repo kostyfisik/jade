@@ -36,13 +36,75 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  std::vector<double>  SubPopulation::Mutation() {
+    std::vector<double> mutation_v;
+    return mutation_v;
+  } // end of std::vector<double> SubPopulation::Mutation();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v) {
+    return mutation_v;
+  } // end of  std::vector<double> SubPopulation::Crossover();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::Selection(std::vector<double> crossover_u)  {
+    return kDone;
+  } // end of int SubPopulation::Selection(std::vector<double> crossover_u);
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::ArchiveCleanUp() {
+    return kDone;
+  } // end of int SubPopulation:: ArchiveCleanUp();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::Adaption()  {
+    return kDone;
+  } // end of int SubPopulation::Adaption();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   int SubPopulation::RunOptimization() {
     CreateInitialPopulation();
-    EvaluateCurrentVectors();
-    printf("Optimize\n");
-
+    //EvaluateCurrentVectors();
+    printf("Start optimization..\n");
+    //long long n_best_total = static_cast<long long>(floor(subpopulation_ * best_share_p_ ));
+    for (long long i = 0; i < subpopulation_; ++i) {
+      for (long long g = 0; g < total_generations_max_; ++g) {
+        successful_mutation_parameters_S_F_.clear();
+        successful_crossover_parameters_S_CR_.clear();        
+        SetCRiFi(i);
+        std::vector<double> mutated_v, crossover_u;
+        mutated_v = Mutation();
+        crossover_u = Crossover(mutated_v);
+        Selection(crossover_u);
+      }  // end of for all individuals in subpopulation
+      ArchiveCleanUp();
+      Adaption();
+      x_vectors_current_.swap(x_vectors_next_generation_);
+    }  // end of stepping generations
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::SetCRiFi(long long i) {
+    while (1) {
+      mutation_F_[i] = randc(adaptor_mutation_mu_F_, 0.1);
+      if (mutation_F_[i] > 1) {
+        mutation_F_[i] = 1;
+        break;
+      }
+      if (mutation_F_[i] > 0) break;
+    }
+    crossover_CR_[i] = randn(adaptor_crossover_mu_CR_,0.1);
+    if (crossover_CR_[i] > 1) crossover_CR_[i] = 1;
+    if (crossover_CR_[i] < 0) crossover_CR_[i] = 0;    
+    return kDone;
+  }  // end of int SubPopulation::SetCRiFi(long long i)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -99,11 +161,11 @@ namespace jade {
     // }
     // //end of debug section
     current_generation_ = 0;
-    x_current_vectors_.resize(subpopulation_);
+    x_vectors_current_.resize(subpopulation_);
     evaluated_fitness_for_current_vectors_.resize(subpopulation_);
-    for (auto &x : x_current_vectors_) x.resize(dimension_);
+    for (auto &x : x_vectors_current_) x.resize(dimension_);
     // //debug
-    // printf("%i, x1 size = %li \n", process_rank_, x_current_vectors_.size());
+    // printf("%i, x1 size = %li \n", process_rank_, x_vectors_current_.size());
     x_lbound_.resize(dimension_);
     x_ubound_.resize(dimension_);
     mutation_F_.resize(subpopulation_);
@@ -114,13 +176,13 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
-    for (auto &x : x_current_vectors_)
+    for (auto &x : x_vectors_current_)
       for (int i = 0; i < dimension_; ++i) {
         if (x_lbound_[i] > x_ubound_[i]) return kError;
         x[i] = rand(x_lbound_[i], x_ubound_[i]);                            // NOLINT
       }
     // //debug
-    // for (auto x : x_current_vectors_[0]) printf("%g ",x);
+    // for (auto x : x_vectors_current_[0]) printf("%g ",x);
     return kDone;
   }  // end of int SubPopulation::CreateInitialPopulation()
   // ********************************************************************** //
@@ -129,7 +191,7 @@ namespace jade {
   int SubPopulation::EvaluateCurrentVectors() {
     evaluated_fitness_for_current_vectors_.clear();
     for (long long i = 0; i < subpopulation_; ++i) {                        // NOLINT
-      auto tmp = std::make_pair(FitnessFunction(x_current_vectors_[i]), i);
+      auto tmp = std::make_pair(FitnessFunction(x_vectors_current_[i]), i);
       evaluated_fitness_for_current_vectors_.push_back(tmp);
     }
     if (find_minimum_)

@@ -205,6 +205,8 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 ]]; then
         path_clang33=
     elif  [[ $HOST == "tig-laptop2" ]]; then
         path_clang33=/home/mmedia/soft/clang/clang33        
+    elif  [[ $HOST == "rh-lum" ]]; then
+        path_clang33=/home/tig/clang/clang33        
     else
         path_clang33=
     fi

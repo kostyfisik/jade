@@ -56,7 +56,18 @@ namespace jade {
 
    private:
     int CreateInitialPopulation();
+    /// @brief Apply fitness function to current population.
     int EvaluateCurrentVectors();
+    /// @brief Generate crossover and mutation factors for current individual
+    int SetCRiFi(long long i);
+    /// @name Main algorithm steps.
+    // @{
+    std::vector<double> Mutation();
+    std::vector<double> Crossover(std::vector<double> mutated_v);
+    int Selection(std::vector<double> crossover_u);
+    int ArchiveCleanUp();
+    int Adaption();
+    // @}
     /// @name Population, individuals and algorithm .
     // @{
     /// @brief Search minimum or maximum of fitness function.
@@ -76,7 +87,10 @@ namespace jade {
     /// @brief Current generation of evalution process;
     long long current_generation_ = -1;                                     // NOLINT
     /// @brief Current state vectors of all individuals in subpopulation.
-    std::vector<std::vector<double> > x_current_vectors_;
+    std::vector<std::vector<double> > x_vectors_current_;
+    /// @brief State vectors of all individuals in subpopulation in
+    /// new generation.
+    std::vector<std::vector<double> > x_vectors_next_generation_;
     /// @brief Sometimes sorted list of evaluated fitness function.
     std::list<std::pair<double, long long> >                                // NOLINT
         evaluated_fitness_for_current_vectors_;
@@ -97,6 +111,12 @@ namespace jade {
     std::vector<double> mutation_F_, crossover_CR_;
     std::list<double> successful_mutation_parameters_S_F_;
     std::list<double> successful_crossover_parameters_S_CR_;
+    /// @brief Share of all individuals in current population to be
+    /// the best, recomended value range 0.05-0.2
+    const double best_share_p_ = 0.12;
+    /// @brief 1/c - number of generations accounted for parameter
+    /// adaption, recommended value 5 to 20 generation;
+    const double adaptation_frequency_c = 1.0/12.0;    
     // @}
     /// @name Random generation
     /// Names are in notation from Jingqiao Zhang and Arthur C. Sanderson book.

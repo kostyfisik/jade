@@ -60,22 +60,6 @@ int main(int argc, char *argv[]) {
   } else {
     printf("Some error!\n");
   }
-  // while (1) {  // use break to report error with done_status.
-  //   done_status = halo_exchange_process.Init(argc, argv);
-  //   if (done_status != jade::kDone) break;
-  //   // Split total simualation domain into subdomains for parallel
-  //   // execution. Each subdomain is simulated on its own MPI processes
-  //   // (physicaly it would be a single core, processor, node etc.).
-  //   done_status = halo_exchange_process.RunDecomposition();
-  //   if (done_status != jade::kDone) break;
-  //   done_status = halo_exchange_process.InitSimulation();
-  //   if (done_status != jade::kDone) break;
-  //   done_status = halo_exchange_process.RunSimulation();
-  //   break;
-  // }  // end of while breaked with errors
-  // if (done_status != jade::kDone
-  //     && done_status != jade::kErrorProcessNotInGrid)
-  //   MPI_Abort(MPI_COMM_WORLD, done_status);
   MPI_Finalize();
   return done_status;
 }  // end of main
