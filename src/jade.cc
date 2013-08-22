@@ -40,12 +40,14 @@ namespace jade {
     std::vector<double> mutation_v, x_best_current, x_random_current,
       x_random_archive_and_current;
     x_best_current = GetXpBestCurrent();
+    // //debug
+    // if (process_rank_ == kOutput) printf("x_best: ");
+    // PrintSingleVector(x_best_current);    
+    x_random_current = GetXRandomCurrent();
     //debug
-    if (process_rank_ == kOutput) printf("x_best: ");
-    PrintSingleVector(x_best_current);
-    
-    // x_random_current = GetXRandomCurrent();
-    // x_random_archive_and_current = GetXRandomArchiveAndCurrent();
+    if (process_rank_ == kOutput) printf("x_random: ");
+    PrintSingleVector(x_random_current);    
+    x_random_archive_and_current = GetXRandomArchiveAndCurrent();
     return mutation_v;
   } // end of std::vector<double> SubPopulation::Mutation();
   // ********************************************************************** //
@@ -54,34 +56,23 @@ namespace jade {
   std::vector<double> SubPopulation::GetXpBestCurrent() {
     const long long n_best_total = static_cast<long long>
       (floor(subpopulation_ * best_share_p_ ));
-    // //debug
-    // if (process_rank_ == kOutput) printf("n_best_total %lli\n", n_best_total);
     long long best_n = randint(0, n_best_total);
     long long best_n_index = -1, i = 0;
-    // //debug
-    // double best_n_evaluated;
     for (auto x : evaluated_fitness_for_current_vectors_) {
       if (i == best_n) {
         best_n_index = x.second;
-        // //debug
-        // best_n_evaluated = x.first;
         break;
       }
       ++i;
     }
-    // //debug
-    // if (process_rank_ == kOutput)
-    //   printf("n:%lli->%lli:%4.2f\n", best_n, best_n_index,
-    //          best_n_evaluated);
-    
-    return x_vectors_current_[best_n_index];
+    return x_vectors_current_.at(best_n_index);
   }  // end of std::vector<double> SubPopulation::GetXpBestCurrent();
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   std::vector<double> SubPopulation::GetXRandomCurrent() {
-    std::vector<double> x;
-    return x;
+    long long random_n = randint(0, subpopulation_-1);
+    return x_vectors_current_.at(random_n);
   }  // end of std::vector<double> SubPopulation::GetXRandomCurrent()
   // ********************************************************************** //
   // ********************************************************************** //
@@ -118,17 +109,22 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::RunOptimization() {
-    CreateInitialPopulation();
     if (process_rank_ == kOutput) printf("Start optimization..\n");
+    adaptor_mutation_mu_F_ = 0.5;
+    adaptor_crossover_mu_CR_ = 0.5;
+    archived_best_A_.clear();
+    CreateInitialPopulation();
     for (long long g = 0; g < total_generations_max_; ++g) {
+      successful_mutation_parameters_S_F_.clear();
+      successful_crossover_parameters_S_CR_.clear();        
+      EvaluateCurrentVectors();
+      //debug section
       if (process_rank_ == kOutput)
         printf("==============  Generation %lli =============\n", g);
-      EvaluateCurrentVectors();
-      PrintPopulation();
+      PrintPopulation();      
       PrintEvaluated();
+      //end of debug section
       for (long long i = 0; i < subpopulation_; ++i) {
-        successful_mutation_parameters_S_F_.clear();
-        successful_crossover_parameters_S_CR_.clear();        
         SetCRiFi(i);
         std::vector<double> mutated_v, crossover_u;
         mutated_v = Mutation();
