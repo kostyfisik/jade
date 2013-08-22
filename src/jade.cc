@@ -76,6 +76,8 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::ArchiveCleanUp() {
+    auto archived_last=archived_best_A_.end();
+    archived_best_A_.splice(archived_last, to_be_archived_best_A_);
     return kDone;
   } // end of int SubPopulation:: ArchiveCleanUp();
   // ********************************************************************** //
