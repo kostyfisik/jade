@@ -150,6 +150,8 @@ namespace jade {
     // @}
     int process_rank_;
     int number_of_processes_;
+    /// @brief Subpopulation status. If non-zero than some error has appeared.
+    int error_status_ = 0;
   };  // end of class SubPopulation
   // ********************************************************************** //
   // ********************************************************************** //
