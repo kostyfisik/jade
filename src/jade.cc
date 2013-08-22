@@ -39,6 +39,37 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::Selection(std::vector<double> crossover_u,
                                long long i)  {
+    bool is_evaluated = false;
+    double f_current;
+    for (auto f : evaluated_fitness_for_current_vectors_) {
+      if (f.second == i) {
+        f_current = f.first;
+        is_evaluated = true;
+      }
+    }  // end of searching of pre-evaluated fitness for current individual
+    if (!is_evaluated) error_status_ = kError;
+    double f_best = evaluated_fitness_for_current_vectors_.front().first;
+    double f_crossover_u = FitnessFunction(crossover_u);
+    bool is_success = f_crossover_u > f_current
+        || f_crossover_u == f_best;  //Selected for maxima search
+    if (is_find_minimum_) is_success = !is_success;
+    if (!is_success) {
+      // Case of current x and f were new for current generation.
+      x_vectors_next_generation_[i] = x_vectors_current_[i];
+      for (auto &f : evaluated_fitness_for_next_generation_) {
+        if (f.second == i) f.first = f_current;
+      }  // end of saving old fitness value in new generation.
+    } else {  // if is_success == true
+      x_vectors_next_generation_[i] = crossover_u;
+      for (auto &f : evaluated_fitness_for_next_generation_) 
+        if (f.second == i) f.first = f_crossover_u;
+      to_be_archived_best_A_.push_back(x_vectors_current_[i]);
+      successful_mutation_parameters_S_F_.push_back(mutation_F_[i]);
+      successful_crossover_parameters_S_CR_.push_back(crossover_CR_[i]);
+      if (process_rank_ == kOutput)
+        printf("n%lli f_new=%4.2f\n",i,f_crossover_u);
+      PrintSingleVector(crossover_u);
+    }  // end of dealing with success crossover
     return kDone;
   } // end of int SubPopulation::Selection(std::vector<double> crossover_u);
   // ********************************************************************** //
@@ -63,10 +94,14 @@ namespace jade {
     adaptor_crossover_mu_CR_ = 0.5;
     archived_best_A_.clear();
     CreateInitialPopulation();
+    x_vectors_next_generation_ = x_vectors_current_;
+    EvaluateCurrentVectors();
+    evaluated_fitness_for_next_generation_ =
+      evaluated_fitness_for_current_vectors_;
     for (long long g = 0; g < total_generations_max_; ++g) {
+      to_be_archived_best_A_.clear();
       successful_mutation_parameters_S_F_.clear();
       successful_crossover_parameters_S_CR_.clear();        
-      EvaluateCurrentVectors();
       //debug section
       if (process_rank_ == kOutput)
         printf("==============  Generation %lli =============\n", g);
@@ -83,6 +118,9 @@ namespace jade {
       ArchiveCleanUp();
       Adaption();
       x_vectors_current_.swap(x_vectors_next_generation_);
+      evaluated_fitness_for_current_vectors_
+        .swap(evaluated_fitness_for_next_generation_);
+      SortEvaluatedCurrent();
       if (error_status_) return error_status_;
     }  // end of stepping generations
     return kDone;
@@ -380,19 +418,26 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  int SubPopulation::SortEvaluatedCurrent() {
+    evaluated_fitness_for_current_vectors_
+      .sort([=](const std::pair<double, long long>& a,                     // NOLINT
+               const std::pair<double, long long>& b) {                   // NOLINT
+              bool cmp = a.first < b.first;
+              if (is_find_minimum_) return cmp;
+              return !cmp;
+            });
+    return kDone;
+  }  // end of int SubPopulation::SortEvaluatedCurrent()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   int SubPopulation::EvaluateCurrentVectors() {
     evaluated_fitness_for_current_vectors_.clear();
     for (long long i = 0; i < subpopulation_; ++i) {                        // NOLINT
       auto tmp = std::make_pair(FitnessFunction(x_vectors_current_[i]), i);
       evaluated_fitness_for_current_vectors_.push_back(tmp);
     }
-    evaluated_fitness_for_current_vectors_
-      .sort([=](const std::pair<double, long long>& a,                     // NOLINT
-               const std::pair<double, long long>& b) {                   // NOLINT
-              bool cmp = a.first < b.first;
-              if (find_minimum_) return cmp;
-              return !cmp;
-            });
+    SortEvaluatedCurrent();
     // //debug
     // if (process_rank_ == kOutput) printf("\n After ");
     // for (auto val : evaluated_fitness_for_current_vectors_)

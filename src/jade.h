@@ -48,8 +48,8 @@ namespace jade {
     /// @brief Set maximum number of generations used for optimization.
     void SetTotalGenerationsMax(long long gen) {total_generations_max_ = gen;} // NOLINT
     /// @brief Select if to find global minimum or maximum of fitness function.
-    void SetTargetToMinimum() {find_minimum_ = true;}
-    void SetTargetToMaximum() {find_minimum_ = false;}
+    void SetTargetToMinimum() {is_find_minimum_ = true;}
+    void SetTargetToMaximum() {is_find_minimum_ = false;}
     /// @brief Set same search bounds for all components of fitness
     /// function input vector.
     int SetAllBounds(double lbound, double ubound);
@@ -59,6 +59,7 @@ namespace jade {
     int PrintPopulation();
     int PrintEvaluated();
     int PrintSingleVector(std::vector<double> x);
+    int SortEvaluatedCurrent();
     /// @brief Apply fitness function to current population.
     int EvaluateCurrentVectors();
     /// @brief Generate crossover and mutation factors for current individual
@@ -86,7 +87,7 @@ namespace jade {
     /// @name Population, individuals and algorithm .
     // @{
     /// @brief Search minimum or maximum of fitness function.
-    bool find_minimum_ = true;
+    bool is_find_minimum_ = true;
     /// @brief Maximum number of generations used for optimization.
     long long total_generations_max_ = 0;                                   // NOLINT
     /// @brief Total number of individuals in all subpopulations.
@@ -109,8 +110,13 @@ namespace jade {
     /// @brief Sometimes sorted list of evaluated fitness function.
     std::list<std::pair<double, long long> >                                // NOLINT
         evaluated_fitness_for_current_vectors_;
+    /// @brief Sometimes sorted list of evaluated fitness function for
+    /// next generation.
+    std::list<std::pair<double, long long> >                                // NOLINT
+        evaluated_fitness_for_next_generation_;
     /// @brief Archived best solutions (state vactors)
     std::list<std::vector<double> > archived_best_A_;
+    std::list<std::vector<double> > to_be_archived_best_A_;
     /// @brief Sometimes sorted list of evaluated fitness function for
     /// best vectors.
     std::list<std::pair<double, long long> >                                // NOLINT
