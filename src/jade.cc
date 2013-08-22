@@ -37,13 +37,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v,
-                                                long long i) {
-    return mutation_v;
-  } // end of  std::vector<double> SubPopulation::Crossover();
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
   int SubPopulation::Selection(std::vector<double> crossover_u,
                                long long i)  {
     return kDone;
@@ -97,6 +90,31 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v,
+                                                long long i) {
+    const double CR_i = crossover_CR_[i];
+    std::vector<double> crossover_u, x_current;
+    crossover_u.resize(dimension_);
+    x_current = x_vectors_current_.at(i);
+    long long j_rand = randint(0, dimension_ - 1);
+    for (long long c = 0; c < dimension_; ++c) {
+      if (c == j_rand || rand(0,1) < CR_i)
+        crossover_u[c] = mutation_v[c];
+      else
+        crossover_u[c] = x_current[c];
+    }
+    //debug section
+    if (process_rank_ == kOutput)
+      printf("x -> v -> u with CR_i=%4.2f j_rand=%lli\n", CR_i, j_rand);
+    PrintSingleVector(mutation_v);
+    PrintSingleVector(x_current);
+    PrintSingleVector(crossover_u);
+    //end of debug section
+    return crossover_u;
+  } // end of  std::vector<double> SubPopulation::Crossover();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   std::vector<double> SubPopulation::Mutation(long long i) {
     std::vector<double> mutation_v, x_best_current, x_random_current,
       x_random_archive_and_current, x_current;    
@@ -128,25 +146,25 @@ namespace jade {
       if (mutation_v[c] < x_lbound_[c])
         mutation_v[c] = (x_lbound_[c] + x_current[c])/2;
     }
-    //debug section
-    int isSame = 888, isSame2 = 7777, isSame3 =11111;
-    for (long long c = 0; c < dimension_; ++c) {
-      double norm = std::abs(mutation_v[c] - x_current[c]);
-      double norm2 = std::abs(x_random_current[c] - x_current[c]);
-      double norm3 = std::abs(x_random_current[c]
-                              - x_random_archive_and_current[c]);
-      if ( norm  > 0.0001) isSame = 0;
-      if ( norm2  > 0.0001) isSame2 = 0;
-      if ( norm3  > 0.0001) isSame3 = 0;
-    }
-    if (process_rank_ == kOutput) printf("mutation_v%i%i%i:  ",isSame, isSame2, isSame3);
-    PrintSingleVector(mutation_v);
-    if (process_rank_ == kOutput) printf("current _v%i%i%i:  ",isSame, isSame2, isSame3);
-    PrintSingleVector(x_current);    
-    if (process_rank_ == kOutput)
-      printf("  -> f = %4.2f                                    F_i=%4.2f\n",
-             FitnessFunction(mutation_v), F_i);
-    //end of debug section
+    // //debug section
+    // int isSame = 888, isSame2 = 7777, isSame3 =11111;
+    // for (long long c = 0; c < dimension_; ++c) {
+    //   double norm = std::abs(mutation_v[c] - x_current[c]);
+    //   double norm2 = std::abs(x_random_current[c] - x_current[c]);
+    //   double norm3 = std::abs(x_random_current[c]
+    //                           - x_random_archive_and_current[c]);
+    //   if ( norm  > 0.0001) isSame = 0;
+    //   if ( norm2  > 0.0001) isSame2 = 0;
+    //   if ( norm3  > 0.0001) isSame3 = 0;
+    // }
+    // if (process_rank_ == kOutput) printf("mutation_v%i%i%i:  ",isSame, isSame2, isSame3);
+    // PrintSingleVector(mutation_v);
+    // if (process_rank_ == kOutput) printf("current _v%i%i%i:  ",isSame, isSame2, isSame3);
+    // PrintSingleVector(x_current);    
+    // if (process_rank_ == kOutput)
+    //   printf("  -> f = %4.2f                                    F_i=%4.2f\n",
+    //          FitnessFunction(mutation_v), F_i);
+    // //end of debug section
     return mutation_v;
   } // end of std::vector<double> SubPopulation::Mutation();
   // ********************************************************************** //
@@ -155,6 +173,7 @@ namespace jade {
   std::vector<double> SubPopulation::GetXpBestCurrent() {
     const long long n_best_total = static_cast<long long>
       (floor(subpopulation_ * best_share_p_ ));
+    if (n_best_total == subpopulation_) error_status_ = kError;
     long long best_n = randint(0, n_best_total);
     long long best_n_index = -1, i = 0;
     for (auto x : evaluated_fitness_for_current_vectors_) {
