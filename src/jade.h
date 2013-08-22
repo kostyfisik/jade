@@ -65,17 +65,23 @@ namespace jade {
     int SetCRiFi(long long i);
     /// @name Main algorithm steps.
     // @{
-    int Selection(std::vector<double> crossover_u);
+    int Selection(std::vector<double> crossover_u,
+                  long long individual_index);
     int ArchiveCleanUp();
     int Adaption();
-    std::vector<double> Mutation();
-    std::vector<double> Crossover(std::vector<double> mutated_v);
+    std::vector<double> Mutation(long long individual_index);
+    std::vector<double> Crossover(std::vector<double> mutated_v,
+                                  long long individual_index);
     // @}
     /// @name Other algorithm steps.
     // @{
     std::vector<double> GetXpBestCurrent();
-    std::vector<double> GetXRandomCurrent();
-    std::vector<double> GetXRandomArchiveAndCurrent();
+    /// @brief Returns random vector from current population and
+    /// vector`s index.
+    std::vector<double> GetXRandomCurrent(long long *index,
+                                          long long forbidden_index);
+    std::vector<double> GetXRandomArchiveAndCurrent(
+                   long long forbidden_index1, long long forbidden_index2);
     // @}
     /// @name Population, individuals and algorithm .
     // @{
@@ -122,10 +128,10 @@ namespace jade {
     std::list<double> successful_crossover_parameters_S_CR_;
     /// @brief Share of all individuals in current population to be
     /// the best, recomended value range 0.05-0.2
-    //const double best_share_p_ = 0.12;
+    const double best_share_p_ = 0.12;
 
-    //debug Change it back before production!!!!
-    const double best_share_p_ = 0.3;
+    /* //debug Change it back before production!!!! */
+    /* const double best_share_p_ = 0.3; */
 
     /// @brief 1/c - number of generations accounted for parameter
     /// adaption, recommended value 5 to 20 generation;

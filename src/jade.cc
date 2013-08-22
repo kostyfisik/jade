@@ -37,76 +37,15 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::Mutation() {
-    std::vector<double> mutation_v, x_best_current, x_random_current,
-      x_random_archive_and_current;
-    x_best_current = GetXpBestCurrent();
-    // //debug
-    // if (process_rank_ == kOutput) printf("x_best: ");
-    // PrintSingleVector(x_best_current);    
-    x_random_current = GetXRandomCurrent();
-    // //debug
-    // if (process_rank_ == kOutput) printf("x_random: ");
-    // PrintSingleVector(x_random_current);    
-    x_random_archive_and_current = GetXRandomArchiveAndCurrent();
-    //debug
-    if (process_rank_ == kOutput) printf("x_random with archive: ");
-    PrintSingleVector(x_random_archive_and_current);    
-    return mutation_v;
-  } // end of std::vector<double> SubPopulation::Mutation();
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXpBestCurrent() {
-    const long long n_best_total = static_cast<long long>
-      (floor(subpopulation_ * best_share_p_ ));
-    long long best_n = randint(0, n_best_total);
-    long long best_n_index = -1, i = 0;
-    for (auto x : evaluated_fitness_for_current_vectors_) {
-      if (i == best_n) {
-        best_n_index = x.second;
-        break;
-      }
-      ++i;
-    }
-    if (best_n_index >= x_vectors_current_.size()) error_status_ = kError; 
-    return x_vectors_current_.at(best_n_index);
-  }  // end of std::vector<double> SubPopulation::GetXpBestCurrent();
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXRandomCurrent() {
-    const long long random_n = randint(0, subpopulation_-1);    
-    if (random_n >= x_vectors_current_.size()) error_status_ = kError; 
-    return x_vectors_current_.at(random_n);
-  }  // end of std::vector<double> SubPopulation::GetXRandomCurrent()
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent() {
-    long long archive_size = archived_best_A_.size();
-    long long random_n = randint(0, subpopulation_ + archive_size - 1);
-    if (random_n < subpopulation_) return x_vectors_current_.at(random_n);
-    random_n -= subpopulation_;
-    long long i = 0;
-    for (auto x : archived_best_A_) {
-      if (i == random_n) return x;
-      ++i;
-    }
-    error_status_ = kError;
-    std::vector<double> x;
-    return x;    
-  }  // end of std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent()
-  // ********************************************************************** //
-  // ********************************************************************** //
-  // ********************************************************************** //
-  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v) {
+  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v,
+                                                long long i) {
     return mutation_v;
   } // end of  std::vector<double> SubPopulation::Crossover();
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::Selection(std::vector<double> crossover_u)  {
+  int SubPopulation::Selection(std::vector<double> crossover_u,
+                               long long i)  {
     return kDone;
   } // end of int SubPopulation::Selection(std::vector<double> crossover_u);
   // ********************************************************************** //
@@ -144,9 +83,9 @@ namespace jade {
       for (long long i = 0; i < subpopulation_; ++i) {
         SetCRiFi(i);
         std::vector<double> mutated_v, crossover_u;
-        mutated_v = Mutation();
-        crossover_u = Crossover(mutated_v);
-        Selection(crossover_u);
+        mutated_v = Mutation(i);
+        crossover_u = Crossover(mutated_v, i);
+        Selection(crossover_u, i);
       }  // end of for all individuals in subpopulation
       ArchiveCleanUp();
       Adaption();
@@ -155,6 +94,114 @@ namespace jade {
     }  // end of stepping generations
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::Mutation(long long i) {
+    std::vector<double> mutation_v, x_best_current, x_random_current,
+      x_random_archive_and_current, x_current;    
+    x_current = x_vectors_current_.at(i);
+    x_best_current = GetXpBestCurrent();
+    // //debug
+    // if (process_rank_ == kOutput) printf("x_best: ");
+    // PrintSingleVector(x_best_current);
+    long long index_of_random_current = -1;
+    x_random_current = GetXRandomCurrent(&index_of_random_current, i);
+    // //debug
+    // if (process_rank_ == kOutput) printf("x_random: ");
+    // PrintSingleVector(x_random_current);    
+    x_random_archive_and_current = GetXRandomArchiveAndCurrent(index_of_random_current, i);
+    // //debug
+    // if (process_rank_ == kOutput) printf("x_random with archive: ");
+    // PrintSingleVector(x_random_archive_and_current);
+    mutation_v.resize(dimension_);
+    double F_i = mutation_F_[i];
+    for (long long c = 0; c < dimension_; ++c) {
+      // Mutation
+      mutation_v[c] = x_current[c]
+        + F_i * (x_best_current[c] - x_current[c])
+        + F_i * (x_random_current[c]
+                 - x_random_archive_and_current[c]);
+      // Bounds control
+      if (mutation_v[c] > x_ubound_[c])
+        mutation_v[c] = (x_ubound_[c] + x_current[c])/2;
+      if (mutation_v[c] < x_lbound_[c])
+        mutation_v[c] = (x_lbound_[c] + x_current[c])/2;
+    }
+    //debug section
+    int isSame = 888, isSame2 = 7777, isSame3 =11111;
+    for (long long c = 0; c < dimension_; ++c) {
+      double norm = std::abs(mutation_v[c] - x_current[c]);
+      double norm2 = std::abs(x_random_current[c] - x_current[c]);
+      double norm3 = std::abs(x_random_current[c]
+                              - x_random_archive_and_current[c]);
+      if ( norm  > 0.0001) isSame = 0;
+      if ( norm2  > 0.0001) isSame2 = 0;
+      if ( norm3  > 0.0001) isSame3 = 0;
+    }
+    if (process_rank_ == kOutput) printf("mutation_v%i%i%i:  ",isSame, isSame2, isSame3);
+    PrintSingleVector(mutation_v);
+    if (process_rank_ == kOutput) printf("current _v%i%i%i:  ",isSame, isSame2, isSame3);
+    PrintSingleVector(x_current);    
+    if (process_rank_ == kOutput)
+      printf("  -> f = %4.2f                                    F_i=%4.2f\n",
+             FitnessFunction(mutation_v), F_i);
+    //end of debug section
+    return mutation_v;
+  } // end of std::vector<double> SubPopulation::Mutation();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetXpBestCurrent() {
+    const long long n_best_total = static_cast<long long>
+      (floor(subpopulation_ * best_share_p_ ));
+    long long best_n = randint(0, n_best_total);
+    long long best_n_index = -1, i = 0;
+    for (auto x : evaluated_fitness_for_current_vectors_) {
+      if (i == best_n) {
+        best_n_index = x.second;
+        break;
+      }
+      ++i;
+    }
+    if (best_n_index >= x_vectors_current_.size()) error_status_ = kError; 
+    return x_vectors_current_.at(best_n_index);
+  }  // end of std::vector<double> SubPopulation::GetXpBestCurrent();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetXRandomCurrent(long long *index,
+                                              long long forbidden_index) {
+    long long random_n = randint(0, subpopulation_-1);
+    while (random_n == forbidden_index) random_n = randint(0, subpopulation_-1);
+    (*index) = random_n;
+    if (random_n >= x_vectors_current_.size()) error_status_ = kError; 
+    return x_vectors_current_.at(random_n);
+  }  // end of std::vector<double> SubPopulation::GetXRandomCurrent()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent(
+                   long long forbidden_index1, long long forbidden_index2) {
+    long long archive_size = archived_best_A_.size();
+    long long random_n = randint(0, subpopulation_ + archive_size - 1);
+    while (random_n == forbidden_index1 || random_n == forbidden_index2)
+      random_n = randint(0, subpopulation_ + archive_size - 1);
+    if (random_n < subpopulation_) return x_vectors_current_.at(random_n);
+    random_n -= subpopulation_;
+    long long i = 0;
+    for (auto x : archived_best_A_) {
+      if (i == random_n) {
+        //debug
+        if (process_rank_ == kOutput) printf("Using Archive!!\n");
+        return x;
+      }
+      ++i;
+    }
+    error_status_ = kError;
+    std::vector<double> x;
+    return x;    
+  }  // end of std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
