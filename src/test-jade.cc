@@ -46,8 +46,8 @@
    int done_status = jade::kDone;
    jade::SubPopulation sub_population;
    /// Settings for optimization algorithm;
-   int total_population = 4;  /// Total number of individuals in population.
-   int dimenstion = 2;  /// Number of parameters to optimize.
+   int total_population = 10;  /// Total number of individuals in population.
+   int dimenstion = 3;  /// Number of parameters to optimize.
    if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
      sub_population.FitnessFunction = &f1;
      /// Low and upper bound for all dimenstions;

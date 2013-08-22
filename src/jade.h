@@ -56,6 +56,9 @@ namespace jade {
 
    private:
     int CreateInitialPopulation();
+    int PrintPopulation();
+    int PrintEvaluated();
+    int PrintSingleVector(std::vector<double> x);
     /// @brief Apply fitness function to current population.
     int EvaluateCurrentVectors();
     /// @brief Generate crossover and mutation factors for current individual
@@ -70,7 +73,7 @@ namespace jade {
     // @}
     /// @name Other algorithm steps.
     // @{
-    std::vector<double> GetXBestCurrent();
+    std::vector<double> GetXpBestCurrent();
     std::vector<double> GetXRandomCurrent();
     std::vector<double> GetXRandomArchiveAndCurrent();
     // @}
@@ -119,7 +122,11 @@ namespace jade {
     std::list<double> successful_crossover_parameters_S_CR_;
     /// @brief Share of all individuals in current population to be
     /// the best, recomended value range 0.05-0.2
-    const double best_share_p_ = 0.12;
+    //const double best_share_p_ = 0.12;
+
+    //debug Change it back before production!!!!
+    const double best_share_p_ = 0.3;
+
     /// @brief 1/c - number of generations accounted for parameter
     /// adaption, recommended value 5 to 20 generation;
     const double adaptation_frequency_c = 1.0/12.0;    

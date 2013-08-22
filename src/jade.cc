@@ -39,8 +39,11 @@ namespace jade {
   std::vector<double> SubPopulation::Mutation() {
     std::vector<double> mutation_v, x_best_current, x_random_current,
       x_random_archive_and_current;
-    EvaluateCurrentVectors();
-    x_best_current = GetXBestCurrent();
+    x_best_current = GetXpBestCurrent();
+    //debug
+    if (process_rank_ == kOutput) printf("x_best: ");
+    PrintSingleVector(x_best_current);
+    
     // x_random_current = GetXRandomCurrent();
     // x_random_archive_and_current = GetXRandomArchiveAndCurrent();
     return mutation_v;
@@ -48,10 +51,31 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXBestCurrent() {
-    std::vector<double> x;
-    return x;
-  }  // end of std::vector<double> SubPopulation::GetXBestCurrent();
+  std::vector<double> SubPopulation::GetXpBestCurrent() {
+    const long long n_best_total = static_cast<long long>
+      (floor(subpopulation_ * best_share_p_ ));
+    // //debug
+    // if (process_rank_ == kOutput) printf("n_best_total %lli\n", n_best_total);
+    long long best_n = randint(0, n_best_total);
+    long long best_n_index = -1, i = 0;
+    // //debug
+    // double best_n_evaluated;
+    for (auto x : evaluated_fitness_for_current_vectors_) {
+      if (i == best_n) {
+        best_n_index = x.second;
+        // //debug
+        // best_n_evaluated = x.first;
+        break;
+      }
+      ++i;
+    }
+    // //debug
+    // if (process_rank_ == kOutput)
+    //   printf("n:%lli->%lli:%4.2f\n", best_n, best_n_index,
+    //          best_n_evaluated);
+    
+    return x_vectors_current_[best_n_index];
+  }  // end of std::vector<double> SubPopulation::GetXpBestCurrent();
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -96,10 +120,12 @@ namespace jade {
   int SubPopulation::RunOptimization() {
     CreateInitialPopulation();
     if (process_rank_ == kOutput) printf("Start optimization..\n");
-    //long long n_best_total = static_cast<long long>(floor(subpopulation_ * best_share_p_ ));
     for (long long g = 0; g < total_generations_max_; ++g) {
+      if (process_rank_ == kOutput)
+        printf("==============  Generation %lli =============\n", g);
       EvaluateCurrentVectors();
-      if (process_rank_ == kOutput) printf("Generation %lli:\n", g);
+      PrintPopulation();
+      PrintEvaluated();
       for (long long i = 0; i < subpopulation_; ++i) {
         successful_mutation_parameters_S_F_.clear();
         successful_crossover_parameters_S_CR_.clear();        
@@ -204,12 +230,48 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  int SubPopulation::PrintPopulation() {
+    if (process_rank_ == kOutput) {
+      for (int i = 0; i < subpopulation_; ++i) {
+        printf("n%i:", i);
+        for (int c = 0; c < dimension_; ++c) {
+          printf(" %5.2f ", x_vectors_current_[i][c]);
+        }
+        printf("\n");
+      }  // end of for each individual
+    }  // end of if output
+    return kDone;
+  }  // end of int SubPupulation::PrintPopulation()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::PrintEvaluated() {
+    if (process_rank_ == kOutput) {
+      for (auto x : evaluated_fitness_for_current_vectors_)
+        printf("%lli:%4.2f  ", x.second, x.first);
+      printf("\n");
+    }  // end of if output
+    return kDone;
+  }  // end of int SubPopulation::PrintEvaluated()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::PrintSingleVector(std::vector<double> x) {
+    if (process_rank_ == kOutput) {
+      for (auto c : x) printf("%5.2f ", c);
+      printf("\n");
+    }  // end of output
+    return kDone;
+  }  // end of int SubPopulation::PrintSingleVector(std::vector<double> x)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
     for (auto &x : x_vectors_current_)
       for (int i = 0; i < dimension_; ++i) {
         if (x_lbound_[i] > x_ubound_[i]) return kError;
         x[i] = rand(x_lbound_[i], x_ubound_[i]);                            // NOLINT
-      }
+      }  // end of for each dimension
     // //debug
     // for (auto x : x_vectors_current_[0]) if (process_rank_ == kOutput) printf("%g ",x);
     return kDone;
