@@ -103,13 +103,13 @@ namespace jade {
       else
         crossover_u[c] = x_current[c];
     }
-    //debug section
-    if (process_rank_ == kOutput)
-      printf("x -> v -> u with CR_i=%4.2f j_rand=%lli\n", CR_i, j_rand);
-    PrintSingleVector(mutation_v);
-    PrintSingleVector(x_current);
-    PrintSingleVector(crossover_u);
-    //end of debug section
+    // //debug section
+    // if (process_rank_ == kOutput)
+    //   printf("x -> v -> u with CR_i=%4.2f j_rand=%lli\n", CR_i, j_rand);
+    // PrintSingleVector(mutation_v);
+    // PrintSingleVector(x_current);
+    // PrintSingleVector(crossover_u);
+    // //end of debug section
     return crossover_u;
   } // end of  std::vector<double> SubPopulation::Crossover();
   // ********************************************************************** //
@@ -386,18 +386,13 @@ namespace jade {
       auto tmp = std::make_pair(FitnessFunction(x_vectors_current_[i]), i);
       evaluated_fitness_for_current_vectors_.push_back(tmp);
     }
-    if (find_minimum_)
-      evaluated_fitness_for_current_vectors_
-        .sort([](const std::pair<double, long long>& a,                     // NOLINT
-                 const std::pair<double, long long>& b) {                   // NOLINT
-                return a.first < b.first;
-              });
-    else
-      evaluated_fitness_for_current_vectors_
-        .sort([](const std::pair<double, long long>& a,                     // NOLINT
-                 const std::pair<double, long long>& b) {                   // NOLINT
-                return a.first > b.first;
-              });
+    evaluated_fitness_for_current_vectors_
+      .sort([=](const std::pair<double, long long>& a,                     // NOLINT
+               const std::pair<double, long long>& b) {                   // NOLINT
+              bool cmp = a.first < b.first;
+              if (find_minimum_) return cmp;
+              return !cmp;
+            });
     // //debug
     // if (process_rank_ == kOutput) printf("\n After ");
     // for (auto val : evaluated_fitness_for_current_vectors_)
