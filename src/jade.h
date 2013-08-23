@@ -180,6 +180,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  const int kOutput = 10; /// Process rank to do output with printf
+  const int kOutput = 0; /// Process rank to do output with printf
 }  // end of namespace jade
 #endif  // SRC_JADE_H_
