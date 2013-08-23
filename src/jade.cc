@@ -67,9 +67,9 @@ namespace jade {
       to_be_archived_best_A_.push_back(x_vectors_current_[i]);
       successful_mutation_parameters_S_F_.push_back(mutation_F_[i]);
       successful_crossover_parameters_S_CR_.push_back(crossover_CR_[i]);
-      if (process_rank_ == kOutput)
-        printf("n%li f_new=%4.2f\n",i,f_crossover_u);
-      PrintSingleVector(crossover_u);
+      // if (process_rank_ == kOutput)
+      //   printf("n%li f_new=%4.2f\n",i,f_crossover_u);
+      //PrintSingleVector(crossover_u);
     }  // end of dealing with success crossover
     return kDone;
   } // end of int SubPopulation::Selection(std::vector<double> crossover_u);
@@ -81,11 +81,11 @@ namespace jade {
     archived_best_A_.splice(archived_last, to_be_archived_best_A_);
     auto size_A = archived_best_A_.size();
     long initial_diff = size_A - subpopulation_;
-    if (process_rank_ == kOutput)
-      printf("diff = %li size_A=%li subpop=%li \n ", initial_diff, size_A, subpopulation_);
-    if (initial_diff < 1) return kDone;
-    if (process_rank_ == kOutput)
-      printf("diff = %li size_A=%li \n ", initial_diff, size_A);
+    // if (process_rank_ == kOutput)
+    //   printf("diff = %li size_A=%li subpop=%li \n ", initial_diff, size_A, subpopulation_);
+    // if (initial_diff < 1) return kDone;
+    // if (process_rank_ == kOutput)
+    //   printf("diff = %li size_A=%li \n ", initial_diff, size_A);
     for (long i = 0; i < initial_diff; ++i) {
       long index_to_remove = randint(0, size_A - 1);
       auto element_A = archived_best_A_.begin();
@@ -101,6 +101,25 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::Adaption()  {
+    long elements = 0;
+    double sum = 0.0;
+    for (auto CR : successful_crossover_parameters_S_CR_) {
+      sum += CR;
+      ++elements;
+    }  // end of collecting data for mean CR
+    double mean_a_CR = sum / static_cast<double>(elements);
+    adaptor_crossover_mu_CR_ =
+      (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+      + adaptation_frequency_c_ * mean_a_CR;
+    double sum_F = 0.0, sum_F2 = 0.0;
+    for (auto F : successful_mutation_parameters_S_F_) {
+      sum_F += F;
+      sum_F2 += F*F;
+    }  // end of collection data for Lehmer mean F
+    double mean_l_F = sum_F2 / sum_F;
+    adaptor_mutation_mu_F_ =
+      (1 - adaptation_frequency_c_) *  adaptor_mutation_mu_F_
+      + adaptation_frequency_c_ * mean_l_F;
     return kDone;
   } // end of int SubPopulation::Adaption();
   // ********************************************************************** //
@@ -142,8 +161,8 @@ namespace jade {
       SortEvaluatedCurrent();
       if (error_status_) return error_status_;
     }  // end of stepping generations
-    for (auto x : evaluated_fitness_for_current_vectors_)
-      printf("%li:%4.2f  ", x.second, x.first);
+    auto x = evaluated_fitness_for_current_vectors_.front();
+    printf("* %li:%4.2f  ", x.second, x.first);
     printf("\n");
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
@@ -271,12 +290,12 @@ namespace jade {
     long i = 0;
     for (auto x : archived_best_A_) {
       if (i == random_n) {
-        //debug
-        if (process_rank_ == kOutput) printf("Using Archive!!\n");
+        // //debug
+        // if (process_rank_ == kOutput) printf("Using Archive!!\n");
         return x;
       }
       ++i;
-    }
+    }  // end of selecting from archive
     error_status_ = kError;
     std::vector<double> x;
     return x;    
@@ -285,6 +304,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::SetCRiFi(long i) {
+    long k = 0;
     while (1) {
       mutation_F_[i] = randc(adaptor_mutation_mu_F_, 0.1);
       if (mutation_F_[i] > 1) {
@@ -292,6 +312,12 @@ namespace jade {
         break;
       }
       if (mutation_F_[i] > 0) break;
+      ++k;
+      if (k > 10) {
+        mutation_F_[i] = 0.05;
+        break;
+      }
+      if (k > 100) printf("k");
     }
     crossover_CR_[i] = randn(adaptor_crossover_mu_CR_,0.1);
     if (crossover_CR_[i] > 1) crossover_CR_[i] = 1;

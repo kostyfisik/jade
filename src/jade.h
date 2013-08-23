@@ -141,7 +141,7 @@ namespace jade {
 
     /// @brief 1/c - number of generations accounted for parameter
     /// adaption, recommended value 5 to 20 generation;
-    const double adaptation_frequency_c = 1.0/12.0;    
+    const double adaptation_frequency_c_ = 1.0/20.0;    
     // @}
     /// @name Random generation
     /// Names are in notation from Jingqiao Zhang and Arthur C. Sanderson book.
@@ -180,6 +180,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  const int kOutput = 0; /// Process rank to do output with printf
+  const int kOutput = 110; /// Process rank to do output with printf
 }  // end of namespace jade
 #endif  // SRC_JADE_H_
