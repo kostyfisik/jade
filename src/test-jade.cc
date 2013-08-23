@@ -46,8 +46,8 @@
    int done_status = jade::kDone;
    jade::SubPopulation sub_population;
    /// Settings for optimization algorithm;
-   int total_population = 10;  /// Total number of individuals in population.
-   int dimenstion = 3;  /// Number of parameters to optimize.
+   int total_population = 20;  /// Total number of individuals in population.
+   int dimenstion = 10;  /// Number of parameters to optimize.
    if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
      sub_population.FitnessFunction = &f1;
      /// Low and upper bound for all dimenstions;
@@ -55,7 +55,7 @@
      sub_population.SetAllBounds(lbound, ubound);
      sub_population.SetTargetToMinimum();
      // sub_population.SetTargetToMaximum();
-     sub_population.SetTotalGenerationsMax(3);
+     sub_population.SetTotalGenerationsMax(50);
      sub_population.RunOptimization();
    } else {
      printf("Some error!\n");

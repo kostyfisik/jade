@@ -40,13 +40,13 @@ namespace jade {
     /// @brief Externaly defined fitness function, used by pointer.
     double (*FitnessFunction)(std::vector<double> x) = nullptr;
     /// @brief Class initialization.
-    int Init(long long total_population, long long dimension);              // NOLINT
+    int Init(long total_population, long dimension);              // NOLINT
     /// @brief Vizualize used random distributions (to do manual check).
     void CheckRandom();
     /// @brief Find optimum value of fitness function.
     int RunOptimization();
     /// @brief Set maximum number of generations used for optimization.
-    void SetTotalGenerationsMax(long long gen) {total_generations_max_ = gen;} // NOLINT
+    void SetTotalGenerationsMax(long gen) {total_generations_max_ = gen;} // NOLINT
     /// @brief Select if to find global minimum or maximum of fitness function.
     void SetTargetToMinimum() {is_find_minimum_ = true;}
     void SetTargetToMaximum() {is_find_minimum_ = false;}
@@ -63,63 +63,63 @@ namespace jade {
     /// @brief Apply fitness function to current population.
     int EvaluateCurrentVectors();
     /// @brief Generate crossover and mutation factors for current individual
-    int SetCRiFi(long long i);
+    int SetCRiFi(long i);
     /// @name Main algorithm steps.
     // @{
     int Selection(std::vector<double> crossover_u,
-                  long long individual_index);
+                  long individual_index);
     int ArchiveCleanUp();
     int Adaption();
-    std::vector<double> Mutation(long long individual_index);
+    std::vector<double> Mutation(long individual_index);
     std::vector<double> Crossover(std::vector<double> mutated_v,
-                                  long long individual_index);
+                                  long individual_index);
     // @}
     /// @name Other algorithm steps.
     // @{
     std::vector<double> GetXpBestCurrent();
     /// @brief Returns random vector from current population and
     /// vector`s index.
-    std::vector<double> GetXRandomCurrent(long long *index,
-                                          long long forbidden_index);
+    std::vector<double> GetXRandomCurrent(long *index,
+                                          long forbidden_index);
     std::vector<double> GetXRandomArchiveAndCurrent(
-                   long long forbidden_index1, long long forbidden_index2);
+                   long forbidden_index1, long forbidden_index2);
     // @}
     /// @name Population, individuals and algorithm .
     // @{
     /// @brief Search minimum or maximum of fitness function.
     bool is_find_minimum_ = true;
     /// @brief Maximum number of generations used for optimization.
-    long long total_generations_max_ = 0;                                   // NOLINT
+    long total_generations_max_ = 0;                                   // NOLINT
     /// @brief Total number of individuals in all subpopulations.
-    long long total_population_ = 0;                                        // NOLINT
+    long total_population_ = 0;                                        // NOLINT
     /// @brief Number of individuals in subpopulation
-    long long subpopulation_ = 0;                                           // NOLINT
+    long subpopulation_ = 0;                                           // NOLINT
     /// @brief All individuals are indexed. First and last index of
     /// individuals in subpopulations.
-    long long index_first_ = -1, index_last_ = -1;                          // NOLINT
+    long index_first_ = -1, index_last_ = -1;                          // NOLINT
     /// @brief Dimension of the optimization task (number of variables
     /// to optimize).
-    long long dimension_ = -1;                                              // NOLINT
+    long dimension_ = -1;                                              // NOLINT
     /// @brief Current generation of evalution process;
-    long long current_generation_ = -1;                                     // NOLINT
+    long current_generation_ = -1;                                     // NOLINT
     /// @brief Current state vectors of all individuals in subpopulation.
     std::vector<std::vector<double> > x_vectors_current_;
     /// @brief State vectors of all individuals in subpopulation in
     /// new generation.
     std::vector<std::vector<double> > x_vectors_next_generation_;
     /// @brief Sometimes sorted list of evaluated fitness function.
-    std::list<std::pair<double, long long> >                                // NOLINT
+    std::list<std::pair<double, long> >                                // NOLINT
         evaluated_fitness_for_current_vectors_;
     /// @brief Sometimes sorted list of evaluated fitness function for
     /// next generation.
-    std::list<std::pair<double, long long> >                                // NOLINT
+    std::list<std::pair<double, long> >                                // NOLINT
         evaluated_fitness_for_next_generation_;
     /// @brief Archived best solutions (state vactors)
     std::list<std::vector<double> > archived_best_A_;
     std::list<std::vector<double> > to_be_archived_best_A_;
     /// @brief Sometimes sorted list of evaluated fitness function for
     /// best vectors.
-    std::list<std::pair<double, long long> >                                // NOLINT
+    std::list<std::pair<double, long> >                                // NOLINT
         evaluated_fitness_for_archived_best_;
     /// @brief Low and upper bounds for x vectors.
     std::vector<double> x_lbound_;
@@ -156,7 +156,7 @@ namespace jade {
     /// with location and scale parameters \mu and \delta
     double randc(double location, double scale);
     /// @brief randint(1, D) is an integer randomly chosen from 1 to D
-    long long randint(long long lbound, long long ubound);                  // NOLINT
+    long randint(long lbound, long ubound);                  // NOLINT
     /// @brief rand(a, b) is an uniform random number chosen from a to b
     double rand(double lbound, double ubound);                              // NOLINT
     // @}
@@ -180,6 +180,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  const int kOutput = 0; /// Process rank to do output with printf
+  const int kOutput = 10; /// Process rank to do output with printf
 }  // end of namespace jade
 #endif  // SRC_JADE_H_

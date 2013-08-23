@@ -31,6 +31,7 @@
 #include <cmath>
 #include <algorithm>
 #include <map>
+#include <iterator>
 #include <string>
 namespace jade {
   /// @todo Replace all simple kError returns with something meangfull.
@@ -38,7 +39,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::Selection(std::vector<double> crossover_u,
-                               long long i)  {
+                               long i)  {
     bool is_evaluated = false;
     double f_current;
     for (auto f : evaluated_fitness_for_current_vectors_) {
@@ -67,7 +68,7 @@ namespace jade {
       successful_mutation_parameters_S_F_.push_back(mutation_F_[i]);
       successful_crossover_parameters_S_CR_.push_back(crossover_CR_[i]);
       if (process_rank_ == kOutput)
-        printf("n%lli f_new=%4.2f\n",i,f_crossover_u);
+        printf("n%li f_new=%4.2f\n",i,f_crossover_u);
       PrintSingleVector(crossover_u);
     }  // end of dealing with success crossover
     return kDone;
@@ -78,6 +79,22 @@ namespace jade {
   int SubPopulation::ArchiveCleanUp() {
     auto archived_last=archived_best_A_.end();
     archived_best_A_.splice(archived_last, to_be_archived_best_A_);
+    auto size_A = archived_best_A_.size();
+    long initial_diff = size_A - subpopulation_;
+    if (process_rank_ == kOutput)
+      printf("diff = %li size_A=%li subpop=%li \n ", initial_diff, size_A, subpopulation_);
+    if (initial_diff < 1) return kDone;
+    if (process_rank_ == kOutput)
+      printf("diff = %li size_A=%li \n ", initial_diff, size_A);
+    for (long i = 0; i < initial_diff; ++i) {
+      long index_to_remove = randint(0, size_A - 1);
+      auto element_A = archived_best_A_.begin();
+      std::advance(element_A, index_to_remove);
+      archived_best_A_.erase(element_A);
+      --size_A;
+    }
+    const auto new_size_A = archived_best_A_.size();
+    if (new_size_A > subpopulation_) error_status_ = kError;
     return kDone;
   } // end of int SubPopulation:: ArchiveCleanUp();
   // ********************************************************************** //
@@ -100,17 +117,17 @@ namespace jade {
     EvaluateCurrentVectors();
     evaluated_fitness_for_next_generation_ =
       evaluated_fitness_for_current_vectors_;
-    for (long long g = 0; g < total_generations_max_; ++g) {
+    for (long g = 0; g < total_generations_max_; ++g) {
       to_be_archived_best_A_.clear();
       successful_mutation_parameters_S_F_.clear();
       successful_crossover_parameters_S_CR_.clear();        
       //debug section
       if (process_rank_ == kOutput)
-        printf("==============  Generation %lli =============\n", g);
+        printf("==============  Generation %li =============\n", g);
       PrintPopulation();      
       PrintEvaluated();
       //end of debug section
-      for (long long i = 0; i < subpopulation_; ++i) {
+      for (long i = 0; i < subpopulation_; ++i) {
         SetCRiFi(i);
         std::vector<double> mutated_v, crossover_u;
         mutated_v = Mutation(i);
@@ -125,19 +142,22 @@ namespace jade {
       SortEvaluatedCurrent();
       if (error_status_) return error_status_;
     }  // end of stepping generations
+    for (auto x : evaluated_fitness_for_current_vectors_)
+      printf("%li:%4.2f  ", x.second, x.first);
+    printf("\n");
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v,
-                                                long long i) {
+                                                long i) {
     const double CR_i = crossover_CR_[i];
     std::vector<double> crossover_u, x_current;
     crossover_u.resize(dimension_);
     x_current = x_vectors_current_.at(i);
-    long long j_rand = randint(0, dimension_ - 1);
-    for (long long c = 0; c < dimension_; ++c) {
+    long j_rand = randint(0, dimension_ - 1);
+    for (long c = 0; c < dimension_; ++c) {
       if (c == j_rand || rand(0,1) < CR_i)
         crossover_u[c] = mutation_v[c];
       else
@@ -145,7 +165,7 @@ namespace jade {
     }
     // //debug section
     // if (process_rank_ == kOutput)
-    //   printf("x -> v -> u with CR_i=%4.2f j_rand=%lli\n", CR_i, j_rand);
+    //   printf("x -> v -> u with CR_i=%4.2f j_rand=%li\n", CR_i, j_rand);
     // PrintSingleVector(mutation_v);
     // PrintSingleVector(x_current);
     // PrintSingleVector(crossover_u);
@@ -155,7 +175,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::Mutation(long long i) {
+  std::vector<double> SubPopulation::Mutation(long i) {
     std::vector<double> mutation_v, x_best_current, x_random_current,
       x_random_archive_and_current, x_current;    
     x_current = x_vectors_current_.at(i);
@@ -163,7 +183,7 @@ namespace jade {
     // //debug
     // if (process_rank_ == kOutput) printf("x_best: ");
     // PrintSingleVector(x_best_current);
-    long long index_of_random_current = -1;
+    long index_of_random_current = -1;
     x_random_current = GetXRandomCurrent(&index_of_random_current, i);
     // //debug
     // if (process_rank_ == kOutput) printf("x_random: ");
@@ -174,7 +194,7 @@ namespace jade {
     // PrintSingleVector(x_random_archive_and_current);
     mutation_v.resize(dimension_);
     double F_i = mutation_F_[i];
-    for (long long c = 0; c < dimension_; ++c) {
+    for (long c = 0; c < dimension_; ++c) {
       // Mutation
       mutation_v[c] = x_current[c]
         + F_i * (x_best_current[c] - x_current[c])
@@ -188,7 +208,7 @@ namespace jade {
     }
     // //debug section
     // int isSame = 888, isSame2 = 7777, isSame3 =11111;
-    // for (long long c = 0; c < dimension_; ++c) {
+    // for (long c = 0; c < dimension_; ++c) {
     //   double norm = std::abs(mutation_v[c] - x_current[c]);
     //   double norm2 = std::abs(x_random_current[c] - x_current[c]);
     //   double norm3 = std::abs(x_random_current[c]
@@ -211,11 +231,11 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   std::vector<double> SubPopulation::GetXpBestCurrent() {
-    const long long n_best_total = static_cast<long long>
+    const long n_best_total = static_cast<long>
       (floor(subpopulation_ * best_share_p_ ));
     if (n_best_total == subpopulation_) error_status_ = kError;
-    long long best_n = randint(0, n_best_total);
-    long long best_n_index = -1, i = 0;
+    long best_n = randint(0, n_best_total);
+    long best_n_index = -1, i = 0;
     for (auto x : evaluated_fitness_for_current_vectors_) {
       if (i == best_n) {
         best_n_index = x.second;
@@ -229,9 +249,9 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXRandomCurrent(long long *index,
-                                              long long forbidden_index) {
-    long long random_n = randint(0, subpopulation_-1);
+  std::vector<double> SubPopulation::GetXRandomCurrent(long *index,
+                                              long forbidden_index) {
+    long random_n = randint(0, subpopulation_-1);
     while (random_n == forbidden_index) random_n = randint(0, subpopulation_-1);
     (*index) = random_n;
     if (random_n >= x_vectors_current_.size()) error_status_ = kError; 
@@ -241,14 +261,14 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent(
-                   long long forbidden_index1, long long forbidden_index2) {
-    long long archive_size = archived_best_A_.size();
-    long long random_n = randint(0, subpopulation_ + archive_size - 1);
+                   long forbidden_index1, long forbidden_index2) {
+    long archive_size = archived_best_A_.size();
+    long random_n = randint(0, subpopulation_ + archive_size - 1);
     while (random_n == forbidden_index1 || random_n == forbidden_index2)
       random_n = randint(0, subpopulation_ + archive_size - 1);
     if (random_n < subpopulation_) return x_vectors_current_.at(random_n);
     random_n -= subpopulation_;
-    long long i = 0;
+    long i = 0;
     for (auto x : archived_best_A_) {
       if (i == random_n) {
         //debug
@@ -264,7 +284,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::SetCRiFi(long long i) {
+  int SubPopulation::SetCRiFi(long i) {
     while (1) {
       mutation_F_[i] = randc(adaptor_mutation_mu_F_, 0.1);
       if (mutation_F_[i] > 1) {
@@ -277,12 +297,12 @@ namespace jade {
     if (crossover_CR_[i] > 1) crossover_CR_[i] = 1;
     if (crossover_CR_[i] < 0) crossover_CR_[i] = 0;    
     return kDone;
-  }  // end of int SubPopulation::SetCRiFi(long long i)
+  }  // end of int SubPopulation::SetCRiFi(long i)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   /// %todo Change returned kError to meangfull error code.
-  int SubPopulation::Init(long long total_population, long long dimension) {// NOLINT
+  int SubPopulation::Init(long total_population, long dimension) {// NOLINT
     total_population_  = total_population;
     if (total_population_ < 1) {
       error_status_ = kError;
@@ -314,12 +334,12 @@ namespace jade {
     if (number_of_processes_ == total_population_) subpopulation_ = 1;
     // //debug section
     // if (process_rank_ == 0) {
-    //   for (long long popul = 1; popul < 10000; popul++) {
+    //   for (long popul = 1; popul < 10000; popul++) {
     //     total_population_ = popul;
     //     for (int procs = 1; procs < 300; procs++) {
     //       if (procs >= popul) break;
     //       number_of_processes_ = procs;
-    //       long long popul_eval = 0;
+    //       long popul_eval = 0;
     //       for (int rank = 0; rank < procs; rank++) {
     //         process_rank_ = rank;
     // //end of debug section
@@ -341,11 +361,11 @@ namespace jade {
       return kError;
     }
     // //debug section
-    //         if (process_rank_ == kOutput) printf("%lli-%lli ", index_first_, index_last_);
+    //         if (process_rank_ == kOutput) printf("%li-%li ", index_first_, index_last_);
     //         popul_eval += index_last_ - index_first_ + 1;
     //       }
     //       if (popul != popul_eval)
-    //         if (process_rank_ == kOutput) printf("procs %i for popul %lli (%lli)\n",
+    //         if (process_rank_ == kOutput) printf("procs %i for popul %li (%li)\n",
     //                procs, popul, popul_eval);
     //     }
     //   }
@@ -370,9 +390,9 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::PrintPopulation() {
     if (process_rank_ == kOutput) {
-      for (int i = 0; i < subpopulation_; ++i) {
-        printf("n%i:", i);
-        for (int c = 0; c < dimension_; ++c) {
+      for (long i = 0; i < subpopulation_; ++i) {
+        printf("n%li:", i);
+        for (long c = 0; c < dimension_; ++c) {
           printf(" %5.2f ", x_vectors_current_[i][c]);
         }
         printf("\n");
@@ -386,7 +406,7 @@ namespace jade {
   int SubPopulation::PrintEvaluated() {
     if (process_rank_ == kOutput) {
       for (auto x : evaluated_fitness_for_current_vectors_)
-        printf("%lli:%4.2f  ", x.second, x.first);
+        printf("%li:%4.2f  ", x.second, x.first);
       printf("\n");
     }  // end of if output
     return kDone;
@@ -406,7 +426,7 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
     for (auto &x : x_vectors_current_)
-      for (int i = 0; i < dimension_; ++i) {
+      for (long i = 0; i < dimension_; ++i) {
         if (x_lbound_[i] > x_ubound_[i]) {
           error_status_ = kError;
           return kError;
@@ -422,8 +442,8 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::SortEvaluatedCurrent() {
     evaluated_fitness_for_current_vectors_
-      .sort([=](const std::pair<double, long long>& a,                     // NOLINT
-               const std::pair<double, long long>& b) {                   // NOLINT
+      .sort([=](const std::pair<double, long>& a,                     // NOLINT
+               const std::pair<double, long>& b) {                   // NOLINT
               bool cmp = a.first < b.first;
               if (is_find_minimum_) return cmp;
               return !cmp;
@@ -435,7 +455,7 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::EvaluateCurrentVectors() {
     evaluated_fitness_for_current_vectors_.clear();
-    for (long long i = 0; i < subpopulation_; ++i) {                        // NOLINT
+    for (long i = 0; i < subpopulation_; ++i) {                        // NOLINT
       auto tmp = std::make_pair(FitnessFunction(x_vectors_current_[i]), i);
       evaluated_fitness_for_current_vectors_.push_back(tmp);
     }
@@ -475,8 +495,8 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  long long SubPopulation::randint(long long lbound, long long ubound) {    // NOLINT
-    std::uniform_int_distribution<long long> distribution(lbound, ubound);  // NOLINT
+  long SubPopulation::randint(long lbound, long ubound) {    // NOLINT
+    std::uniform_int_distribution<long> distribution(lbound, ubound);  // NOLINT
     return distribution(generator_);
   }
   // ********************************************************************** //
