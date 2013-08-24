@@ -33,6 +33,7 @@
 #include <map>
 #include <iterator>
 #include <string>
+#include <vector>
 namespace jade {
   /// @todo Replace all simple kError returns with something meangfull.
   // ********************************************************************** //
@@ -161,9 +162,6 @@ namespace jade {
       SortEvaluatedCurrent();
       if (error_status_) return error_status_;
     }  // end of stepping generations
-    auto x = evaluated_fitness_for_current_vectors_.front();
-    printf("* %li:%4.2f  ", x.second, x.first);
-    printf("\n");
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
   // ********************************************************************** //
@@ -381,7 +379,9 @@ namespace jade {
     // HACK! try to deal with double rounding unstability.
     if (process_rank_ + 1 == number_of_processes_)
       index_last_ = total_population_ - 1;
-    subpopulation_ = index_last_ - index_first_ + 1;
+    if (distribution_level_ != 0)
+      subpopulation_ = index_last_ - index_first_ + 1;
+    subpopulation_ = total_population;
     if (subpopulation_ == 0) {
       error_status_ = kError;
       return kError;
@@ -544,35 +544,87 @@ namespace jade {
       ++hist_int[std::round(randint(0, 10))];
       ++hist[std::round(rand(0, 15))];                                      // NOLINT 
     }
-    if (process_rank_ == 0) {
-      if (process_rank_ == kOutput) printf("Normal (0,2)\n");
+    if (process_rank_ == kOutput) {
+      printf("Normal (0,2)\n");
       for (auto p : hist_n) {
         if (p.second > factor)
-          if (process_rank_ == kOutput) printf("%i: % 4i %s\n", process_rank_, p.first,
+          printf("%i: % 4i %s\n", process_rank_, p.first,
                  std::string(p.second/factor, '*').c_str());
       }  // end of for p in hist_n
-      if (process_rank_ == kOutput) printf("Cauchy (0,2)\n");
+      printf("Cauchy (0,2)\n");
       for (auto p : hist_c) {
         if (p.second > factor)
-          if (process_rank_ == kOutput) printf("%i: % 4i %s\n", process_rank_, p.first,
+          printf("%i: % 4i %s\n", process_rank_, p.first,
                  std::string(p.second/factor, '*').c_str());
       }  // end of for p in hist_c
-      if (process_rank_ == kOutput) printf("Uniform int (0,10)\n");
+      printf("Uniform int (0,10)\n");
       for (auto p : hist_int) {
         if (p.second > factor)
-          if (process_rank_ == kOutput) printf("%i: % 4i %s\n", process_rank_, p.first,
+          printf("%i: % 4i %s\n", process_rank_, p.first,
                  std::string(p.second/factor, '*').c_str());
       }  // end of for p in hist_int
-      if (process_rank_ == kOutput) printf("Uniform double (0,15)\n");
+      printf("Uniform double (0,15)\n");
       for (auto p : hist) {
         if (p.second > factor)
-          if (process_rank_ == kOutput) printf("%i: % 4i %s\n", process_rank_, p.first,
+          printf("%i: % 4i %s\n", process_rank_, p.first,
                  std::string(p.second/factor, '*').c_str());
       }  // end of for p in hist
-    }  //  end of if current process_rank_ == 0
+    }  //  end of if current process_rank_ == kOutput
   }
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-
+  int SubPopulation::SetBestShareP(double p) {
+    if (p < 0 || p > 1) {
+      error_status_ = kError;
+      return kError;
+    }
+    best_share_p_ = p;
+    return kDone;
+  }  // end of int SubPopulation::SetBestShareP(double p)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::SetAdapitonFrequencyC(double c) {
+    if (c < 0 || c > 1) {
+      error_status_ = kError;
+      return kError;
+    }
+    adaptation_frequency_c_ = c;
+    return kDone;
+  }  // end of int SubPopulation::SetAdapitonFrequency(double c)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::SetDistributionLevel(int level) {
+    distribution_level_ = level;
+    return kDone;
+  }
+  // end of int SubPopulation::SetDistributionLevel(int level)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::PrintParameters(std::string comment) {
+    if (process_rank_ == 0) {
+      printf("#%s dim=%li NP=%li(of %li) p=%4.2f c=%4.2f generation=%li\n",
+             comment.c_str(),dimension_, subpopulation_, total_population_,
+             best_share_p_, adaptation_frequency_c_, total_generations_max_
+             );
+      fflush(stdout);
+    }  // end of output
+    return kDone;
+  }  // end of int SubPopulation::PrintParameters(std::string comment)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::PrintResult() {
+    if (distribution_level_ == 0) {
+      auto x = evaluated_fitness_for_current_vectors_.front();
+      printf("%8.5g\n  ", x.first);
+    }
+    return kDone;
+  }  // end of int SubPopulation::PrintResult()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
 }  // end of namespace jade

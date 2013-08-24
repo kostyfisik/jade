@@ -29,6 +29,7 @@
 #include <random>
 #include <utility>
 #include <list>
+#include <string>
 #include <vector>
 namespace jade {
   // ********************************************************************** //
@@ -50,10 +51,19 @@ namespace jade {
     /// @brief Select if to find global minimum or maximum of fitness function.
     void SetTargetToMinimum() {is_find_minimum_ = true;}
     void SetTargetToMaximum() {is_find_minimum_ = false;}
+    /// @brief Set adaption parameters.
+    int SetBestShareP(double p);
+    int SetAdapitonFrequencyC(double c);
+    /// @brief Set level of algorithm distribution.
+    /// 0 - no distribution, each MPI process acts independantly.
+    int SetDistributionLevel(int level);
     /// @brief Set same search bounds for all components of fitness
     /// function input vector.
     int SetAllBounds(double lbound, double ubound);
-
+    /// @brief Print Optimization parameters.
+    int PrintParameters(std::string comment);
+    /// @brief Print final result
+    int PrintResult();
    private:
     int CreateInitialPopulation();
     int PrintPopulation();
@@ -134,14 +144,16 @@ namespace jade {
     std::list<double> successful_crossover_parameters_S_CR_;
     /// @brief Share of all individuals in current population to be
     /// the best, recomended value range 0.05-0.2
-    const double best_share_p_ = 0.12;
+    //const double best_share_p_ = 0.12;
+    double best_share_p_ = 0.05;
 
     /* //debug Change it back before production!!!! */
     /* const double best_share_p_ = 0.3; */
 
     /// @brief 1/c - number of generations accounted for parameter
     /// adaption, recommended value 5 to 20 generation;
-    const double adaptation_frequency_c_ = 1.0/20.0;    
+    //const double adaptation_frequency_c_ = 1.0/20.0;    
+    double adaptation_frequency_c_ = 0.1;    
     // @}
     /// @name Random generation
     /// Names are in notation from Jingqiao Zhang and Arthur C. Sanderson book.
@@ -164,6 +176,7 @@ namespace jade {
     int number_of_processes_;
     /// @brief Subpopulation status. If non-zero than some error has appeared.
     int error_status_ = 0;
+    int distribution_level_ = 0;
   };  // end of class SubPopulation
   // ********************************************************************** //
   // ********************************************************************** //
@@ -180,6 +193,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  const int kOutput = 110; /// Process rank to do output with printf
+  const int kOutput = -1; /// Process rank to do output with printf
 }  // end of namespace jade
 #endif  // SRC_JADE_H_

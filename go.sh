@@ -315,7 +315,7 @@ function RunJADE {
             mpirun $MPI_options ./$jade_bin #jade.config
     else
         echo "(1) Nodes 1  procs $JADE_MPI_size"
-        mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
+        time mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
     fi    
     cd $path_tmp
 }  # end of RunJADE
