@@ -160,7 +160,7 @@ namespace jade {
     // @{
     /// @todo Select random generator enginge for best results in DE!
     std::mt19937_64 generator_;
-    // std::ranlux48 generator_;
+    //std::ranlux48 generator_;
     /// @brief randn(\mu, \sigma^2 ) denotes a random value from a normal
     /// distribution of mean \mu and variance \sigma^2
     double randn(double mean, double stddev);
