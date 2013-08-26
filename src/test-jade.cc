@@ -159,7 +159,7 @@ std::vector<double> ubound =
   { 100,  10,  100,  100,  30,  100,  1.28,  500,  5.12,  32,  600,  50,  50};
 /// @brief Generations for each test function
 std::vector<long> gen30 =
-  {15, 20, 50, 50, 30, 1, 30 };
+  {15, 20, 50, 50, 30, 1, 30, 10, 10, 5, 5, 5, 5};
 std::vector<std::vector <double> > fitness30, fitness100;
 /// @brief Run tests of JADE++.
 ///
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
   // int total_population = 400;  /// Total number of individuals in population.
   //int total_population = 3 * dimenstion;  /// Total number of individuals in population.
   for (int i = 0; i < number_of_test_functions; ++i) {
-    if (i == 8) continue;
+    // if (i == 8) continue;
     jade::SubPopulation sub_population;
     if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
       sub_population.FitnessFunction = f[i];
@@ -207,8 +207,8 @@ int main(int argc, char *argv[]) {
       for (auto x : fitness30[i]) sigma += pow2(x - mean);
       sigma = sqrt(sigma/size);
       if (rank == 0)
-        printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g)\n",
-              comment[i].c_str(), gen30[i]*x100, mean,sigma,size);
+        printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g) at (%g,%g)\n",
+               comment[i].c_str(), gen30[i]*x100, mean,sigma,size, lbound[i], ubound[i]);
     } else {
       printf("Some error!\n");
     }
