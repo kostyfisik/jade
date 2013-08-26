@@ -298,6 +298,8 @@ function TuneJADEOptionsMPI {
         if [[ $JADE_MPI_nodes = "unset" ]]; then JADE_MPI_nodes=8; fi
     elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=4; fi            
+    elif  [[ $HOST == "rh-lum" ]]; then
+        if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=12; fi            
     else
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=2; fi
     fi
