@@ -172,8 +172,16 @@ namespace jade {
     /// @brief rand(a, b) is an uniform random number chosen from a to b
     double rand(double lbound, double ubound);                              // NOLINT
     // @}
+    /// @name MPI section
+    // @{
     int process_rank_;
     int number_of_processes_;
+    int AllGatherVectorDouble(std::vector<double> to_send);
+    std::vector<double> recieve_double_;
+    int AllGatherVectorLong(std::vector<long> to_send);
+    std::vector<long> recieve_long_;
+       
+    // @}
     /// @brief Subpopulation status. If non-zero than some error has appeared.
     int error_status_ = 0;
     int distribution_level_ = 0;
@@ -194,5 +202,6 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   const int kOutput = -1; /// Process rank to do output with printf
+  template<class T> inline T pow2(const T value) {return value*value;}
 }  // end of namespace jade
 #endif  // SRC_JADE_H_

@@ -617,13 +617,53 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::PrintResult() {
-    if (distribution_level_ == 0) {
+  int SubPopulation::PrintResult() {    
+    if (distribution_level_ == 0) {      
       auto x = evaluated_fitness_for_current_vectors_.front();
-      printf("%8.5g\n  ", x.first);
+      std::vector<double> to_send {x.first};
+      //printf("%8.5g\n  ", x.first);
+      AllGatherVectorDouble(to_send);
+      if (process_rank_ == 0) {
+        double sum = 0;
+        double size = static_cast<double>(recieve_double_.size());
+        for (auto x : recieve_double_) sum += x;
+        double mean = sum/size;
+        double sigma = 0;
+        for (auto x : recieve_double_) sigma += pow2(x - mean);
+        sigma = sqrt(sigma/size);
+        printf("%18.15g (%18.15g)\n", mean,sigma);
+        for (auto x : recieve_double_)
+          printf("%18.15g\n", x);
+      }
     }
     return kDone;
   }  // end of int SubPopulation::PrintResult()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::AllGatherVectorDouble(std::vector<double> to_send) {
+    long size_single = to_send.size();
+    long size_all = size_single * number_of_processes_;
+    recieve_double_.clear();
+    recieve_double_.resize(size_all);
+    MPI_Allgather(&to_send.front(), size_single, MPI_DOUBLE,
+                  &recieve_double_.front(), size_single, MPI_DOUBLE,
+                  MPI_COMM_WORLD);
+    return kDone;
+  }  // end of int SubPopulation::AllGatherVectorDouble(std::vector<double> to_send);
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  int SubPopulation::AllGatherVectorLong(std::vector<long> to_send) {
+    long size_single = to_send.size();
+    long size_all = size_single * number_of_processes_;
+    recieve_long_.clear();
+    recieve_long_.resize(size_all);
+    MPI_Allgather(&to_send.front(), size_single, MPI_LONG,
+                  &recieve_long_.front(), size_single, MPI_LONG,
+                  MPI_COMM_WORLD);
+    return kDone;
+  }  // end of int SubPopulation::AllGatherVectorLong(std::vector<long> to_send);
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
