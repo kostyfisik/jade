@@ -618,7 +618,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::PrintResult() {    
+  int SubPopulation::PrintResult(std::string comment) {    
     if (distribution_level_ == 0) {      
       auto x = evaluated_fitness_for_current_vectors_.front();
       std::vector<double> to_send {x.first};
@@ -632,9 +632,10 @@ namespace jade {
         double sigma = 0;
         for (auto x : recieve_double_) sigma += pow2(x - mean);
         sigma = sqrt(sigma/size);
-        printf("%18.15g (%18.15g) runs(%g)\n", mean,sigma,size);
-        for (auto x : recieve_double_)
-          printf("%18.15g\n", x);
+        printf("%s gen%li, %4.1e (%4.1e) runs(%g)\n",
+               comment.c_str(), total_generations_max_,  mean,sigma,size);
+        // for (auto x : recieve_double_)
+        //   printf("%18.15g\n", x);
       }
     }
     return kDone;

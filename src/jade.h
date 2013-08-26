@@ -63,7 +63,7 @@ namespace jade {
     /// @brief Print Optimization parameters.
     int PrintParameters(std::string comment);
     /// @brief Print final result
-    int PrintResult();
+    int PrintResult(std::string comment);
     std::vector<double> GetFinalFitness();
     
    private:

@@ -144,6 +144,19 @@ double f13(std::vector<double> x) {
                 + pow2(x[D-1] - 1.0 )*(1.0 + pow2(sin(2.0 * PI * x[D-1]))) )
     + sum_u;
 }
+/// @brief Vector of pointers to test function
+std::vector<double (*)(std::vector<double>)> f =
+  {&f1, &f2, &f3, &f4, &f5, &f6, &f7, &f8, &f9, &f10, &f11, &f12, &f13};
+std::vector<std::string> comment =
+  {"f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "f13"};
+std::vector<double> lbound =
+  {-100, -10, -100, -100, -30, -100, -1.28, -500, -5.12, -32, -600, -50, -50};
+std::vector<double> ubound =
+  { 100,  10,  100,  100,  30,  100,  1.28,  500,  5.12,  32,  600,  50,  50};
+/// @brief Generations for each test function
+std::vector<long> gen30 =
+  {};
+std::vector<std::vector <double> > fitness30, fitness100;
 /// @brief Run tests of JADE++.
 ///
 /// @param argc
@@ -161,19 +174,19 @@ int main(int argc, char *argv[]) {
   // int total_population = 400;  /// Total number of individuals in population.
   //int total_population = 3 * dimenstion;  /// Total number of individuals in population.
   if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
-    sub_population.FitnessFunction = &f1;
+    sub_population.FitnessFunction = f[0];
     /// Low and upper bound for all dimenstions;
     double lbound = -1, ubound = 1;
     sub_population.SetAllBounds(lbound, ubound);
      sub_population.SetTargetToMinimum();
      // sub_population.SetTargetToMaximum();
-     sub_population.SetTotalGenerationsMax(50);
+     sub_population.SetTotalGenerationsMax(250);
      sub_population.SetBestShareP(0.05);
      sub_population.SetAdapitonFrequencyC(0.1);
      sub_population.SetDistributionLevel(0);
-     sub_population.PrintParameters("f1");
+     //sub_population.PrintParameters("f1");
      sub_population.RunOptimization();
-     sub_population.PrintResult();
+     sub_population.PrintResult("f1");
   } else {
     printf("Some error!\n");
   }
