@@ -64,6 +64,8 @@ namespace jade {
     int PrintParameters(std::string comment);
     /// @brief Print final result
     int PrintResult();
+    std::vector<double> GetFinalFitness();
+    
    private:
     int CreateInitialPopulation();
     int PrintPopulation();

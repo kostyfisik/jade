@@ -109,6 +109,7 @@ namespace jade {
       ++elements;
     }  // end of collecting data for mean CR
     double mean_a_CR = sum / static_cast<double>(elements);
+    //@todo See PMCRADE 
     adaptor_crossover_mu_CR_ =
       (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
       + adaptation_frequency_c_ * mean_a_CR;
@@ -631,13 +632,26 @@ namespace jade {
         double sigma = 0;
         for (auto x : recieve_double_) sigma += pow2(x - mean);
         sigma = sqrt(sigma/size);
-        printf("%18.15g (%18.15g)\n", mean,sigma);
+        printf("%18.15g (%18.15g) runs(%g)\n", mean,sigma,size);
         for (auto x : recieve_double_)
           printf("%18.15g\n", x);
       }
     }
     return kDone;
   }  // end of int SubPopulation::PrintResult()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetFinalFitness() {
+    recieve_double_.clear();    
+    if (distribution_level_ == 0) {      
+      auto x = evaluated_fitness_for_current_vectors_.front();
+      std::vector<double> to_send {x.first};
+      AllGatherVectorDouble(to_send);      
+    }
+    return recieve_double_;
+  }
+  // end of sdt::vector<double> SubPopulation::GetFinalFitness();
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
