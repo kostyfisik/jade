@@ -30,6 +30,7 @@
 //debug
 const int x100 = 100;
 const int total_repeats = 50;
+const only_30D = 1;
 template<class T> inline T pow2(const T value) {return value*value;}
 /// @brief Fitness test functions f1-f13 for benchmarks
 ///
@@ -216,6 +217,7 @@ int main(int argc, char *argv[]) {
         printf("Some error!\n");
       }
     }  // end of for all test functions
+    if (only_30D) continue;
     if (rank == 0) printf("100D\n");
     dimenstion = 100;  /// Number of parameters to optimize.
     total_population = 400;  /// Total number of individuals in population.
