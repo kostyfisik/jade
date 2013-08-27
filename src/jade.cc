@@ -101,18 +101,42 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::Adaption()  {
+  int SubPopulation::Adaption()  {    
     long elements = 0;
     double sum = 0.0;
     for (auto CR : successful_crossover_parameters_S_CR_) {
       sum += CR;
       ++elements;
     }  // end of collecting data for mean CR
+    if (elements == 0) return kDone;
+    // Should never be reached for symmetric filling of S_CR and S_F.
+    if (successful_mutation_parameters_S_F_.size() == 0) return kDone;  
     double mean_a_CR = sum / static_cast<double>(elements);
+    // // Original JADE adaption of mu_CR.
+    // adaptor_crossover_mu_CR_ =
+    //   (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+    //   + adaptation_frequency_c_ * mean_a_CR;
     //@todo See PMCRADE 
-    adaptor_crossover_mu_CR_ =
-      (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
-      + adaptation_frequency_c_ * mean_a_CR;
+    // PMCRADE patch for mu_CR
+    double std_S_CR = 0;
+    for (auto CR : successful_crossover_parameters_S_CR_)
+      std_S_CR += pow2(CR - mean_a_CR);
+    std_S_CR = sqrt(std_S_CR / static_cast<double>(elements));
+    const double PMCRADE_const = 0.07;
+    if (std_S_CR < PMCRADE_const) {
+      adaptor_crossover_mu_CR_ =
+        (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+        + adaptation_frequency_c_ * mean_a_CR;
+    } else {
+      double mean_pow2_CR = 0.0;
+      for (auto CR : successful_crossover_parameters_S_CR_)
+        mean_pow2_CR += pow2(CR);
+      mean_pow2_CR = sqrt(mean_pow2_CR/static_cast<double>(elements));
+      adaptor_crossover_mu_CR_ =
+        (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+        + adaptation_frequency_c_ * mean_pow2_CR;
+    }
+    // end of PMCRADE patch
     double sum_F = 0.0, sum_F2 = 0.0;
     for (auto F : successful_mutation_parameters_S_F_) {
       sum_F += F;
