@@ -23,7 +23,11 @@
 /// adaptive differential evolution optimization algorithm from
 /// Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
-/// Springer, 2009.
+/// Springer, 2009.  Crossover rate was patched according to PMCRADE
+/// approach supposed by Jie Li, Wujie Zhu, Mengjun Zhou, and Hua Wang
+/// in <<Power Mean Based Crossover Rate Adaptive Differential
+/// Evolution>> in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
+/// 7003, pp. 34–41, 2011
 #include "./jade.h"
 #include <mpi.h>
 #include <random>
@@ -112,31 +116,33 @@ namespace jade {
     // Should never be reached for symmetric filling of S_CR and S_F.
     if (successful_mutation_parameters_S_F_.size() == 0) return kDone;  
     double mean_a_CR = sum / static_cast<double>(elements);
-    // // Original JADE adaption of mu_CR.
-    // adaptor_crossover_mu_CR_ =
-    //   (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
-    //   + adaptation_frequency_c_ * mean_a_CR;
-    //@todo See PMCRADE 
-    // PMCRADE patch for mu_CR
-    double std_S_CR = 0;
-    for (auto CR : successful_crossover_parameters_S_CR_)
-      std_S_CR += pow2(CR - mean_a_CR);
-    std_S_CR = sqrt(std_S_CR / static_cast<double>(elements));
-    const double PMCRADE_const = 0.07;
-    if (std_S_CR < PMCRADE_const) {
+    // Original JADE adaption of mu_CR.
+    if (!isPMCRADE) {
       adaptor_crossover_mu_CR_ =
         (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
         + adaptation_frequency_c_ * mean_a_CR;
     } else {
-      double mean_pow2_CR = 0.0;
+      // PMCRADE patch for mu_CR
+      double std_S_CR = 0;
       for (auto CR : successful_crossover_parameters_S_CR_)
-        mean_pow2_CR += pow2(CR);
-      mean_pow2_CR = sqrt(mean_pow2_CR/static_cast<double>(elements));
-      adaptor_crossover_mu_CR_ =
-        (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
-        + adaptation_frequency_c_ * mean_pow2_CR;
-    }
-    // end of PMCRADE patch
+        std_S_CR += pow2(CR - mean_a_CR);
+      std_S_CR = sqrt(std_S_CR / static_cast<double>(elements));
+      const double PMCRADE_const = 0.07;
+      if (std_S_CR < PMCRADE_const) {
+        adaptor_crossover_mu_CR_ =
+          (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+          + adaptation_frequency_c_ * mean_a_CR;
+      } else {
+        double mean_pow2_CR = 0.0;
+        for (auto CR : successful_crossover_parameters_S_CR_)
+          mean_pow2_CR += pow2(CR);
+        mean_pow2_CR = sqrt(mean_pow2_CR/static_cast<double>(elements));
+        adaptor_crossover_mu_CR_ =
+          (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
+          + adaptation_frequency_c_ * mean_pow2_CR;
+      }
+      // end of PMCRADE patch
+    }  // end of if isPMCRADE
     double sum_F = 0.0, sum_F2 = 0.0;
     for (auto F : successful_mutation_parameters_S_F_) {
       sum_F += F;

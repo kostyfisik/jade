@@ -25,7 +25,12 @@
 /// adaptive differential evolution optimization algorithm from
 /// Jingqiao Zhang and Arthur C. Sanderson book 'Adaptive Differential
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
-/// Springer, 2009.
+/// Springer, 2009. Crossover rate was patched according to PMCRADE
+/// approach supposed by Jie Li, Wujie Zhu, Mengjun Zhou, and Hua Wang
+/// in <<Power Mean Based Crossover Rate Adaptive Differential
+/// Evolution>> in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
+/// 7003, pp. 34–41, 2011
+
 #include <random>
 #include <utility>
 #include <list>
@@ -66,8 +71,9 @@ namespace jade {
     int PrintResult(std::string comment);
     std::vector<double> GetFinalFitness();
     int ErrorStatus() {return error_status_;};
-    
+    void SwitchOffPMCRADE(){isPMCRADE = false;};
    private:
+    bool isPMCRADE = true;
     int CreateInitialPopulation();
     int PrintPopulation();
     int PrintEvaluated();
