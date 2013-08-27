@@ -303,7 +303,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::SetCRiFi(long i) {
-    long k = 0;
+     long k = 0;
     while (1) {
       mutation_F_[i] = randc(adaptor_mutation_mu_F_, 0.1);
       if (mutation_F_[i] > 1) {

@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
         printf("Some error!\n");
       }
     }  // end of for all test functions
-    if (rank == 0) printf("\n");
+     if (rank == 0) printf("\n");
   }  // end of collecting runs 
   MPI_Finalize();
   return done_status;

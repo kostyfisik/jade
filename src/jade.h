@@ -138,7 +138,7 @@ namespace jade {
     std::vector<double> x_lbound_;
     std::vector<double> x_ubound_;
     /// @brief JADE+ adaption parameter for mutation factor
-    double adaptor_mutation_mu_F_ = 0.5;
+     double adaptor_mutation_mu_F_ = 0.5;
     /// @brief JADE+ adaption parameter for crossover probability
     double adaptor_crossover_mu_CR_ = 0.5;
     /// @brief Individual mutation and crossover parameters for each individual.
