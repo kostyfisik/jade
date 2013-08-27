@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     int dimenstion = 30;  /// Number of parameters to optimize.
     int total_population = 100;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i != 1) continue;
+      // if (i != 4) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
         sub_population.FitnessFunction = f[i];
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
     dimenstion = 100;  /// Number of parameters to optimize.
     total_population = 400;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i != 1) continue;
+      //if (i != 4) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
         sub_population.FitnessFunction = f[i];

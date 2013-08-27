@@ -305,6 +305,7 @@ namespace jade {
   int SubPopulation::SetCRiFi(long i) {
     long k = 0;
     while (1) {
+      double old = mutation_F_[i];
       mutation_F_[i] = randc(adaptor_mutation_mu_F_, 0.1);
       if (mutation_F_[i] > 1) {
         mutation_F_[i] = 1;
@@ -312,8 +313,8 @@ namespace jade {
       }
       if (mutation_F_[i] > 0) break;
       ++k;
-      if (k > 10) {
-        mutation_F_[i] = 0.001;
+      if (k > 3) {
+        mutation_F_[i] = old/2.0;
         break;
       }
       if (k > 100) printf("k");
