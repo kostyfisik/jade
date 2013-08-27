@@ -65,6 +65,7 @@ namespace jade {
     /// @brief Print final result
     int PrintResult(std::string comment);
     std::vector<double> GetFinalFitness();
+    int ErrorStatus() {return error_status_;};
     
    private:
     int CreateInitialPopulation();

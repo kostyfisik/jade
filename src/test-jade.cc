@@ -42,7 +42,7 @@ double f1(std::vector<double> x) {
   return accumed;
 }
 double f2(std::vector<double> x) {
-  double sum = 0, product = 0;
+  double sum = 0, product = 1.0;
   for (auto x_i : x) {
     product *= abs(x_i);
     sum += abs(x_i);
@@ -112,7 +112,7 @@ double f10(std::vector<double> x) {
     - exp(exp2_sum/D) + 20.0 + 2.718281828459045235;
 }
 double f11(std::vector<double> x) {
-  double sum = 0, product = 0;
+  double sum = 0, product = 1.0;
   long D = x.size();
   for (int i = 0; i < D; ++i) {
     sum += pow2(x[i]);
@@ -199,6 +199,7 @@ int main(int argc, char *argv[]) {
         //sub_population.PrintParameters("f1");
         sub_population.RunOptimization();
         auto current = sub_population.GetFinalFitness();
+        if (sub_population.ErrorStatus()) continue;
         for (auto val : current) fitness30[i].push_back(val);
         double sum = 0;
         for (auto x : fitness30[i]) sum += x;
