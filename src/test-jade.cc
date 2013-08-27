@@ -44,8 +44,8 @@ double f1(std::vector<double> x) {
 double f2(std::vector<double> x) {
   double sum = 0, product = 1.0;
   for (auto x_i : x) {
-    product *= abs(x_i);
-    sum += abs(x_i);
+    product *= std::abs(x_i);
+    sum += std::abs(x_i);
   }
   return sum+product;
 }
@@ -60,8 +60,8 @@ double f3(std::vector<double> x) {
   return sum1;
 }
 double f4(std::vector<double> x) {
-  double y = abs(x.front());
-  for (auto x_i : x) if (abs(x_i) > y) y = abs(x_i);
+  double y = std::abs(x.front());
+  for (auto x_i : x) if (std::abs(x_i) > y) y = std::abs(x_i);
   return y;
 }
 /// %brief Rosenbrock function
@@ -91,7 +91,7 @@ double f7(std::vector<double> x) {
 }
 double f8(std::vector<double> x) {
   double sum = 0;
-  for (auto x_i : x) sum += -x_i * sin(sqrt(abs(x_i)));
+  for (auto x_i : x) sum += -x_i * sin(sqrt(std::abs(x_i)));
   double D = static_cast<double>(x.size()); 
   return sum + D*418.98288727243369;
 }
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   for (int counts = 0; counts < 50; ++counts) {
     if (fitness30[0].size() >= total_repeats) break;
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i == 8) continue;
+      // if (i != 1) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
         sub_population.FitnessFunction = f[i];
