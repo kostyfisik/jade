@@ -312,8 +312,9 @@ namespace jade {
       }
       if (mutation_F_[i] > 0) break;
       ++k;
-      if (k > 10) {
-        mutation_F_[i] = 0.001;
+      if (k > 3) {
+        mutation_F_[i] = randc(adaptor_mutation_mu_F_, adaptor_mutation_mu_F_);
+        if (mutation_F_[i] <= 0) mutation_F_[i] = 0.001;
         break;
       }
       if (k > 100) printf("k");

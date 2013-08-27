@@ -29,7 +29,8 @@
 //const int x100 = 100;
 //debug
 const int x100 = 100;
-const int total_repeats = 50;
+const int total_repeats = 1;
+const int only_30D = 1;
 template<class T> inline T pow2(const T value) {return value*value;}
 /// @brief Fitness test functions f1-f13 for benchmarks
 ///
@@ -185,7 +186,7 @@ int main(int argc, char *argv[]) {
     int dimenstion = 30;  /// Number of parameters to optimize.
     int total_population = 100;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i != 1) continue;
+      // if (i != 4) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
         sub_population.FitnessFunction = f[i];
@@ -216,11 +217,12 @@ int main(int argc, char *argv[]) {
         printf("Some error!\n");
       }
     }  // end of for all test functions
+    if (only_30D) continue;
     if (rank == 0) printf("100D\n");
     dimenstion = 100;  /// Number of parameters to optimize.
     total_population = 400;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i != 1) continue;
+      //if (i != 4) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
         sub_population.FitnessFunction = f[i];
