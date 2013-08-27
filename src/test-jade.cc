@@ -29,7 +29,7 @@
 //const int x100 = 100;
 //debug
 const int x100 = 100;
-const int total_repeats = 5;
+const int total_repeats = 50;
 template<class T> inline T pow2(const T value) {return value*value;}
 /// @brief Fitness test functions f1-f13 for benchmarks
 ///
@@ -171,7 +171,6 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
   int done_status = jade::kDone;
   const int number_of_test_functions = 13;
   fitness30.resize(number_of_test_functions);
@@ -182,37 +181,41 @@ int main(int argc, char *argv[]) {
   // int dimenstion = 100;  /// Number of parameters to optimize.
   // int total_population = 400;  /// Total number of individuals in population.
   //int total_population = 3 * dimenstion;  /// Total number of individuals in population.
-  for (int i = 0; i < number_of_test_functions; ++i) {
-    // if (i == 8) continue;
-    jade::SubPopulation sub_population;
-    if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
-      sub_population.FitnessFunction = f[i];
-      /// Low and upper bound for all dimenstions;
-      sub_population.SetAllBounds(lbound[i], ubound[i]);
-      sub_population.SetTargetToMinimum();
-      // sub_population.SetTargetToMaximum();
-      sub_population.SetTotalGenerationsMax(gen30[i]*x100);
-      sub_population.SetBestShareP(0.05);
-      sub_population.SetAdapitonFrequencyC(0.1);
-      sub_population.SetDistributionLevel(0);
-      //sub_population.PrintParameters("f1");
-      sub_population.RunOptimization();
-      auto current = sub_population.GetFinalFitness();
-      for (auto val : current) fitness30[i].push_back(val);
-      double sum = 0;
-      for (auto x : fitness30[i]) sum += x;
-      double size = static_cast<double>(fitness30[i].size());
-      double mean = sum/size;
-      double sigma = 0;
-      for (auto x : fitness30[i]) sigma += pow2(x - mean);
-      sigma = sqrt(sigma/size);
-      if (rank == 0)
-        printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g) at (%g,%g)\n",
-               comment[i].c_str(), gen30[i]*x100, mean,sigma,size, lbound[i], ubound[i]);
-    } else {
-      printf("Some error!\n");
-    }
-  }
+  for (int counts = 0; counts < 50; ++counts) {
+    if (fitness30[0].size() >= total_repeats) break;
+    for (int i = 0; i < number_of_test_functions; ++i) {
+      // if (i == 8) continue;
+      jade::SubPopulation sub_population;
+      if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
+        sub_population.FitnessFunction = f[i];
+        /// Low and upper bound for all dimenstions;
+        sub_population.SetAllBounds(lbound[i], ubound[i]);
+        sub_population.SetTargetToMinimum();
+        // sub_population.SetTargetToMaximum();
+        sub_population.SetTotalGenerationsMax(gen30[i]*x100);
+        sub_population.SetBestShareP(0.05);
+        sub_population.SetAdapitonFrequencyC(0.1);
+        sub_population.SetDistributionLevel(0);
+        //sub_population.PrintParameters("f1");
+        sub_population.RunOptimization();
+        auto current = sub_population.GetFinalFitness();
+        for (auto val : current) fitness30[i].push_back(val);
+        double sum = 0;
+        for (auto x : fitness30[i]) sum += x;
+        double size = static_cast<double>(fitness30[i].size());
+        double mean = sum/size;
+        double sigma = 0;
+        for (auto x : fitness30[i]) sigma += pow2(x - mean);
+        sigma = sqrt(sigma/size);
+        if (rank == 0)
+          printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g) at (%g,%g)\n",
+                 comment[i].c_str(), gen30[i]*x100, mean,sigma,size, lbound[i], ubound[i]);
+      } else {
+        printf("Some error!\n");
+      }
+    }  // end of for all test functions
+    if (rank == 0) printf("\n");
+  }  // end of collecting runs 
   MPI_Finalize();
   return done_status;
 }  // end of main
