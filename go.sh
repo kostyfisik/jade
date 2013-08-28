@@ -24,6 +24,7 @@ $./go.sh [mode]\n
 Possible modes:\n
 new     \t - Default. Make new build and run.
 old     \t - Re-build and run.
+test    \t - Re-build and run JADE++ on a set of test functions.
 Possible enviroment parameters:\n
 \n
 JADE_MPI_size   \t- total number of MPI processes.\n
