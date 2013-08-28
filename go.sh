@@ -52,8 +52,8 @@ mode_new1="new"
 # ? clang mode 
 # mode_new2="new2"  # gcc
 # mode_new3="new3"  # gcc with -O3
-mode_old1="old"; #     mode_old2="old2";         mode_test="test"; 
-# mode_prof="prof";     mode_old2prof="old2prof"; mode_pgo="pgo"
+mode_old1="old"; #     mode_old2="old2";         
+mode_test="test"; # mode_prof="prof";     mode_old2prof="old2prof"; mode_pgo="pgo"
 # mode_custom="custom"; mode_debug="debug";       mode_build="build"
 # Default values
 yes="yes";        no="no"
@@ -70,11 +70,16 @@ isBuildOnly=$no;
 path_jade=$PWD;   path_bin=$path_jade/bin;   path_build=$path_jade/build
 path_src=$path_jade/src
 # Should be same as in cmake config in $path_src
-jade_bin="run-jade-fdtd"
+
 if [[ ! $mode ]]; then  mode=$mode_new1; fi
 if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
  echo -e $usage_msg
  exit 0
+fi 
+jade_bin="run-optimize-cloak"
+if [[ $mode = $mode_test ]]; then
+    echo Run JADE++ test!
+    jade_bin="run-jade-test"
 fi 
 # # Check mode
 # if [[ $mode != $mode_new1 \
@@ -174,7 +179,7 @@ fi
 #   Compile settings
 #############################################################################
 echo ============ Compile settings =============
-if [[ ( $mode = $mode_old1 || $mode = $mode_old2 ) && $force_new_build = $no ]]; then
+if [[ ( $mode = $mode_old1 || $mode = $mode_old2 || $mode = $mode_test ) && $force_new_build = $no ]]; then
     isNew=$no
     echo Recompile mode is on.
 else
@@ -195,7 +200,7 @@ if [[ $mode = $mode_pgo ]]; then
     isPGO=$yes
 fi 
 # Set compiler
-if [[ $mode = $mode_new1 || $mode = $mode_old1 ]]; then
+if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test ]]; then
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
     #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
@@ -278,7 +283,7 @@ BuildJADE
 echo "Executing on host -> $HOST <-"
 if [[ $isBuildOnly = $yes ]]; then
     cd $path_bin
-    mv run-jade-fdtd jade-fdtd.bin
+    mv run-jade-test jade-test.bin
     exit 0; 
 fi
 if [[ $mode = $mode_test ]]; then isTest=$yes; fi
@@ -363,6 +368,10 @@ fi  # end of if [[ $isTest = $no ]]
 #     gprof $jade_bin gmon.out* > flat-average-profile
 #     rm gmon.out*
 # fi  # end of if isProfile
+if [[ $isTest = $yes ]]; then
+    TuneJADEOptionsMPI
+    RunJADE
+fi
 # if [[ $isTest = $yes ]]; then
 #     echo "Prepare files for tests ..."
 #     cd $path_bin

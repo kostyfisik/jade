@@ -18,9 +18,10 @@ foreach(subdir ${SUBDIRS})
 endforeach()
 
 # Create a variable called JADE++_SOURCES containing all .cc files:
-file(GLOB JADE++_SOURCES *.cc) 
+#file(GLOB JADE++_SOURCES *.cc *.c) 
 # Create an executable file called run-onzf-fdtd from sources:
-add_executable(run-jade-fdtd ${JADE++_SOURCES})
+add_executable(run-jade-test jade.cc  test-jade.cc)
+add_executable(run-optimize-cloak optimize-cloak.cc)
 # subdirs names are synonyms for librarys names
 message("Searching for MPI...")
 find_package(MPI)
@@ -38,12 +39,14 @@ find_package(MPI)
 
 # if (MPI_FOUND AND BLITZ_FOUND)
 if (MPI_FOUND)
-  include_directories(${MPI_INCLUDE_DIRS} ${BLITZ_INCLUDE_DIR})
-#  target_link_libraries(run-jade-fdtd ${SUBDIRS} ${MPI_LIBRARIES} ${BLITZ_LIBRRIES} -lblitz)
-  target_link_libraries(run-jade-fdtd ${SUBDIRS} -lc++)
+#  include_directories(${MPI_INCLUDE_DIRS} ${BLITZ_INCLUDE_DIR} ${SUBDIRS} ${JADE++_SOURCE_DIR}/src)
+#  target_link_libraries(run-jade-test ${SUBDIRS} ${MPI_LIBRARIES} ${BLITZ_LIBRRIES} -lblitz)
+  target_link_libraries(run-jade-test ${SUBDIRS} -lc++)
+  target_link_libraries(run-optimize-cloak ${SUBDIRS} -lc++)
 
-#  target_link_libraries(run-jade-fdtd ${SUBDIRS} ${MPI_LIBRARIES})
-  install( TARGETS run-jade-fdtd   DESTINATION ./    )
+#  target_link_libraries(run-jade-test ${SUBDIRS} ${MPI_LIBRARIES})
+  install( TARGETS run-jade-test   DESTINATION ./    )
+  install( TARGETS run-optimize-cloak   DESTINATION ./    )
 else()
   message( FATAL_ERROR "JADE++ needs MPI libs installed!" )
 endif()
