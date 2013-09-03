@@ -1,3 +1,5 @@
+#ifndef SRC_NMIE_UCOMPLEX_H_
+#define SRC_NMIE_UCOMPLEX_H_
 //**********************************************************************************//
 //    Copyright (C) 2009  Ovidio Pena <ovidio@bytesfall.com>                        //
 //                                                                                  //
@@ -65,4 +67,5 @@ complex Cth(complex z);     // hyperbolic tangent
 complex Carc_ch(complex z); // hyperbolic arc cosinus
 complex Carc_sh(complex z); // hyperbolic arc sinus
 complex Carc_th(complex z); // hyperbolic arc tangente
+#endif  // SRC_NMIE_UCOMPLEX_H_
 
