@@ -78,6 +78,7 @@ if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
  exit 0
 fi 
 jade_bin="run-optimize-cloak"
+#jade_bin="run-quasi-pec-spectra"
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
     jade_bin="run-jade-test"
@@ -323,7 +324,8 @@ function RunJADE {
             mpirun $MPI_options ./$jade_bin #jade.config
     else
         echo "(1) Nodes 1  procs $JADE_MPI_size"
-        time mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
+        #time mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
+        mpirun -np $JADE_MPI_size $MPI_options ./$jade_bin #jade.config
     fi    
     cd $path_tmp
 }  # end of RunJADE

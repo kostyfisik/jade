@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
       // try {
       //   multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
       // } catch(const std::invalid_argument& ia) {continue;}
-      //      printf("%g\t%g\t%g\t%g\t%g\n", lambda_work, Qext, Qsca,Qabs,Qbk);        
+      printf("%g\t%g\t%g\t%g\t%g\n", lambda_work, Qext, Qsca,Qabs,Qbk);        
     }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.

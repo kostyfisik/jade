@@ -94,7 +94,8 @@ namespace nmie {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  void MultiLayerMie::RunMie() {
+  void MultiLayerMie::RunMie(double *Qext_out, double *Qsca_out,
+                             double *Qabs_out, double *Qbk_out) {
     GenerateSizeParameter();
     GenerateIndex();
     if (size_parameter_.size() != index_.size())
@@ -114,8 +115,12 @@ namespace nmie {
                  S1,S2);
     if (terms == 0)
       throw std::invalid_argument("Wrong parameters for nMie!");
-    printf("%g\t%g\t%g\t%g\t%g\n", wavelength_, Qext,Qsca,Qabs,Qbk);        
-
+    //printf("%g\t%g\t%g\t%g\t%g\n", wavelength_, Qext,Qsca,Qabs,Qbk);        
+    *Qext_out = Qext;
+    *Qsca_out = Qsca;
+    *Qabs_out = Qabs;
+    *Qbk_out = Qbk;
+    
     // double *x = (double *)malloc((L+1) * sizeof(double));
     // complex *m = (complex *)malloc((L+1) * sizeof(complex));
     // free(x);
