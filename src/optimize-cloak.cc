@@ -47,54 +47,69 @@
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
 nmie::MultiLayerMie multi_layer_mie;
-//bool isUsingPEC = true;
-bool isUsingPEC = false;
+bool isUsingPEC = true;
+//bool isUsingPEC = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 double a = 0.75*lambda_work;  // 2.8125 cm
-double b = 3.14*pow2(a);
+double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
-double layer_thickness = 0.015*a*10;
-int number_of_layers = 1;
+double layer_thickness = 0.015*a;
+int number_of_layers = 5;
 void SetTarget();
 void SetThickness();
+
+double EvaluateScatter(std::vector<double> index) {
+  double Qext, Qsca, Qabs, Qbk;
+  std::vector<complex> cindex;
+  cindex.clear();
+  double k = 0.0;
+  for (auto n : index) cindex.push_back({n, k});
+  multi_layer_mie.SetCoatingIndex(cindex);
+  multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+  double total_r = multi_layer_mie.GetTotalRadius();
+  return Qsca*pi*pow2(total_r);
+}
 int main(int argc, char *argv[]) {
+  MPI_Init(&argc, &argv);
+  int rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     // Set common parameters for all wavelengths.
     SetTarget();
-    // SetThickness();
+    multi_layer_mie.SetQfaild(1000.0);  // Searching for minima
     multi_layer_mie.SetWavelength(lambda_work);
     double Qext, Qsca, Qabs, Qbk;
-    printf("Without coating (target only mode):\n");
-    double r_ext = a;
     multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-    printf("r_ext = %g  x_ext=2*pi*r_ext/lambda_work=%g\n",
-           r_ext, 2*pi*r_ext/lambda_work);
-    printf("(Qext\tQsca\tQabs\tQbk )*(2*pi*r_ext)\n");
-    b = 3.14*pow2(r_ext);
-    printf("%g\t%g\t%g\t%g\n", Qext*b, Qsca*b,Qabs*b,Qbk*b);
-    printf("%g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
-    printf("With virtual coating (air layer):\n");
-    r_ext = 2*a;
-    // // For case of coating thickness equal to ball radius the result
-    // //is wrong
-    // multi_layer_mie.SetCoatingThickness({a});
-    // To get correct result change coating thickness a little
-    multi_layer_mie.SetCoatingThickness({a+0.0000001});
-    multi_layer_mie.SetCoatingIndex({{1.0, 0.0}});
-    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-    printf("r_ext = %g  x_ext=2*pi*r_ext/lambda_work=%g\n",
-           r_ext, 2*pi*r_ext/lambda_work);
-    printf("(Qext\tQsca\tQabs\tQbk )*(2*pi*r_ext)\n");
-    b = 3.14*pow2(r_ext);
-    printf("%g\t%g\t%g\t%g\n", Qext*b, Qsca*b,Qabs*b,Qbk*b);
-    printf("%g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
-      // }  // end of for i
+    double total_r = multi_layer_mie.GetTotalRadius();
+    if (rank == 0) printf("Initial RCS: %g\n", Qsca*pi*pow2(total_r));
+
+    SetThickness();
+    // Set optimizer
+    jade::SubPopulation sub_population;
+    double total_population = number_of_layers * 5;
+    double dimension = number_of_layers;
+    sub_population.Init(total_population, dimension);
+    sub_population.FitnessFunction = &EvaluateScatter;
+    /// Low and upper bound for all dimenstions;
+    double from_n = 1.0, to_n = 5.0;
+    sub_population.SetAllBounds(from_n, to_n);
+    sub_population.SetTargetToMinimum();
+    // sub_population.SetTargetToMaximum();
+    sub_population.SetTotalGenerationsMax(100);
+        //sub_population.PrintParameters("f1");
+    sub_population.RunOptimization();
+    auto current = sub_population.GetFinalFitness();
+    if (rank == 0) {
+      for (auto c : current) printf("%g ",c);
+      printf("\n");
+    }  // end of if first process
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
   }  
+  MPI_Finalize();
   return 0;
 }
 void SetTarget() {
@@ -106,10 +121,8 @@ void SetTarget() {
     double k = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) - eps_re ));
     multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
     multi_layer_mie.AddTargetLayer(target_shell_share*a, {n, k});
-    // multi_layer_mie.AddTargetLayer(target_shell_share*a, {1.0, 0.0});
   } else {      
     multi_layer_mie.AddTargetLayer(a, {2.0, 0.0001});
-    //multi_layer_mie.AddTargetLayer(a, {1.0, 0.0});
   }
 }
 void SetThickness() {

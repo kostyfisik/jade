@@ -44,13 +44,13 @@ namespace nmie {
     void SetCoatingIndex(std::vector<complex> index);
     void SetQfaild (double Q) {Qfaild_ = Q;};
     void RunMie(double *Qext, double *Qsca, double *Qabs, double *Qbk);
-    void RunMieDebug(int L, double x[], complex m[], int nTheta, double Theta[], double *Qext, double *Qsca, double *Qabs, double *Qbk, double *Qpr, double *g, double *Albedo, complex S1[], complex S2[]);
-
+    double GetTotalRadius();
   private:
     void GenerateSizeParameter();
     void GenerateIndex();
     double wavelength_ = 1.0;
-    double Qfaild_ = 100.0;
+    double Qfaild_ = 1000.0;
+    double total_radius_ = 0.0;
     std::vector<double> target_thickness_, coating_thickness_;
     std::vector<complex> target_index_, coating_index_;
     std::vector<double> size_parameter_;

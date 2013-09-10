@@ -29,7 +29,7 @@
 int main(int argc, char *argv[]) {
   char comment[200];
   int has_comment = 0;
-  int i, j, L;
+  int i, j, L = 0;
   double x[MAXLAYERS];
   complex m[MAXLAYERS];
   double Theta[MAXTHETA];

@@ -16,12 +16,12 @@ subdirlist(SUBDIRS ${JADE++_SOURCE_DIR}/src)
 foreach(subdir ${SUBDIRS})
     add_subdirectory(${subdir})
 endforeach()
-
 # Create a variable called JADE++_SOURCES containing all .cc files:
 #file(GLOB JADE++_SOURCES *.cc *.c) 
 # Create an executable file called run-onzf-fdtd from sources:
+
 add_executable(run-jade-test jade.cc  test-jade.cc)
-add_executable(run-optimize-cloak optimize-cloak.cc)
+add_executable(run-optimize-cloak jade.cc optimize-cloak.cc)
 add_executable(run-quasi-pec-spectra quasi-pec-spectra.cc)
 add_executable(scattnlay scattnlay.cc)
 # subdirs names are synonyms for librarys names
