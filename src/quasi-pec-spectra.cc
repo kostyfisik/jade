@@ -63,18 +63,11 @@ int main(int argc, char *argv[]) {
     double target_shell_share = 0.01;
     double eps_re = 1.0;
     double eps_im = 1250.0;
-    double n = sqrt(0.5*(sqrt(pow2(eps_re)+
-                              pow2(eps_im)
-                              ) + eps_re ));
-    double k = sqrt(0.5*(sqrt(pow2(eps_re)+
-                              pow2(eps_im)
-                              ) - eps_re ));
-    // multi_layer_mie.AddTargetLayer(a, {2.0, 0.0});
+    double n = sqrt( 0.5*(sqrt( pow2(eps_re)+pow2(eps_im) )+eps_re) );
+    double k = sqrt( 0.5*(sqrt( pow2(eps_re)+pow2(eps_im) )-eps_re) );
     multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
     multi_layer_mie.SetCoatingThickness({target_shell_share*a});
     multi_layer_mie.SetCoatingIndex({{n, k }});
-    //multi_layer_mie.SetCoatingIndex({{index, 0.0}});
-    // multi_layer_mie.SetWavelength(lambda_work);
     double Qext, Qsca, Qabs, Qbk;
     for (int i = 0; i<100; ++i) {
       lambda_work = 3.0 + (5.0-3.0)/100.0*i;

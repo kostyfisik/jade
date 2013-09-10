@@ -391,6 +391,7 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   }
 
   *Qext = 2*(*Qext)/x2;                                 // Equation (27)
+  printf("Ssca=%g\n",*Qsca);
   *Qsca = 2*(*Qsca)/x2;                                 // Equation (28)
   *Qpr = *Qext - 4*(*Qpr)/x2;                           // Equation (29)
 
@@ -450,7 +451,7 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
 }
 
 int isClose (double A, double B) {
-  double epsilon = 1e-14;
+  double epsilon = 1e-13;
   if (B == 0 && A == 0) return 1;
   if (A*(1+epsilon) > B && B*(1+epsilon) > A) return 1;
   return 0;
@@ -460,11 +461,11 @@ int nMie(int L, double x[], complex m[], int nTheta, double Theta[],
                   double *g, double *Albedo, complex S1[], complex S2[]) {
   double uQext, uQsca, uQabs, uQbk;
   double uQext_old, uQsca_old, uQabs_old, uQbk_old;
-  double corrector = 1.0;
-  nMieBase(L, x, m, nTheta, Theta, &uQext, &uQsca, &uQabs, &uQbk, Qpr, g, Albedo, S1,S2,corrector);
+  double corrector = 15.0;
+  int terms;
+  terms = nMieBase(L, x, m, nTheta, Theta, &uQext, &uQsca, &uQabs, &uQbk, Qpr, g, Albedo, S1,S2,corrector);
   uQext_old = uQext;  uQsca_old = uQsca;   uQabs_old = uQabs;   uQbk_old = uQbk;      
   int unstable = 1;
-  int terms;
   while (unstable) {
     corrector +=1.0;
     if (corrector > 400.0) {

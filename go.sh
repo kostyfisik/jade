@@ -51,9 +51,9 @@ fi
 # # Mode names
 mode_new1="new"
 # ? clang mode 
-# mode_new2="new2"  # gcc
+mode_new2="new2"  # gcc
 # mode_new3="new3"  # gcc with -O3
-mode_old1="old"; #     mode_old2="old2";         
+mode_old1="old";     mode_old2="old2";         
 mode_test="test"; # mode_prof="prof";     mode_old2prof="old2prof"; mode_pgo="pgo"
 # mode_custom="custom"; mode_debug="debug";       mode_build="build"
 # Default values
@@ -61,7 +61,7 @@ yes="yes";        no="no"
 compiler_gcc="gcc";
 #compiler_clang="clang"
 usedCompiler=$compiler_gcc # or clang
-#useGCC47=$yes  # use gcc 4.7 if it is available in build area of scripts folder
+useGCC48=$yes  # use gcc 4.8 if it is available in build area of scripts folder
 isNew=$yes;
 isTest=$no ;  isProfile=$no ; isPGO=$no
 isBuildOnly=$no;
@@ -219,24 +219,27 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test ]]; then
     fi
     echo path_clang: $path_clang33
     export OMPI_CC=$path_clang33/bin/clang
-    export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include"
+    export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include -stdlib=libc++"
 else
-    path_gcc47=$path_jade/scripts/build-additional-soft/gcc-4.7/output/bin/
-    if [[ -a $path_gcc47/gcc-4.7 && $useGCC47 = $yes ]]; then
-        echo Using \'gcc-4.7.2\' compiler.
-        export OMPI_CC=$path_gcc47/gcc-4.7
-        export OMPI_CXX=$path_gcc47/g++-4.7
+    path_gcc48=/home/mmedia/soft/gcc/gcc48
+    if [[ -a $path_gcc48 && $useGCC48 = $yes ]]; then
+        echo Using \'gcc-4.8\' compiler.
+        export OMPI_CC=$path_gcc48/bin/gcc
+        #export OMPI_CXX="$path_gcc48/bin/g++"
+        export OMPI_CXX="$path_gcc48/bin/g++ -I$path_gcc48/include/c++/4.8.1 -Wl,-rpath,$path_gcc48/lib64"
     else
         echo Using gcc compiler.
-        path_gcc47=
+        path_gcc48=
         export OMPI_CC=gcc
         export OMPI_CXX=g++
     fi
 fi 
 # Select OMPI_CXXFLAGS
+#debug
+#flags_O2="-std=c++11"
 flags_O2="-O2 -Wall -std=c++11"
 #flags_O2="-O2 -ftemplate-depth-30 -Wall -std=c++11"
-flags_debug="-ftemplate-depth-30 -Wall -std=c++11 -stdlib=libc++"
+flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
 flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall  -std=c++11 -stdlib=libc++" 
 # TODO option -flto   -- Do we need it?
 export OMPI_CXXFLAGS=$flags_O2

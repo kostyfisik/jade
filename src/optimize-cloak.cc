@@ -39,55 +39,80 @@
 #include <cstdlib>
 #include <cstdio>
 #include <ctime>
+#include <stdexcept>
 #include <string>
 #include "./nmie/ucomplex.h"
 #include "./nmie/nmie-wrapper.h"
 #include "./nmie/Au-dispersion.h"
+const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
+nmie::MultiLayerMie multi_layer_mie;
+//bool isUsingPEC = true;
+bool isUsingPEC = false;
+// Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
+double lambda_work = 3.75; // cm
+//    double f_work = 30/lambda_work; // 8 GHz
+double a = 0.75*lambda_work;  // 2.8125 cm
+double b = 3.14*pow2(a);
+//size param = 2 pi r/wl = 2pi0.75 = 4.71
+double layer_thickness = 0.015*a*10;
+int number_of_layers = 1;
+void SetTarget();
+void SetThickness();
 int main(int argc, char *argv[]) {
   try {
-    // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
-    double lambda_work = 3.75; // cm
-    //    double f_work = 30/lambda_work; // 8 GHz
-    double a = 0.75*lambda_work;  // 2.8125 cm
-    //size param = 2 pi r/wl = 2pi0.75 = 4.71
-    // Qsca
-    // pec lum = 2.4
-    // nmie/lum
-    // n5 = 1.917/2.02
-    // n2 = 2.43/2.52
-    // n1.1 =  0.42/0.43
-    // n1.2 = 1.59/1.62
     // Set common parameters for all wavelengths.
-    nmie::MultiLayerMie multi_layer_mie;
-    double target_shell_share = 0.01;
-    double eps_re = 1.0;
-    double eps_im = 1250.0;
-    double n = sqrt(0.5*(sqrt(pow2(eps_re)+
-                              pow2(eps_im)
-                              ) + eps_re ));
-    double k = sqrt(0.5*(sqrt(pow2(eps_re)+
-                              pow2(eps_im)
-                              ) - eps_re ));
-    // multi_layer_mie.AddTargetLayer(a, {2.0, 0.0});
-    multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
-    multi_layer_mie.SetCoatingThickness({target_shell_share*a});
-    multi_layer_mie.SetCoatingIndex({{n, k }});
-    //multi_layer_mie.SetCoatingIndex({{index, 0.0}});
-    // multi_layer_mie.SetWavelength(lambda_work);
+    SetTarget();
+    // SetThickness();
+    multi_layer_mie.SetWavelength(lambda_work);
     double Qext, Qsca, Qabs, Qbk;
-    for (int i = 0; i<100; ++i) {
-      lambda_work = 3.0 + (5.0-3.0)/100.0*i;
-      multi_layer_mie.SetWavelength(lambda_work);
-      multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-      // try {
-      //   multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-      // } catch(const std::invalid_argument& ia) {continue;}
-      //      printf("%g\t%g\t%g\t%g\t%g\n", lambda_work, Qext, Qsca,Qabs,Qbk);        
-    }
+    printf("Without coating (target only mode):\n");
+    double r_ext = a;
+    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+    printf("r_ext = %g  x_ext=2*pi*r_ext/lambda_work=%g\n",
+           r_ext, 2*pi*r_ext/lambda_work);
+    printf("(Qext\tQsca\tQabs\tQbk )*(2*pi*r_ext)\n");
+    b = 3.14*pow2(r_ext);
+    printf("%g\t%g\t%g\t%g\n", Qext*b, Qsca*b,Qabs*b,Qbk*b);
+    printf("%g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
+    printf("With virtual coating (air layer):\n");
+    r_ext = 2*a;
+    multi_layer_mie.SetCoatingThickness({a});
+    multi_layer_mie.SetCoatingIndex({{1.0, 0.0}});
+    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+    printf("r_ext = %g  x_ext=2*pi*r_ext/lambda_work=%g\n",
+           r_ext, 2*pi*r_ext/lambda_work);
+    printf("(Qext\tQsca\tQabs\tQbk )*(2*pi*r_ext)\n");
+    b = 3.14*pow2(r_ext);
+    printf("%g\t%g\t%g\t%g\n", Qext*b, Qsca*b,Qabs*b,Qbk*b);
+    printf("%g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
+      // }  // end of for i
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
   }  
   return 0;
+}
+void SetTarget() {
+  if (isUsingPEC) {
+    double target_shell_share = 0.01;
+    double eps_re = 1.0;
+    double eps_im = 1250.0;
+    double n = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) + eps_re ));
+    double k = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) - eps_re ));
+    multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
+    multi_layer_mie.AddTargetLayer(target_shell_share*a, {n, k});
+    // multi_layer_mie.AddTargetLayer(target_shell_share*a, {1.0, 0.0});
+  } else {      
+    multi_layer_mie.AddTargetLayer(a, {2.0, 0.0001});
+    //multi_layer_mie.AddTargetLayer(a, {1.0, 0.0});
+  }
+}
+void SetThickness() {
+  std::vector<double> thickness;
+  thickness.clear();
+  if (number_of_layers < 0)
+    throw std::invalid_argument("Number of coating layers should be >= 0!");
+  for (int i = 0; i < number_of_layers; ++i) thickness.push_back(layer_thickness);
+  multi_layer_mie.SetCoatingThickness(thickness);
 }
