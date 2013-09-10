@@ -462,7 +462,7 @@ int nMie(int L, double x[], complex m[], int nTheta, double Theta[],
   double uQext, uQsca, uQabs, uQbk;
   double uQext_old, uQsca_old, uQabs_old, uQbk_old;
   double corrector = 15.0;
-  int terms;
+  int terms = 0;
   terms = nMieBase(L, x, m, nTheta, Theta, &uQext, &uQsca, &uQabs, &uQbk, Qpr, g, Albedo, S1,S2,corrector);
   uQext_old = uQext;  uQsca_old = uQsca;   uQabs_old = uQabs;   uQbk_old = uQbk;      
   int unstable = 1;

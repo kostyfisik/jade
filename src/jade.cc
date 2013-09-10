@@ -46,7 +46,7 @@ namespace jade {
   int SubPopulation::Selection(std::vector<double> crossover_u,
                                long i)  {
     bool is_evaluated = false;
-    double f_current;
+    double f_current = 0.0;
     for (auto f : evaluated_fitness_for_current_vectors_) {
       if (f.second == i) {
         f_current = f.first;
@@ -98,7 +98,7 @@ namespace jade {
       archived_best_A_.erase(element_A);
       --size_A;
     }
-    const auto new_size_A = archived_best_A_.size();
+    const long new_size_A = archived_best_A_.size();
     if (new_size_A > subpopulation_) error_status_ = kError;
     return kDone;
   } // end of int SubPopulation:: ArchiveCleanUp();
@@ -291,7 +291,6 @@ namespace jade {
       }
       ++i;
     }
-    if (best_n_index >= x_vectors_current_.size()) error_status_ = kError; 
     return x_vectors_current_.at(best_n_index);
   }  // end of std::vector<double> SubPopulation::GetXpBestCurrent();
   // ********************************************************************** //
@@ -302,7 +301,6 @@ namespace jade {
     long random_n = randint(0, subpopulation_-1);
     while (random_n == forbidden_index) random_n = randint(0, subpopulation_-1);
     (*index) = random_n;
-    if (random_n >= x_vectors_current_.size()) error_status_ = kError; 
     return x_vectors_current_.at(random_n);
   }  // end of std::vector<double> SubPopulation::GetXRandomCurrent()
   // ********************************************************************** //

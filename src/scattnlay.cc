@@ -29,8 +29,8 @@
 //***********************************************************************************//
 int main(int argc, char *argv[]) {
   char comment[200];
-  int has_comment = 0;
-  int i, j, L;
+  //int has_comment = 0;
+  int i, j, L = 0;
   double x[MAXLAYERS];
   complex m[MAXLAYERS];
   double Theta[MAXTHETA];
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(argv[i], "-c") == 0) {
       i++;
       strcpy(comment, argv[i]);
-      has_comment = 1;
+      //has_comment = 1;
     } else { i++; }
   }
 
@@ -99,12 +99,12 @@ int main(int argc, char *argv[]) {
   }
   nmie::MultiLayerMie multi_layer_mie;
   double lambda_work = 3.75; // cm
-  double a = 0.75*lambda_work;  // 2.8125 cm
-  printf("x[1]=%g, x[2]=%g, a=%g\n", x[1]*lambda_work/2/pi, x[2]*lambda_work/2/pi, a);
-  // multi_layer_mie.AddTargetLayer(2.8125, {2.0, 0.0001});
-  // multi_layer_mie.AddTargetLayer(2.8125, {1.0, 0.0});
-  multi_layer_mie.AddTargetLayer(x[1]*lambda_work/2/pi, {2.0, 0.0001});
-  multi_layer_mie.AddTargetLayer((x[2]-x[1])*lambda_work/2/pi+2, {1.0, 0.0});
+  const double a_thickness = 0.75*lambda_work;  // 2.8125 cm
+  printf("x[1]=%g, x[2]=%g, a=%g\n", x[1]*lambda_work/2/pi, x[2]*lambda_work/2/pi,
+         a_thickness);
+  multi_layer_mie.AddTargetLayer(a_thickness, {2.0, 0.0001});
+  //multi_layer_mie.AddTargetLayer(a_thickness, {1.0, 0.0});
+  multi_layer_mie.AddTargetLayer((x[2]-x[1])*lambda_work/2.0/pi, {1.0, 0.0});
   multi_layer_mie.SetWavelength(lambda_work);
   multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
   printf("RUN   MLM %g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);

@@ -45,6 +45,7 @@ namespace nmie {
       throw std::invalid_argument("Layer thickness should be positive!");
     target_thickness_.push_back(thickness);
     target_index_.push_back(layer_index);
+    printf("thickness=%g\n",target_thickness_.back());
   }  // end of void  MultiLayerMie::AddTargetLayer(...)
   // ********************************************************************** //
   // ********************************************************************** //
@@ -210,6 +211,13 @@ namespace nmie {
     // free(m);
     
     //printf ("L %i, ", L);
+    if (terms == 0) {
+      // *Qext_out = Qfaild_;
+      // *Qsca_out = Qfaild_;
+      // *Qabs_out = Qfaild_;
+      // *Qbk_out = Qfaild_;
+      throw std::invalid_argument("Failed to evaluate Q!");
+    }
   }  // end of void MultiLayerMie::RunMie();
   ///MultiLayerMie::
 }  // end of namespace nmie
