@@ -187,8 +187,8 @@ namespace nmie {
     nt = 0;
     terms = 0;
     for (int i = 0; i<=L; ++i) {
-      printf("x[i]=%g vs sp[i]=%g diff=%g\n", xx[i],size_parameter_[i],
-             xx[i]-size_parameter_[i]);
+      // printf("x[i]=%g vs sp[i]=%g diff=%g\n", xx[i],size_parameter_[i],
+      //        xx[i]-size_parameter_[i]);
       m[i] = index_[i];
     }
     //    x[1] = 4.71239;

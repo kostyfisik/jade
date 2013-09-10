@@ -4,10 +4,9 @@
 #include <string.h>
 #include "./nmie/ucomplex.h"
 #include "./nmie/nmie.h"
-#include "./nmie/nmie-wrapper.h"
 #define MAXLAYERS 1100
 #define MAXTHETA 800
-#define pi 3.14159265358979323846
+#define PI 3.14159
 
 //***********************************************************************************//
 // This is the main function of 'scattnlay', here we read the parameters as          //
@@ -29,8 +28,8 @@
 //***********************************************************************************//
 int main(int argc, char *argv[]) {
   char comment[200];
-  //int has_comment = 0;
-  int i, j, L = 0;
+  int has_comment = 0;
+  int i, j, L;
   double x[MAXLAYERS];
   complex m[MAXLAYERS];
   double Theta[MAXTHETA];
@@ -83,7 +82,7 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(argv[i], "-c") == 0) {
       i++;
       strcpy(comment, argv[i]);
-      //has_comment = 1;
+      has_comment = 1;
     } else { i++; }
   }
 
@@ -91,29 +90,28 @@ int main(int argc, char *argv[]) {
     printf("Error reading Theta.\n");
     return -1;
   } else if (nt == 1) {
-    Theta[0] = ti*pi/180.0;
+    Theta[0] = ti*PI/180.0;
   } else {
     for (i = 0; i < nt; i++) {
-      Theta[i] = (ti + (double)i*(tf - ti)/(nt - 1))*pi/180.0;
+      Theta[i] = (ti + (double)i*(tf - ti)/(nt - 1))*PI/180.0;
     }
   }
-  nmie::MultiLayerMie multi_layer_mie;
-  double lambda_work = 3.75; // cm
-  const double a_thickness = 0.75*lambda_work;  // 2.8125 cm
-  printf("x[1]=%g, x[2]=%g, a=%g\n", x[1]*lambda_work/2/pi, x[2]*lambda_work/2/pi,
-         a_thickness);
-  multi_layer_mie.AddTargetLayer(a_thickness, {2.0, 0.0001});
-  //multi_layer_mie.AddTargetLayer(a_thickness, {1.0, 0.0});
-  multi_layer_mie.AddTargetLayer((x[2]-x[1])*lambda_work/2.0/pi, {1.0, 0.0});
-  multi_layer_mie.SetWavelength(lambda_work);
-  multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-  printf("RUN   MLM %g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
 
-  multi_layer_mie.RunMieDebug(L, x, m, nt, Theta, &Qext, &Qsca, &Qabs, &Qbk, &Qpr, &g, &Albedo, S1, S2);
-  printf("RUN debug %g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
   nMie(L, x, m, nt, Theta, &Qext, &Qsca, &Qabs, &Qbk, &Qpr, &g, &Albedo, S1, S2);
-  printf("RUN  orig %g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
 
+  if (has_comment) {
+    printf("%6s, %+.5e, %+.5e, %+.5e, %+.5e, %+.5e, %+.5e, %+.5e\n", comment, Qext, Qsca, Qabs, Qbk, Qpr, g, Albedo);
+  } else {
+    printf("%+.5e, %+.5e, %+.5e, %+.5e, %+.5e, %+.5e, %+.5e\n", Qext, Qsca, Qabs, Qbk, Qpr, g, Albedo);
+  }
+
+  if (nt > 0) {
+    printf(" Theta,         S1.r,         S1.i,         S2.r,         S2.i\n");
+
+    for (i = 0; i < nt; i++) {
+      printf("%6.2f, %+.5e, %+.5e, %+.5e, %+.5e\n", Theta[i]*180.0/PI, S1[i].r, S1[i].i, S2[i].r, S2[i].i);
+    }
+  }
 }
 
 

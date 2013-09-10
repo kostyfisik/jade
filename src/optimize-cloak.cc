@@ -77,7 +77,11 @@ int main(int argc, char *argv[]) {
     printf("%g\t%g\t%g\t%g\n", Qext, Qsca,Qabs,Qbk);
     printf("With virtual coating (air layer):\n");
     r_ext = 2*a;
-    multi_layer_mie.SetCoatingThickness({a});
+    // // For case of coating thickness equal to ball radius the result
+    // //is wrong
+    // multi_layer_mie.SetCoatingThickness({a});
+    // To get correct result change coating thickness a little
+    multi_layer_mie.SetCoatingThickness({a+0.0000001});
     multi_layer_mie.SetCoatingIndex({{1.0, 0.0}});
     multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
     printf("r_ext = %g  x_ext=2*pi*r_ext/lambda_work=%g\n",

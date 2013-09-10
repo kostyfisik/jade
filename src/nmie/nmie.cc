@@ -391,7 +391,7 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   }
 
   *Qext = 2*(*Qext)/x2;                                 // Equation (27)
-  printf("Ssca=%g\n",*Qsca);
+  //printf("Ssca=%g\n",*Qsca);
   *Qsca = 2*(*Qsca)/x2;                                 // Equation (28)
   *Qpr = *Qext - 4*(*Qpr)/x2;                           // Equation (29)
 
@@ -503,11 +503,11 @@ int nMieFast(int L, double x[], complex m[], int nTheta, double Theta[],
                   double *g, double *Albedo, complex S1[], complex S2[]) {
   double uQext, uQsca, uQabs, uQbk;
   double uQext_old, uQsca_old, uQabs_old, uQbk_old;
+  int terms = 0;
   double corrector = 1.0;
-  nMieBase(L, x, m, nTheta, Theta, &uQext, &uQsca, &uQabs, &uQbk, Qpr, g, Albedo, S1,S2,corrector);
+  terms = nMieBase(L, x, m, nTheta, Theta, &uQext, &uQsca, &uQabs, &uQbk, Qpr, g, Albedo, S1,S2,corrector);
   uQext_old = uQext;  uQsca_old = uQsca;   uQabs_old = uQabs;   uQbk_old = uQbk;      
   int unstable = 1;
-  int terms;
   while (unstable) {
     corrector +=10.0;
     if (corrector > 120.0) {
