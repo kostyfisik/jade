@@ -52,8 +52,8 @@ nmie::MultiLayerMie multi_layer_mie;
 // ********************************************************************** //
 bool isUsingPEC = true;
 //bool isUsingPEC = false;
-//bool isOnlyIndexOptimization = true;
-bool isOnlyIndexOptimization = false;
+bool isOnlyIndexOptimization = true;
+//bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
@@ -61,9 +61,10 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double a = lambda_work;  // 
 double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
-double layer_thickness = 0.015*a;
-int number_of_layers = 8;
-int total_generations = 20;
+int mul = 1;
+double layer_thickness = 0.015*a/static_cast<double>(mul);
+int number_of_layers = 8 * mul;
+int total_generations = 1000;
 void SetTarget();
 void SetThickness();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
@@ -83,7 +84,7 @@ int main(int argc, char *argv[]) {
     double Qext, Qsca, Qabs, Qbk;
     multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
     double total_r = multi_layer_mie.GetTotalRadius();
-    if (rank == 0) printf("Initial RCS: %g\n", Qsca*pi*pow2(total_r));
+    double initial_RCS = Qsca*pi*pow2(total_r);
     // Set optimizer
     jade::SubPopulation sub_population;
     long dimension = 0;
@@ -104,12 +105,43 @@ int main(int argc, char *argv[]) {
     // sub_population.SetTargetToMaximum();
     sub_population.SetTotalGenerationsMax(total_generations);
         //sub_population.PrintParameters("f1");
+    // if (rank == 0) printf("Layer(dim)=%iInitial RCS: %g\n",
+    //                       Qsca*pi*pow2(total_r));
     sub_population.RunOptimization();
     auto current = sub_population.GetFinalFitness();
+    //Output results
     if (rank == 0) {
-      for (auto c : current) printf("Final %g\n",c);
+      for (auto c : current) printf("All %g\n",c);
+      double best_RCS = 0.0;
+      auto best_x = sub_population.GetBest(&best_RCS);
+      
+      printf("Target R=%g, WL=%g\n",
+             a, lambda_work);
+      printf("Initial RCS: %g\n", initial_RCS);
+      printf("Final RCS: %g\n", best_RCS);
+      printf ("Layer:\t");
+      for (int i = 0; i < number_of_layers; ++i)
+        printf("% 5i\t",i+1);
+      printf ("\n");
+      printf ("Index:\t");
+      for (int i = 0; i < number_of_layers; ++i)
+        printf("%5.4g\t",best_x[i]);
       printf("\n");
+      double total_coating_width = 0.0;
+      if (!isOnlyIndexOptimization) {
+        printf ("Width:\t");
+        for (int i = 0; i < number_of_layers; ++i) {
+          double width = best_x[i+number_of_layers]*layer_thickness;
+          printf("%5.4g\t",width);
+          total_coating_width += width;
+        }
+        printf("\n");
+      } else {
+        total_coating_width = layer_thickness*number_of_layers;
+      }
+      printf("Total coating width: %g\n", total_coating_width);
     }  // end of if first process
+    sub_population.PrintResult("-- ");
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;

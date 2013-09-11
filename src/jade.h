@@ -70,6 +70,7 @@ namespace jade {
     /// @brief Print final result
     int PrintResult(std::string comment);
     std::vector<double> GetFinalFitness();
+    std::vector<double> GetBest(double *best_fitness);
     int ErrorStatus() {return error_status_;};
     void SwitchOffPMCRADE(){isPMCRADE = false;};
    private:
@@ -210,7 +211,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  const int kOutput = -1; /// Process rank to do output with printf
+  const int kOutput = 0; /// Process rank to do output with printf
   template<class T> inline T pow2(const T value) {return value*value;}
 }  // end of namespace jade
 #endif  // SRC_JADE_H_

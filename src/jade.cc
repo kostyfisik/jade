@@ -169,14 +169,15 @@ namespace jade {
     evaluated_fitness_for_next_generation_ =
       evaluated_fitness_for_current_vectors_;
     for (long g = 0; g < total_generations_max_; ++g) {
+      if (process_rank_ == kOutput && g%100 == 0) printf("%li\n",g);      
       to_be_archived_best_A_.clear();
       successful_mutation_parameters_S_F_.clear();
       successful_crossover_parameters_S_CR_.clear();        
-      //debug section
-      if (process_rank_ == kOutput)
-        printf("==============  Generation %li =============\n", g);
-      PrintPopulation();      
-      PrintEvaluated();
+      // //debug section
+      // if (process_rank_ == kOutput)
+      //   printf("==============  Generation %li =============\n", g);
+      // PrintPopulation();      
+      // PrintEvaluated();
       //end of debug section
       for (long i = 0; i < subpopulation_; ++i) {
         SetCRiFi(i);
@@ -193,6 +194,8 @@ namespace jade {
       SortEvaluatedCurrent();
       if (error_status_) return error_status_;
     }  // end of stepping generations
+    PrintPopulation();      
+    PrintEvaluated();
     return kDone;
   }  // end of int SubPopulation::RunOptimization()
   // ********************************************************************** //
@@ -660,7 +663,7 @@ namespace jade {
         double sigma = 0;
         for (auto x : recieve_double_) sigma += pow2(x - mean);
         sigma = sqrt(sigma/size);
-        printf("%s gen%li, %4.1e (%4.1e) runs(%g)\n",
+        printf("%s gen%li, mean %4.1e (stddev %4.1e) runs(%g)\n",
                comment.c_str(), total_generations_max_,  mean,sigma,size);
         // for (auto x : recieve_double_)
         //   printf("%18.15g\n", x);
@@ -681,6 +684,16 @@ namespace jade {
     return recieve_double_;
   }
   // end of sdt::vector<double> SubPopulation::GetFinalFitness();
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetBest(double *best_fitness) {
+    auto x = evaluated_fitness_for_current_vectors_.front();
+    (*best_fitness) = x.first;
+    return x_vectors_current_[x.second];
+  }
+  // end of std::vector<double> SubPopulation::GetBest(double *best_fitness)
+
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //

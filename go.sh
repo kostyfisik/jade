@@ -208,9 +208,9 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test ]]; then
     #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
     if [[ $HOST == "head.phoif.ifmo.ru" ]]; then
         path_clang33=/home/nfs-shared/tig/clang
-    elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
+    elif  [[ $HOST == "dmmrkovich-birzha" ]]; then
         path_clang33=
-    elif  [[ $HOST == "tig-laptop2" ]]; then
+    elif  [[ $HOST == "deb00" || $HOST == "tig-laptop2" ]]; then
         path_clang33=/home/mmedia/soft/clang/clang33        
     elif  [[ $HOST == "rh-lum" ]]; then
         path_clang33=/home/tig/clang/clang33        
