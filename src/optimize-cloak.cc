@@ -47,30 +47,30 @@
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
 nmie::MultiLayerMie multi_layer_mie;
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 bool isUsingPEC = true;
 //bool isUsingPEC = false;
+//bool isOnlyIndexOptimization = true;
+bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 double a = 0.75*lambda_work;  // 2.8125 cm
+//double a = lambda_work;  // 
 double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 double layer_thickness = 0.015*a;
-int number_of_layers = 5;
+int number_of_layers = 8;
+int total_generations = 20;
 void SetTarget();
 void SetThickness();
-
-double EvaluateScatter(std::vector<double> index) {
-  double Qext, Qsca, Qabs, Qbk;
-  std::vector<complex> cindex;
-  cindex.clear();
-  double k = 0.0;
-  for (auto n : index) cindex.push_back({n, k});
-  multi_layer_mie.SetCoatingIndex(cindex);
-  multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-  double total_r = multi_layer_mie.GetTotalRadius();
-  return Qsca*pi*pow2(total_r);
-}
+double EvaluateScatterOnlyIndex(std::vector<double> input);
+double EvaluateScatter(std::vector<double> input);
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
@@ -84,25 +84,30 @@ int main(int argc, char *argv[]) {
     multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
     double total_r = multi_layer_mie.GetTotalRadius();
     if (rank == 0) printf("Initial RCS: %g\n", Qsca*pi*pow2(total_r));
-
-    SetThickness();
     // Set optimizer
     jade::SubPopulation sub_population;
-    double total_population = number_of_layers * 5;
-    double dimension = number_of_layers;
+    long dimension = 0;
+    if (isOnlyIndexOptimization) {
+      SetThickness();
+      dimension = number_of_layers;
+      sub_population.FitnessFunction = &EvaluateScatterOnlyIndex;
+    } else {
+      dimension = number_of_layers * 2;
+      sub_population.FitnessFunction = &EvaluateScatter;
+    }
+    long total_population = dimension * 3;
     sub_population.Init(total_population, dimension);
-    sub_population.FitnessFunction = &EvaluateScatter;
     /// Low and upper bound for all dimenstions;
-    double from_n = 1.0, to_n = 5.0;
+    double from_n = 1.0, to_n = 8.0;
     sub_population.SetAllBounds(from_n, to_n);
     sub_population.SetTargetToMinimum();
     // sub_population.SetTargetToMaximum();
-    sub_population.SetTotalGenerationsMax(100);
+    sub_population.SetTotalGenerationsMax(total_generations);
         //sub_population.PrintParameters("f1");
     sub_population.RunOptimization();
     auto current = sub_population.GetFinalFitness();
     if (rank == 0) {
-      for (auto c : current) printf("%g ",c);
+      for (auto c : current) printf("Final %g\n",c);
       printf("\n");
     }  // end of if first process
   } catch( const std::invalid_argument& ia ) {
@@ -112,11 +117,15 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
   return 0;
 }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 void SetTarget() {
   if (isUsingPEC) {
     double target_shell_share = 0.01;
     double eps_re = 1.0;
-    double eps_im = 1250.0;
+    //double eps_im = 1250.0; // a = 0.75 lambda
+    double eps_im = 900.0;
     double n = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) + eps_re ));
     double k = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) - eps_re ));
     multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
@@ -125,6 +134,9 @@ void SetTarget() {
     multi_layer_mie.AddTargetLayer(a, {2.0, 0.0001});
   }
 }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 void SetThickness() {
   std::vector<double> thickness;
   thickness.clear();
@@ -133,3 +145,53 @@ void SetThickness() {
   for (int i = 0; i < number_of_layers; ++i) thickness.push_back(layer_thickness);
   multi_layer_mie.SetCoatingThickness(thickness);
 }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+double EvaluateScatterOnlyIndex(std::vector<double> input) {
+  double Qext, Qsca, Qabs, Qbk;
+  std::vector<complex> cindex;
+  cindex.clear();
+  double k = 0.0;
+  for (auto n : input) cindex.push_back({n, k});
+  multi_layer_mie.SetCoatingIndex(cindex);
+  try {
+    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    // Will catch if  multi_layer_mie fails or other errors.
+    //std::cerr << "Invalid argument: " << ia.what() << std::endl;
+  }  
+  double total_r = multi_layer_mie.GetTotalRadius();
+  return Qsca*pi*pow2(total_r);
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+double EvaluateScatter(std::vector<double> input) {
+  std::vector<double> thickness;
+  thickness.clear();
+  std::vector<complex> cindex;
+  cindex.clear();
+  double k = 0.0;
+  for (int i = 0; i < number_of_layers; ++i) {
+    cindex.push_back({input[i], k});
+    if (input[i+number_of_layers] < 1.0) input[i+number_of_layers] = 1.0; 
+    thickness.push_back(input[i+number_of_layers]*layer_thickness);
+  }
+  multi_layer_mie.SetCoatingIndex(cindex);
+  multi_layer_mie.SetCoatingThickness(thickness);
+  double Qext, Qsca, Qabs, Qbk;
+  try {
+    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    // Will catch if  multi_layer_mie fails or other errors.
+    //std::cerr << "Invalid argument: " << ia.what() << std::endl;
+  }  
+  double total_r = multi_layer_mie.GetTotalRadius();
+  return Qsca*pi*pow2(total_r);
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
