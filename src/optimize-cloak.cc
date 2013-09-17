@@ -52,8 +52,8 @@ nmie::MultiLayerMie multi_layer_mie;
 // ********************************************************************** //
 bool isUsingPEC = true;
 //bool isUsingPEC = false;
-bool isOnlyIndexOptimization = true;
-//bool isOnlyIndexOptimization = false;
+//bool isOnlyIndexOptimization = true;
+bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
@@ -64,7 +64,7 @@ double b = pi*pow2(a);
 int mul = 1;
 double layer_thickness = 0.015*a/static_cast<double>(mul);
 int number_of_layers = 8 * mul;
-int total_generations = 1000;
+int total_generations = 2000;
 void SetTarget();
 void SetThickness();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
