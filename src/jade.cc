@@ -663,8 +663,9 @@ namespace jade {
         double sigma = 0;
         for (auto x : recieve_double_) sigma += pow2(x - mean);
         sigma = sqrt(sigma/size);
-        printf("%s gen%li, mean %4.1e (stddev %4.1e) runs(%g)\n",
-               comment.c_str(), total_generations_max_,  mean,sigma,size);
+        printf("%s gen%li, mean %4.1e (stddev %4.1e = %3.2g %%) runs(%g)\n",
+               comment.c_str(), total_generations_max_,  mean,sigma,
+               sigma*100.0/mean,size);
         // for (auto x : recieve_double_)
         //   printf("%18.15g\n", x);
       }

@@ -64,11 +64,13 @@ double b = pi*pow2(a);
 int mul = 1;
 double layer_thickness = 0.015*a/static_cast<double>(mul);
 int number_of_layers = 8 * mul;
-int total_generations = 2000;
+int total_generations = 1200;
 void SetTarget();
 void SetThickness();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
+void PrintCoating(std::vector<double> current, double initial_RCS,
+                    jade::SubPopulation sub_population);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -102,44 +104,16 @@ int main(int argc, char *argv[]) {
     double from_n = 1.0, to_n = 8.0;
     sub_population.SetAllBounds(from_n, to_n);
     sub_population.SetTargetToMinimum();
-    // sub_population.SetTargetToMaximum();
     sub_population.SetTotalGenerationsMax(total_generations);
-        //sub_population.PrintParameters("f1");
-    // if (rank == 0) printf("Layer(dim)=%iInitial RCS: %g\n",
-    //                       Qsca*pi*pow2(total_r));
     sub_population.RunOptimization();
     auto current = sub_population.GetFinalFitness();
     //Output results
-    if (rank == 0) {
+    int output_rank = 0;
+    for (int i = 0; i < current.size(); ++i)
+      if (current[output_rank] > current[i]) output_rank = i;
+    if (rank == output_rank) {
       for (auto c : current) printf("All %g\n",c);
-      double best_RCS = 0.0;
-      auto best_x = sub_population.GetBest(&best_RCS);
-      
-      printf("Target R=%g, WL=%g\n",
-             a, lambda_work);
-      printf("Initial RCS: %g\n", initial_RCS);
-      printf("Final RCS: %g\n", best_RCS);
-      printf ("Layer:\t");
-      for (int i = 0; i < number_of_layers; ++i)
-        printf("% 5i\t",i+1);
-      printf ("\n");
-      printf ("Index:\t");
-      for (int i = 0; i < number_of_layers; ++i)
-        printf("%5.4g\t",best_x[i]);
-      printf("\n");
-      double total_coating_width = 0.0;
-      if (!isOnlyIndexOptimization) {
-        printf ("Width:\t");
-        for (int i = 0; i < number_of_layers; ++i) {
-          double width = best_x[i+number_of_layers]*layer_thickness;
-          printf("%5.4g\t",width);
-          total_coating_width += width;
-        }
-        printf("\n");
-      } else {
-        total_coating_width = layer_thickness*number_of_layers;
-      }
-      printf("Total coating width: %g\n", total_coating_width);
+      PrintCoating(current, initial_RCS, sub_population);
     }  // end of if first process
     sub_population.PrintResult("-- ");
   } catch( const std::invalid_argument& ia ) {
@@ -223,6 +197,38 @@ double EvaluateScatter(std::vector<double> input) {
   }  
   double total_r = multi_layer_mie.GetTotalRadius();
   return Qsca*pi*pow2(total_r);
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void PrintCoating(std::vector<double> current, double initial_RCS,
+                    jade::SubPopulation sub_population) {
+  double best_RCS = 0.0;
+  auto best_x = sub_population.GetBest(&best_RCS);
+  printf("Target R=%g, WL=%g\n", a, lambda_work);
+  printf("Initial RCS: %g\n", initial_RCS);
+  printf("Final RCS: %g (%4.1f%%)\n", best_RCS, (best_RCS/initial_RCS-1.0)*100.0);
+  printf ("Layer:\t");
+  for (int i = 0; i < number_of_layers; ++i)
+    printf("% 5i\t",i+1);
+  printf ("\n");
+  printf ("Index:\t");
+  for (int i = 0; i < number_of_layers; ++i)
+    printf("%5.4g\t",best_x[i]);
+  printf("\n");
+  double total_coating_width = 0.0;
+  if (!isOnlyIndexOptimization) {
+    printf ("Width:\t");
+    for (int i = 0; i < number_of_layers; ++i) {
+      double width = best_x[i+number_of_layers]*layer_thickness;
+      printf("%5.4g\t",width);
+      total_coating_width += width;
+    }
+    printf("\n");
+  } else {
+    total_coating_width = layer_thickness*number_of_layers;
+  }
+  printf("Total coating width: %g\n", total_coating_width);
 }
 // ********************************************************************** //
 // ********************************************************************** //

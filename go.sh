@@ -35,7 +35,8 @@ set some default vale (depending on executing host) will be used.\n"
 #############################################################################
 if [[ ! $JADE_MPI_size ]]; then JADE_MPI_size="unset"; fi
 if [[ ! $JADE_MPI_nodes ]]; then JADE_MPI_nodes="unset"; fi
-MPI_options="--bind-to-core"
+MPI_options=
+#MPI_options="--bind-to-core"
 #############################################################################
 #   Parse input parameters   
 #############################################################################
@@ -334,7 +335,7 @@ function RunJADE {
 }  # end of RunJADE
 if [[ $isTest = $no ]]; then
     TuneJADEOptionsMPI
-    RunJADE
+    time RunJADE
     if [[ $isPGO = $yes ]]; then
         # export OMPI_CXXFLAGS="$flags_O2 -fprofile-generate"
         # export OMPI_LDFLAGS=$OMPI_CXXFLAGS
