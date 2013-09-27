@@ -41,32 +41,36 @@
 #include <ctime>
 #include <stdexcept>
 #include <string>
+#include "./gnuplot-wrapper/gnuplot-wrapper.h"
 #include "./nmie/ucomplex.h"
 #include "./nmie/nmie-wrapper.h"
 #include "./nmie/Au-dispersion.h"
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
-nmie::MultiLayerMie multi_layer_mie;
+nmie::MultiLayerMie multi_layer_mie;  // Mie model.
+jade::SubPopulation sub_population;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 bool isUsingPEC = true;
 //bool isUsingPEC = false;
-//bool isOnlyIndexOptimization = true;
-bool isOnlyIndexOptimization = false;
+bool isOnlyIndexOptimization = true;
+//bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 double a = 0.75*lambda_work;  // 2.8125 cm
 //double a = lambda_work;  // 
-double b = pi*pow2(a);
+//double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 int mul = 1;
 double layer_thickness = 0.015*a/static_cast<double>(mul);
 int number_of_layers = 8 * mul;
-int total_generations = 1200;
+int total_generations = 20;
 void SetTarget();
 void SetThickness();
+double SetInitialModel();
+void SetOptimizer();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
 void PrintCoating(std::vector<double> current, double initial_RCS,
@@ -79,37 +83,13 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    // Set common parameters for all wavelengths.
-    SetTarget();
-    multi_layer_mie.SetQfaild(1000.0);  // Searching for minima
-    multi_layer_mie.SetWavelength(lambda_work);
-    double Qext, Qsca, Qabs, Qbk;
-    multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
-    double total_r = multi_layer_mie.GetTotalRadius();
-    double initial_RCS = Qsca*pi*pow2(total_r);
-    // Set optimizer
-    jade::SubPopulation sub_population;
-    long dimension = 0;
-    if (isOnlyIndexOptimization) {
-      SetThickness();
-      dimension = number_of_layers;
-      sub_population.FitnessFunction = &EvaluateScatterOnlyIndex;
-    } else {
-      dimension = number_of_layers * 2;
-      sub_population.FitnessFunction = &EvaluateScatter;
-    }
-    long total_population = dimension * 3;
-    sub_population.Init(total_population, dimension);
-    /// Low and upper bound for all dimenstions;
-    double from_n = 1.0, to_n = 8.0;
-    sub_population.SetAllBounds(from_n, to_n);
-    sub_population.SetTargetToMinimum();
-    sub_population.SetTotalGenerationsMax(total_generations);
+    double initial_RCS = SetInitialModel();
+    SetOptimizer();
     sub_population.RunOptimization();
     auto current = sub_population.GetFinalFitness();
     //Output results
     int output_rank = 0;
-    for (int i = 0; i < current.size(); ++i)
+    for (unsigned int i = 0; i < current.size(); ++i)
       if (current[output_rank] > current[i]) output_rank = i;
     if (rank == output_rank) {
       for (auto c : current) printf("All %g\n",c);
@@ -122,6 +102,41 @@ int main(int argc, char *argv[]) {
   }  
   MPI_Finalize();
   return 0;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+double SetInitialModel() {
+  // Set common parameters for all wavelengths.
+  SetTarget();
+  multi_layer_mie.SetQfaild(1000.0);  // Searching for minima
+  multi_layer_mie.SetWavelength(lambda_work);
+  double Qext, Qsca, Qabs, Qbk;
+  multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+  double total_r = multi_layer_mie.GetTotalRadius();
+  double initial_RCS = Qsca*pi*pow2(total_r);
+  return initial_RCS;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void SetOptimizer() {
+  long dimension = 0;
+  if (isOnlyIndexOptimization) {
+    SetThickness();
+    dimension = number_of_layers;
+    sub_population.FitnessFunction = &EvaluateScatterOnlyIndex;
+  } else {
+    dimension = number_of_layers * 2;
+    sub_population.FitnessFunction = &EvaluateScatter;
+  }
+  long total_population = dimension * 3;
+  sub_population.Init(total_population, dimension);
+  /// Low and upper bound for all dimenstions;
+  double from_n = 1.0, to_n = 8.0;
+  sub_population.SetAllBounds(from_n, to_n);
+  sub_population.SetTargetToMinimum();
+  sub_population.SetTotalGenerationsMax(total_generations);
 }
 // ********************************************************************** //
 // ********************************************************************** //
