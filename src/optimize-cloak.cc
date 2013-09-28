@@ -63,10 +63,9 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double a = lambda_work;  // 
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
-int mul = 1;
-double layer_thickness = 0.015*a/static_cast<double>(mul);
-int number_of_layers = 8 * mul;
-int total_generations = 20;
+double layer_thickness = 0.015*a;
+int number_of_layers = 8;
+int total_generations = 200;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();
@@ -75,7 +74,8 @@ double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
-void PrintGnuPlot();
+void PrintGnuPlot(double initial_RCS,
+                  jade::SubPopulation sub_population);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
     if (rank == output_rank) {
       for (auto c : current) printf("All %g\n",c);
       PrintCoating(current, initial_RCS, sub_population);
-      PrintGnuPlot();
+      PrintGnuPlot(initial_RCS, sub_population);
     }  // end of if first process
     sub_population.PrintResult("-- ");
   } catch( const std::invalid_argument& ia ) {
@@ -109,18 +109,28 @@ int main(int argc, char *argv[]) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintGnuPlot() {
+void PrintGnuPlot(double initial_RCS,
+                  jade::SubPopulation sub_population) {
   gnuplot::GnuplotWrapper wrapper;
-  wrapper.SetPlotName("coating-layers-index");
-  wrapper.SetXLabelName("Layer #");
-  wrapper.SetYLabelName("Index");
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
+  double total_coating_width = layer_thickness*number_of_layers;
+  double index_sum = 0.0;
+  for (auto i : best_x) index_sum+=i;
+  char plot_name [300];
+  snprintf(plot_name, 300,
+           "LayerIndex-TargetR%g-CoatingW%g-FinalRCS%gdiff%4.1f%%-s%015.12f",
+           a, total_coating_width,
+           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("Layer #");
+  wrapper.SetYLabelName("Index");
+  wrapper.SetDrawStyle("with histeps lw 2");
+  wrapper.SetXRange({0.51, number_of_layers+0.49});
   for (int i = 0; i < number_of_layers; ++i) 
-    wrapper.AddMultiPoint({i+1.0, best_x[i], best_x[i]+1.0});
+    wrapper.AddMultiPoint({i+1.0, best_x[i]});
   wrapper.AddColumnName("Layer N");
   wrapper.AddColumnName("Index");
-  wrapper.AddColumnName("Index Again");
   wrapper.MakeOutput();
 }
 // ********************************************************************** //

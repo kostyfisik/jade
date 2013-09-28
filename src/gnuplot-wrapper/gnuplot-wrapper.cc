@@ -43,12 +43,15 @@ namespace gnuplot{
       + std::to_string(plot_size_y_) + "\n" +
       "set output \"" + plot_name_ + ".png\"\n"+
       "set xlabel \"" + x_label_name_ + "\"\n"+
-      "set ylabel \"" + y_label_name_ + "\"\n"+
+      "set ylabel \"" + y_label_name_ + "\"\n" +
+      "set key below\n";
+    if (x_range_[0] != x_range_[1])
+      plt_format += "set xrange [" + std::to_string(x_range_[0])
+        + ":" + std::to_string(x_range_[1]) + "]\n";
       // #set yrange [-0.1:0.1]
       // #set yrange [-1:1]
       // #set linestyle 1 lt 2 lw 3
-      "set key below\n" +
-      "set title \"" + plot_name_ + "\"\n"
+    plt_format += "set title \"" + plot_name_ + "\"\n"
       +"plot \\\n";
     for (int i = 1; i < column_names_.size(); ++i)
       plt_format += "\"" + plot_name_ + ".dat\" using 1:"

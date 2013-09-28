@@ -30,8 +30,10 @@ namespace gnuplot {
   class GnuplotWrapper {
    public:
     void SetPlotName(std::string name) {plot_name_ = name;};
+    void SetDrawStyle(std::string style) {plot_draw_style_ = style;};
     void SetXLabelName(std::string name) {x_label_name_ = name;};
     void SetYLabelName(std::string name) {y_label_name_ = name;};
+    void SetXRange(std::vector<double> range) {x_range_ = range;};
     void AddMultiPoint(std::vector<double> point);
     void AddColumnName(std::string name) {column_names_.push_back(name);};
     void MakeOutput();
@@ -42,6 +44,7 @@ namespace gnuplot {
     void PrintShellFile();
     int plot_size_x_ = 1366;
     int plot_size_y_ = 768;
+    std::vector<double> x_range_ = {0, 0};
     std::string plot_name_ = "gnuplot";
     std::string x_label_name_ = "x";
     std::string y_label_name_ = "y";
