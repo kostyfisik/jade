@@ -13,8 +13,10 @@ macro(SUBDIRLIST result curdir)
 endmacro()
 # use all subdirs in JADE++ "src" direcory
 subdirlist(SUBDIRS ${JADE++_SOURCE_DIR}/src)
+message("adding subdirs:")
 foreach(subdir ${SUBDIRS})
     add_subdirectory(${subdir})
+    message(${subdir})
 endforeach()
 # Create a variable called JADE++_SOURCES containing all .cc files:
 #file(GLOB JADE++_SOURCES *.cc *.c) 

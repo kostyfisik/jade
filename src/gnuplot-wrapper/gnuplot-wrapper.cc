@@ -22,19 +22,93 @@
 /// data file, plot description for gnuplot and shell script to call
 /// gnuplot.
 ///
-#include "gnuplot-wrapper.h"
+//        gnuplot-wrapper.h
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
 #include <vector>
-namespace gnuplot {  
+#include <string>
+#include "gnuplot-wrapper.h"
+namespace gnuplot{  
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-
-  // end of double MultiLayerMie::GetTotalRadius();
+  void GnuplotWrapper::PrintPlotFile() {
+    FILE *fp;
+    std::string fname = plot_name_ + ".plt";
+    fp = fopen(fname.c_str(), "w");
+    std::string plt_format = "# " + plot_name_ + "\n" +
+      "set terminal png nocrop size " +
+      std::to_string(plot_size_x_) + ","
+      + std::to_string(plot_size_y_) + "\n" +
+      "set output \"" + plot_name_ + ".png\"\n"+
+      "set xlabel \"" + x_label_name_ + "\"\n"+
+      "set ylabel \"" + y_label_name_ + "\"\n"+
+      // #set yrange [-0.1:0.1]
+      // #set yrange [-1:1]
+      // #set linestyle 1 lt 2 lw 3
+      "set key below\n" +
+      "set title \"" + plot_name_ + "\"\n"
+      +"plot \\\n";
+    for (int i = 1; i < column_names_.size(); ++i)
+      plt_format += "\"" + plot_name_ + ".dat\" using 1:"
+        + std::to_string(i+1) + " title '" +
+        column_names_[i] + "' " +
+        plot_draw_style_ +",\\\n";
+    plt_format.erase (plt_format.end()-3, plt_format.end());
+    plt_format += "\n";
+    fprintf(fp, "%s", plt_format.c_str());
+    fclose(fp);
+  }  // end of void GnuplotWrapper::PrintPlotFile()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  ///MultiLayerMie::
+  void GnuplotWrapper::PrintShellFile() {
+    FILE *fp;
+    std::string fname = "run-gnuplot-" + plot_name_ + ".sh";
+    fp = fopen(fname.c_str(), "w");
+    std::string shell = std::string("#!/bin/bash\n")
+      + "gnuplot " + plot_name_ + ".plt\n";
+    fprintf(fp, "%s", shell.c_str());
+    fclose(fp);
+  }  // end of void GnuplotWrapper::PrintShellFile()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  void GnuplotWrapper::PrintDataFile() {
+    FILE *fp;
+    std::string fname = plot_name_ + ".dat";
+    fp = fopen(fname.c_str(), "w");
+    std::string header_line = "#";
+    for (auto name : column_names_) header_line += name + "\t";
+    header_line.push_back('\n');
+    fprintf(fp, "%s", header_line.c_str());
+    for (auto row : data_) {
+      for (auto cell : row) fprintf(fp, "%g\t", cell);
+      fprintf(fp, "\n");
+    }  // end of for each row
+    fclose(fp);
+  }  // end of void GnuplotWrapper::PrintDataFile()
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  void GnuplotWrapper::MakeOutput() {
+    int number_or_columns = column_names_.size();
+    for (auto row : data_)
+      if (number_or_columns != row.size())
+        throw std::invalid_argument("All rows should be the same size!");
+    PrintDataFile();
+    PrintPlotFile();
+    PrintShellFile();
+  }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  void GnuplotWrapper::AddMultiPoint(std::vector<double> point) {
+    data_.push_back(point);
+  }  // end of void GnuplotWrapper::AddMultiPoint(std::vector<double> point)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  ///GnuplotWrapper::
 }  // end of namespace gnuplot

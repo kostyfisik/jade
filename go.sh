@@ -451,4 +451,6 @@ fi
 #     # rm -r $path_bin/tmpdir
 # fi
 #rm *.jade  >/dev/null  2>&1
-    
+cd bin
+chmod +x run-gnuplot*.sh
+./run-gnuplot*.sh    

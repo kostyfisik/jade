@@ -1,5 +1,5 @@
-#ifndef SRC_GNUPLOT_GNUPLOT_GNUPLOT_WRAPPER_H_
-#define SRC_GNUPLOT_GNUPLOT_GNUPLOT_WRAPPER_H_
+#ifndef SRC_GNUPLOT_WRAPPER_GNUPLOT_WRAPPER_H_
+#define SRC_GNUPLOT_WRAPPER_GNUPLOT_WRAPPER_H_
 ///
 /// @file   gnuplot-wrapper.h
 /// @author Ladutenko Konstantin <kostyfisik at gmail (.) com>
@@ -30,10 +30,24 @@ namespace gnuplot {
   class GnuplotWrapper {
    public:
     void SetPlotName(std::string name) {plot_name_ = name;};
-
+    void SetXLabelName(std::string name) {x_label_name_ = name;};
+    void SetYLabelName(std::string name) {y_label_name_ = name;};
+    void AddMultiPoint(std::vector<double> point);
+    void AddColumnName(std::string name) {column_names_.push_back(name);};
+    void MakeOutput();
+    
    private:
+    void PrintDataFile();
+    void PrintPlotFile();
+    void PrintShellFile();
+    int plot_size_x_ = 1366;
+    int plot_size_y_ = 768;
     std::string plot_name_ = "gnuplot";
+    std::string x_label_name_ = "x";
+    std::string y_label_name_ = "y";
+    std::string plot_draw_style_ = "w l lw 2";
+    std::vector< std::string> column_names_;
     std::vector< std::vector<double> > data_;
-  };  // end of class MultiLayerMie
+  };  // end of class GnuplotWRapper
 }  // end of namespace gnuplot
 #endif  // SRC_GNUPLOT_WRAPPER_GNUPLOT_WRAPPER_H_

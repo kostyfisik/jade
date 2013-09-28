@@ -75,6 +75,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
+void PrintGnuPlot();
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -94,14 +95,33 @@ int main(int argc, char *argv[]) {
     if (rank == output_rank) {
       for (auto c : current) printf("All %g\n",c);
       PrintCoating(current, initial_RCS, sub_population);
+      PrintGnuPlot();
     }  // end of if first process
     sub_population.PrintResult("-- ");
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
+    MPI_Abort(MPI_COMM_WORLD, 1);  
   }  
   MPI_Finalize();
   return 0;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void PrintGnuPlot() {
+  gnuplot::GnuplotWrapper wrapper;
+  wrapper.SetPlotName("coating-layers-index");
+  wrapper.SetXLabelName("Layer #");
+  wrapper.SetYLabelName("Index");
+  double best_RCS = 0.0;
+  auto best_x = sub_population.GetBest(&best_RCS);
+  for (int i = 0; i < number_of_layers; ++i) 
+    wrapper.AddMultiPoint({i+1.0, best_x[i], best_x[i]+1.0});
+  wrapper.AddColumnName("Layer N");
+  wrapper.AddColumnName("Index");
+  wrapper.AddColumnName("Index Again");
+  wrapper.MakeOutput();
 }
 // ********************************************************************** //
 // ********************************************************************** //
