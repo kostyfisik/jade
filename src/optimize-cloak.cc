@@ -86,8 +86,9 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    for (double total_thickness = 0.15; total_thickness < 0.5; total_thickness+=0.05) {
-      for (number_of_layers = 4; number_of_layers < 100; number_of_layers *=2) {
+    //for (double total_thickness = 0.15; total_thickness < 0.5; total_thickness+=0.05) {
+    double total_thickness = 0.45;
+      for (number_of_layers = 4; number_of_layers < 5; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
         SetOptimizer();
         sub_population.RunOptimization();
@@ -103,7 +104,7 @@ int main(int argc, char *argv[]) {
         PrintGnuPlot(initial_RCS, sub_population);
         sub_population.PrintResult("-- ");
       }  // end of changing number of layers
-    }  // end of total coating thickness sweep
+      // }  // end of total coating thickness sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -173,7 +174,10 @@ void SetOptimizer() {
   sub_population.SetAllBounds(from_n, to_n);
   sub_population.SetTargetToMinimum();
   sub_population.SetTotalGenerationsMax(total_generations);
-  sub_population.SetBestShareP(0.12);
+  sub_population.SwitchOffPMCRADE();
+
+  sub_population.SetBestShareP(0.02);
+  sub_population.SetAdapitonFrequencyC(1.0/20.0);
 
 }
 // ********************************************************************** //
