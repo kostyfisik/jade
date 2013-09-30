@@ -63,9 +63,10 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double a = lambda_work;  // 
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
-double layer_thickness = 0.015*a;
+//double layer_thickness = 0.015*a;
+double layer_thickness = 0.0;
 int number_of_layers = 8;
-int total_generations = 200;
+int total_generations = 800;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();
@@ -85,19 +86,24 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    SetOptimizer();
-    sub_population.RunOptimization();
-    auto current = sub_population.GetFinalFitness();
-    //Output results
-    int output_rank = 0;
-    for (unsigned int i = 0; i < current.size(); ++i)
-      if (current[output_rank] > current[i]) output_rank = i;
-    if (rank == output_rank) {
-      for (auto c : current) printf("All %g\n",c);
-      PrintCoating(current, initial_RCS, sub_population);
-      PrintGnuPlot(initial_RCS, sub_population);
-    }  // end of if first process
-    sub_population.PrintResult("-- ");
+    for (double total_thickness = 0.15; total_thickness < 0.5; total_thickness+=0.05) {
+      for (number_of_layers = 4; number_of_layers < 100; number_of_layers *=2) {
+        layer_thickness = total_thickness / number_of_layers;
+        SetOptimizer();
+        sub_population.RunOptimization();
+        auto current = sub_population.GetFinalFitness();
+        //Output results
+        int output_rank = 0;
+        for (unsigned int i = 0; i < current.size(); ++i)
+          if (current[output_rank] > current[i]) output_rank = i;
+        if (rank == output_rank) {
+          for (auto c : current) printf("All %g\n",c);
+          PrintCoating(current, initial_RCS, sub_population);
+        }  // end of if first process
+        PrintGnuPlot(initial_RCS, sub_population);
+        sub_population.PrintResult("-- ");
+      }  // end of changing number of layers
+    }  // end of total coating thickness sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -167,6 +173,8 @@ void SetOptimizer() {
   sub_population.SetAllBounds(from_n, to_n);
   sub_population.SetTargetToMinimum();
   sub_population.SetTotalGenerationsMax(total_generations);
+  sub_population.SetBestShareP(0.12);
+
 }
 // ********************************************************************** //
 // ********************************************************************** //

@@ -453,4 +453,6 @@ fi
 #rm *.jade  >/dev/null  2>&1
 cd bin
 chmod +x run-gnuplot*.sh
-./run-gnuplot*.sh    
+for file in `ls run-gnuplot*`; do 
+ ./$file
+done   

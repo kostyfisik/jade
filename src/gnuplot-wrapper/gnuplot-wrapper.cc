@@ -86,6 +86,8 @@ namespace gnuplot{
     for (auto name : column_names_) header_line += name + "\t";
     header_line.push_back('\n');
     fprintf(fp, "%s", header_line.c_str());
+    header_line = "# "+ plot_name_ + "\n";
+    fprintf(fp, "%s", header_line.c_str());    
     for (auto row : data_) {
       for (auto cell : row) fprintf(fp, "%g\t", cell);
       fprintf(fp, "\n");
