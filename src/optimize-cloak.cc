@@ -132,9 +132,9 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "LayerIndex-TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%4.1f%%-s%015.12f",
+           "TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%4.1f%%-n%lu-s%015.12f-index",
            a, total_coating_width,
-           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
+           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Layer #");
   wrapper.SetYLabelName("Index");
@@ -314,9 +314,9 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "LayerIndex-TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%4.1f%%-s%015.12f-spectra",
+           "TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%4.1f%%-n%lu-s%015.12f-spectra",
            a, total_coating_width,
-           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
+           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
   wrapper.SetYLabelName("Mie efficiency");
