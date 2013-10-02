@@ -44,6 +44,8 @@ namespace nmie {
     void SetCoatingIndex(std::vector<complex> index);
     void SetQfaild (double Q) {Qfaild_ = Q;};
     void RunMie(double *Qext, double *Qsca, double *Qabs, double *Qbk);
+    std::vector< std::vector<double> >  GetSpectra(double from_WL, double to_WL,
+                                                   int samples);
     double GetTotalRadius();
   private:
     void GenerateSizeParameter();

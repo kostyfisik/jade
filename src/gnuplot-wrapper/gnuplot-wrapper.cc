@@ -89,7 +89,7 @@ namespace gnuplot{
     header_line = "# "+ plot_name_ + "\n";
     fprintf(fp, "%s", header_line.c_str());    
     for (auto row : data_) {
-      for (auto cell : row) fprintf(fp, "%g\t", cell);
+      for (auto cell : row) fprintf(fp, "%.19g\t", cell);
       fprintf(fp, "\n");
     }  // end of for each row
     fclose(fp);

@@ -139,5 +139,27 @@ namespace nmie {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  ///MultiLayerMie::
+  std::vector< std::vector<double> >
+  MultiLayerMie::GetSpectra(double from_WL, double to_WL, int samples) {
+    std::vector< std::vector<double> > spectra;
+    double step_WL = (to_WL - from_WL)/ static_cast<double>(samples);
+    double wavelength_backup = wavelength_;
+    for (double WL = from_WL; WL < to_WL; WL += step_WL) {
+      double Qext, Qsca, Qabs, Qbk;
+      wavelength_ = WL;
+      try {
+        RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+      } catch( const std::invalid_argument& ia ) {
+        // printf("*");
+        continue;
+      }  
+      spectra.push_back({wavelength_, Qext, Qsca, Qabs, Qbk});
+    }  // end of for each WL in spectra
+    wavelength_ = wavelength_backup;
+    return spectra;
+  }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+///MultiLayerMie::
 }  // end of namespace nmie

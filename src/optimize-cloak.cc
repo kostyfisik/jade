@@ -47,7 +47,9 @@
 #include "./nmie/Au-dispersion.h"
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
-nmie::MultiLayerMie multi_layer_mie;  // Mie model.
+// Mie model. Used in fitness function for optimization of
+// sub_population.
+nmie::MultiLayerMie multi_layer_mie;  
 jade::SubPopulation sub_population;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
@@ -66,17 +68,20 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double layer_thickness = 0.015*a;
 double layer_thickness = 0.0;
 int number_of_layers = 8;
-int total_generations = 800;
+int total_generations = 100;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();
 void SetOptimizer();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
+std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
-void PrintGnuPlot(double initial_RCS,
+void PrintGnuPlotIndex(double initial_RCS,
                   jade::SubPopulation sub_population);
+void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
+                         double initial_RCS);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -93,15 +98,16 @@ int main(int argc, char *argv[]) {
         SetOptimizer();
         sub_population.RunOptimization();
         auto current = sub_population.GetFinalFitness();
-        //Output results
+        // Output results
         int output_rank = 0;
         for (unsigned int i = 0; i < current.size(); ++i)
           if (current[output_rank] > current[i]) output_rank = i;
         if (rank == output_rank) {
           for (auto c : current) printf("All %g\n",c);
           PrintCoating(current, initial_RCS, sub_population);
-        }  // end of if first process
-        PrintGnuPlot(initial_RCS, sub_population);
+        }  // end of output for process with best final fitness
+        PrintGnuPlotIndex(initial_RCS, sub_population);
+        PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
         sub_population.PrintResult("-- ");
       }  // end of changing number of layers
       // }  // end of total coating thickness sweep
@@ -116,7 +122,7 @@ int main(int argc, char *argv[]) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintGnuPlot(double initial_RCS,
+void PrintGnuPlotIndex(double initial_RCS,
                   jade::SubPopulation sub_population) {
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
@@ -233,9 +239,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
 // ********************************************************************** //
 double EvaluateScatter(std::vector<double> input) {
   std::vector<double> thickness;
-  thickness.clear();
   std::vector<complex> cindex;
-  cindex.clear();
   double k = 0.0;
   for (int i = 0; i < number_of_layers; ++i) {
     cindex.push_back({input[i], k});
@@ -254,6 +258,16 @@ double EvaluateScatter(std::vector<double> input) {
   }  
   double total_r = multi_layer_mie.GetTotalRadius();
   return Qsca*pi*pow2(total_r);
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
+  double best_RCS;
+  auto best_x = sub_population.GetBest(&best_RCS);
+  // Setting Mie model to the best state.
+  sub_population.FitnessFunction(best_x);
+  return multi_layer_mie.GetSpectra(lambda_work*0.5, lambda_work*1.5, 1000);
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -286,6 +300,35 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
     total_coating_width = layer_thickness*number_of_layers;
   }
   printf("Total coating width: %g\n", total_coating_width);
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
+                         double initial_RCS) {
+  gnuplot::GnuplotWrapper wrapper;
+  double best_RCS = 0.0;
+  auto best_x = sub_population.GetBest(&best_RCS);
+  double total_coating_width = layer_thickness*number_of_layers;
+  double index_sum = 0.0;
+  for (auto i : best_x) index_sum+=i;
+  char plot_name [300];
+  snprintf(plot_name, 300,
+           "LayerIndex-TargetR%g-CoatingW%g-FinalRCS%gdiff%4.1f%%-s%015.12f-spectra",
+           a, total_coating_width,
+           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("WL");
+  wrapper.SetYLabelName("Mie efficiency");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("WL");
+  wrapper.AddColumnName("Qext");
+  wrapper.AddColumnName("Qsca");
+  wrapper.AddColumnName("Qabs");
+  wrapper.AddColumnName("Qbk");
+  wrapper.MakeOutput();
 }
 // ********************************************************************** //
 // ********************************************************************** //
