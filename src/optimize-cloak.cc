@@ -68,7 +68,7 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double layer_thickness = 0.015*a;
 double layer_thickness = 0.0;
 int number_of_layers = 8;
-int total_generations = 100;
+int total_generations = 1200;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();
@@ -91,9 +91,9 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    //for (double total_thickness = 0.15; total_thickness < 0.5; total_thickness+=0.05) {
-    double total_thickness = 0.45;
-      for (number_of_layers = 4; number_of_layers < 5; number_of_layers *=2) {
+    for (double total_thickness = 0.15; total_thickness < 1.5; total_thickness+=0.05) {
+      //double total_thickness = 0.45;
+      for (number_of_layers = 4; number_of_layers < 70; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
         SetOptimizer();
         sub_population.RunOptimization();
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
         PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
         sub_population.PrintResult("-- ");
       }  // end of changing number of layers
-      // }  // end of total coating thickness sweep
+    }  // end of total coating thickness sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -132,7 +132,7 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "LayerIndex-TargetR%g-CoatingW%g-FinalRCS%gdiff%4.1f%%-s%015.12f",
+           "LayerIndex-TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%4.1f%%-s%015.12f",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
   wrapper.SetPlotName(plot_name);
@@ -314,7 +314,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "LayerIndex-TargetR%g-CoatingW%g-FinalRCS%gdiff%4.1f%%-s%015.12f-spectra",
+           "LayerIndex-TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%4.1f%%-s%015.12f-spectra",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, index_sum);
   wrapper.SetPlotName(plot_name);
