@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    for (double total_thickness = 0.02; total_thickness < 0.2; total_thickness+=0.02) {
+    for (double total_thickness = 0.35; total_thickness < 0.5; total_thickness+=0.01) {
       //double total_thickness = 0.45;
       for (number_of_layers = 4; number_of_layers < 40; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
