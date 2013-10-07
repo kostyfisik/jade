@@ -1,3 +1,7 @@
+// * Посчитать от нулевой толщины до d крит.
+// * Нужна зависимость d критического от максимального eps
+// * сделать для d крит разбиение на 128 слоев
+// *Только ветка 1
 ///
 /// @file   optimize-cloak.cc
 /// @author Ladutenko Konstantin <kostyfisik at gmail (.) com>
@@ -91,9 +95,9 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    for (double total_thickness = 0.15; total_thickness < 1.5; total_thickness+=0.05) {
+    for (double total_thickness = 0.02; total_thickness < 0.2; total_thickness+=0.02) {
       //double total_thickness = 0.45;
-      for (number_of_layers = 4; number_of_layers < 70; number_of_layers *=2) {
+      for (number_of_layers = 4; number_of_layers < 40; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
         SetOptimizer();
         sub_population.RunOptimization();
@@ -132,7 +136,7 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%4.1f%%-n%lu-s%015.12f-index",
+           "TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
@@ -314,7 +318,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%4.1f%%-n%lu-s%015.12f-spectra",
+           "TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
