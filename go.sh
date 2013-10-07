@@ -25,6 +25,7 @@ Possible modes:\n
 new     \t - Default. Make new build and run.
 old     \t - Re-build and run.
 test    \t - Re-build and run JADE++ on a set of test functions.
+single  \t - Re-build and run JADE++ on a single test function.
 Possible enviroment parameters:\n
 \n
 JADE_MPI_size   \t- total number of MPI processes.\n
@@ -56,6 +57,7 @@ mode_new2="new2"  # gcc
 # mode_new3="new3"  # gcc with -O3
 mode_old1="old";     mode_old2="old2";         
 mode_test="test"; # mode_prof="prof";     mode_old2prof="old2prof"; mode_pgo="pgo"
+mode_single="single";
 # mode_custom="custom"; mode_debug="debug";       mode_build="build"
 # Default values
 yes="yes";        no="no"
@@ -83,6 +85,10 @@ jade_bin="run-optimize-cloak"
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
     jade_bin="run-jade-test"
+fi 
+if [[ $mode = $mode_single ]]; then
+    echo Run JADE++ test for single function!
+    jade_bin="run-jade-single"
 fi 
 # # Check mode
 # if [[ $mode != $mode_new1 \
@@ -182,7 +188,7 @@ fi
 #   Compile settings
 #############################################################################
 echo ============ Compile settings =============
-if [[ ( $mode = $mode_old1 || $mode = $mode_old2 || $mode = $mode_test ) && $force_new_build = $no ]]; then
+if [[ ( $mode = $mode_old1 || $mode = $mode_old2 || $mode = $mode_test || $mode=$mode_single ) && $force_new_build = $no ]]; then
     isNew=$no
     echo Recompile mode is on.
 else
@@ -203,7 +209,7 @@ if [[ $mode = $mode_pgo ]]; then
     isPGO=$yes
 fi 
 # Set compiler
-if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test ]]; then
+if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$mode_single ]]; then
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
     #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
