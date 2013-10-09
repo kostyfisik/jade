@@ -527,6 +527,16 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  void SubPopulation::SetAllBoundsVectors
+  (std::vector<double> lbound, std::vector<double> ubound) {
+    x_lbound_.clear();
+    x_ubound_.clear();    
+    for (auto x : lbound) x_lbound_.push_back(x);
+    for (auto x : ubound) x_ubound_.push_back(x);
+  }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   int SubPopulation::SetAllBounds(double lbound, double ubound) {
     if (lbound >= ubound) {
       error_status_ = kError;

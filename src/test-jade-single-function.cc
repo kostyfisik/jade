@@ -35,14 +35,28 @@ template<class T> inline T pow2(const T value) {return value*value;}
 ///
 /// @return Value to be minimized by changing x
 double func_single(std::vector<double> x) {
-  double w=x.front();
-  double ww = w*w;
-  double f = 1.0/2.0 *
-    ( 8.0 - 6.0*ww - 2.0*(3.0 - 3.0*ww)*ww/(-1.0 + ww)
-      )/
-    (-12.0 + 9.0*ww + 3.0*(3.0 - 3.0*ww)*ww/(-1.0 + ww)
-     -4.0*(4.0 - 4.0*ww)*ww/(pow2(-1.0 + ww))     
-     );
+  // double w=x.front();
+  // double ww = w*w;
+  // double f = 1.0/2.0 *
+  //   ( 8.0 - 6.0*ww - 2.0*(3.0 - 3.0*ww)*ww/(-1.0 + ww)
+  //     )/
+  //   (-12.0 + 9.0*ww + 3.0*(3.0 - 3.0*ww)*ww/(-1.0 + ww)
+  //    -4.0*(4.0 - 4.0*ww)*ww/(pow2(-1.0 + ww))     
+  //    );
+  double w2 = x[0];
+  double wD = x[1];
+  double w22= w2*w2, wD2 = wD*wD, wD3 = wD2*wD, wD4 = wD3*wD;
+  double
+  f = 1.0/2.0* ( 2.0*(4.0*wD2 - 3.0*w22)/wD3
+                - 2.0*(3.0*wD2 - 3.0*w22)*w22/
+                  ((-wD2 + w22)*wD3)
+               )/(
+                  -3.0*(4.0*wD2 - 3.0*w22)/wD4
+                  +3.0*(3.0*wD2 - 3.0*w22)*w22/
+                   ((-wD2 + w22)*wD4)
+                  -4.0*(4.0*wD2 - 4.0*w22)*w22/
+                   ((-wD2 + w22)*wD2)
+                 );
   return f;
 }
 
@@ -51,19 +65,19 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    /// Settings for optimization algorithm;
-  int dimenstion = 1;  /// Number of parameters to optimize.
-  int total_population = 3 * dimenstion;  /// Total number of individuals in population.
+  int dimenstion = 2;  /// Number of parameters to optimize.
+  int total_population = 5 * dimenstion;  /// Total number of individuals in population.
   //int total_population = 100;  /// Total number of individuals in population.
   jade::SubPopulation sub_population;
   sub_population.Init(total_population, dimenstion);
   sub_population.FitnessFunction = &func_single;
   /// Low and upper bound for all dimenstions;
-  double lbound = 0.0;
-  double ubound = 2.0/std::sqrt(3.0);
-  sub_population.SetAllBounds(lbound, ubound);
+  // double lbound = 0.0;
+  // double ubound = 1.1;
+  sub_population.SetAllBoundsVectors({0, 0.1}, {1.5, 1.1});
   //sub_population.SetTargetToMinimum();
   sub_population.SetTargetToMaximum();
-  sub_population.SetTotalGenerationsMax(30);
+  sub_population.SetTotalGenerationsMax(300);
   sub_population.SetBestShareP(0.05);
   sub_population.SetAdapitonFrequencyC(0.1);
   sub_population.SetDistributionLevel(0);
@@ -72,12 +86,16 @@ int main(int argc, char *argv[]) {
   sub_population.PrintResult("Alena");
   if (rank == 0) {
     //for (double x = lbound; x < ubound; x+= (ubound - lbound)/100.0) {
-    for (double x = lbound; x < ubound; x+= 0.01) {
-      std::vector<double> input = {x};
-      printf("f(%g)=%g\n",x, func_single(input));
+    double step = 0.0000001;
+    for (double w2 = 0.866025; w2 < 0.86604+step; w2+= step) {
+      for (double wD = 1.0999; wD < 1.1+step; wD+= step) {
+        std::vector<double> input = {w2, wD};
+        if ( func_single(input) > 1650162
+              && std::abs(w2 - wD) > 0)
+          printf("f(%20.7f,%20.7f)=%+5.3f\n",w2,wD, func_single(input));
+      }
     }
-    std::vector<double> input = {ubound};
-    printf("final f(ubound)=%g\n", func_single(input));
+    printf("\n");
   }
   MPI_Finalize();
   return 0;

@@ -65,6 +65,8 @@ namespace jade {
     /// @brief Set same search bounds for all components of fitness
     /// function input vector.
     int SetAllBounds(double lbound, double ubound);
+    void SetAllBoundsVectors
+        (std::vector<double> lbound, std::vector<double> ubound);
     /// @brief Print Optimization parameters.
     int PrintParameters(std::string comment);
     /// @brief Print final result
