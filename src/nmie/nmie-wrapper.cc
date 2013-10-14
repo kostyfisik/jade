@@ -111,7 +111,7 @@ namespace nmie {
     double *x = &(size_parameter_.front());
     complex *m = &(index_.front());
     int terms = 0;
-    terms = nMieFast(L, x, m, nt, Theta,
+    terms = nMie(L, x, m, nt, Theta,
                  &Qext, &Qsca, &Qabs, &Qbk, &Qpr, &g, &Albedo,
                  S1,S2);
     free(Theta);
@@ -144,17 +144,20 @@ namespace nmie {
     std::vector< std::vector<double> > spectra;
     double step_WL = (to_WL - from_WL)/ static_cast<double>(samples);
     double wavelength_backup = wavelength_;
+    long fails = 0;
     for (double WL = from_WL; WL < to_WL; WL += step_WL) {
       double Qext, Qsca, Qabs, Qbk;
       wavelength_ = WL;
       try {
         RunMie(&Qext, &Qsca, &Qabs, &Qbk);
       } catch( const std::invalid_argument& ia ) {
-        // printf("*");
+        fails++;
         continue;
-      }  
+      }
+      printf("%3.1f ",WL);
       spectra.push_back({wavelength_, Qext, Qsca, Qabs, Qbk});
     }  // end of for each WL in spectra
+    printf("fails %li\n",fails);
     wavelength_ = wavelength_backup;
     return spectra;
   }

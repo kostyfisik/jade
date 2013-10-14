@@ -42,8 +42,10 @@ namespace gnuplot {
     void PrintDataFile();
     void PrintPlotFile();
     void PrintShellFile();
-    int plot_size_x_ = 1366;
-    int plot_size_y_ = 768;
+    int plot_size_x_ = 800;
+    int plot_size_y_ = 600;
+    /* int plot_size_x_ = 1366; */
+    /* int plot_size_y_ = 768; */
     std::vector<double> x_range_ = {0, 0};
     std::string plot_name_ = "gnuplot";
     std::string x_label_name_ = "x";

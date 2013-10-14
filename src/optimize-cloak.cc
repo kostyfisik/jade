@@ -65,14 +65,15 @@ bool isOnlyIndexOptimization = true;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
-double a = 0.75*lambda_work;  // 2.8125 cm
+double a = 1; // Krasnok PEC
+//double a = 0.75*lambda_work;  // 2.8125 cm
 //double a = lambda_work;  // 
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 //double layer_thickness = 0.015*a;
 double layer_thickness = 0.0;
 int number_of_layers = 8;
-int total_generations = 1200;
+int total_generations = 120;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();
@@ -89,15 +90,38 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+double loss_index = 1e-14;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     double initial_RCS = SetInitialModel();
-    for (double total_thickness = 0.35; total_thickness < 0.5; total_thickness+=0.01) {
+    std::vector< std::vector<double> > spectra
+      = multi_layer_mie.GetSpectra(4.76, 4.92, 500);
+    gnuplot::GnuplotWrapper wrapper;
+    char plot_name [300];
+    snprintf(plot_name, 300,
+             "PEC-nmie-loss-index-%.0e",loss_index);
+    wrapper.SetPlotName(plot_name);
+    wrapper.SetXLabelName("WL, cm");
+    wrapper.SetYLabelName("Mie efficiency");
+    wrapper.SetDrawStyle("w l lw 2");
+    wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+    for (auto multi_point = spectra.rbegin(); multi_point != spectra.rend(); ++multi_point)
+      wrapper.AddMultiPoint(*multi_point);
+    //for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+    wrapper.AddColumnName("WL");
+    wrapper.AddColumnName("Qext");
+    wrapper.AddColumnName("Qsca");
+    wrapper.AddColumnName("Qabs");
+    wrapper.AddColumnName("Qbk");
+    wrapper.MakeOutput();
+
+    throw std::invalid_argument("Debug!\n");
+    for (double total_thickness = 0.35; total_thickness < 0.5; total_thickness+=0.1) {
       //double total_thickness = 0.45;
-      for (number_of_layers = 4; number_of_layers < 40; number_of_layers *=2) {
+      for (number_of_layers = 4; number_of_layers < 6; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
         SetOptimizer();
         sub_population.RunOptimization();
@@ -201,8 +225,12 @@ void SetTarget() {
     double eps_im = 900.0;
     double n = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) + eps_re ));
     double k = sqrt(0.5*(sqrt(pow2(eps_re) + pow2(eps_im)) - eps_re ));
-    multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
-    multi_layer_mie.AddTargetLayer(target_shell_share*a, {n, k});
+    // multi_layer_mie.AddTargetLayer((1.0-target_shell_share)*a, {1.0, 0.0000000});
+    // multi_layer_mie.AddTargetLayer(target_shell_share*a, {n, k});
+    //Krasnok PEC, a = 1;
+    multi_layer_mie.AddTargetLayer(1.0, {-1.0, -1.0});
+    multi_layer_mie.AddTargetLayer(0.7, {std::sqrt(15.0), loss_index});
+    
   } else {      
     multi_layer_mie.AddTargetLayer(a, {2.0, 0.0001});
   }
@@ -322,7 +350,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
-  wrapper.SetXLabelName("WL");
+  wrapper.SetXLabelName("freq");
   wrapper.SetYLabelName("Mie efficiency");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});

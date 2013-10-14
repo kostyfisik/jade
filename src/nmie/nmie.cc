@@ -1,5 +1,5 @@
 //**********************************************************************************//
-//    Copyright (C) 2009  Ovidio Pena <ovidio@bytesfall.com>                        //
+//    Copyright (C) 2009-2013  Ovidio Pena <ovidio@bytesfall.com>                   //
 //                                                                                  //
 //    This file is part of scattnlay                                                //
 //                                                                                  //
@@ -13,8 +13,8 @@
 //    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the                 //
 //    GNU General Public License for more details.                                  //
 //                                                                                  //
-//    The only additional condition is that we expect that all publications         //
-//    describing  work using this software , or all commercial products             //
+//    The only additional remark is that we expect that all publications            //
+//    describing work using this software, or all commercial products               //
 //    using it, cite the following reference:                                       //
 //    [1] O. Pena and U. Pal, "Scattering of electromagnetic radiation by           //
 //        a multilayered sphere," Computer Physics Communications,                  //
@@ -50,6 +50,19 @@
 
 #define round(x) ((x) >= 0 ? (int)((x) + 0.5):(int)((x) - 0.5))
 
+int firstLayer(int L, complex m[]) {
+  int i, result;
+
+  result = 1;
+  for (i = 1; i <= L; i++) {
+    if ((m[i].r < 0) || (m[i].i < 0)) {
+      result = i;
+    }
+  }
+
+  return result;
+}
+
 // Calculate Nstop - equation (17)
 int Nstop(double xL) {
   int result;
@@ -65,22 +78,22 @@ int Nstop(double xL) {
   return result;
 }
 
-int Nmax(int L, double x[], complex m[]) {
+int Nmax(int L, int fl, double x[], complex m[]) {
   int i, result;
 
-  result = Nstop(x[L + 1]);
-  for (i = 1; i <= L; i++) {
-    if (result < Cabs(RCmul(x[i], m[i]))) {
-      result = round(Cabs(RCmul(x[i], m[i])));
-    }
-    if (result < Cabs(RCmul(x[i - 1], m[i]))) {
-      result = round(Cabs(RCmul(x[i - 1], m[i])));
+  result = Nstop(x[L]);
+  if ((fl < L) || ((m[L].r >= 0) && (m[L].i >= 0))) {
+    for (i = fl; i <= L; i++) {
+      if (result < Cabs(RCmul(x[i], m[i]))) {
+        result = round(Cabs(RCmul(x[i], m[i])));
+      }
+      if ((i > fl) && (result < Cabs(RCmul(x[i - 1], m[i])))) {
+        result = round(Cabs(RCmul(x[i - 1], m[i])));
+      }
     }
   }
 
-  //return result + 300; 
-  return result + 5;  // Tig: May be it save to ommit +5 also.
-  //return result + 15;
+  return result + 5;
 }
 
 // Calculate an - equation (5)
@@ -132,24 +145,19 @@ complex calc_S2_n(int n, complex an, complex bn, double Pin, double Taun) {
 //                                                                                  //
 // Return value:                                                                    //
 //   Number of multipolar expansion terms used for the calculations                 //
-//
-// double expansion_corrector -- try to correct stability.
 //**********************************************************************************//
 
 int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double *Qext, double *Qsca, double *Qabs, double *Qbk, double *Qpr, double *g, double *Albedo, complex S1[], complex S2[], int expansion_corrector) {
-  int n_max = Nmax(L, x, m) + expansion_corrector;
+  //************************************************************************//
+  // Calculate the index of the first layer. It can be either 1 (default)   //
+  // or the index of the outermost PEC layer. In the latter case all layers //
+  // below the PEC are discarded.                                           //
+  //************************************************************************//
+  int fl = firstLayer(L, m);
+
+  int n_max = Nmax(L, fl, x, m) + expansion_corrector;
 
   complex an, bn, anP1, bnP1, Qbktmp;
-
-//  complex D1_lmlx[n_max + 2][L + 1], D1_lmlxM1[n_max + 2][L + 1];
-//  complex **D1_lmlx, **D1_lmlxM1;
-//  complex D3_lmlx[n_max + 1][L + 1], D3_lmlxM1[n_max + 1][L + 1];
-//  complex D1XL[n_max + 2], D3XL[n_max + 1];
-//  complex PsiZeta_lmlx[n_max + 1][L + 1], PsiZeta_lmlxM1[n_max + 1][L + 1];
-//  complex *PsiXL, *ZetaXL, *PsiZetaXL;
-//  complex Q[n_max + 1][L + 1];
-//  complex Hb[n_max + 1][L + 1];//, Hb[n_max + 1][L + 1];
-//  double Pi[n_max + 1][nTheta], Tau[n_max + 1][nTheta];
   complex z1, z2;
   complex Num, Denom;
   complex G1, G2;
@@ -159,14 +167,14 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   int n, l, t;
 
   // Allocate memory to the arrays
-  complex **D1_lmlx = (complex **) malloc((n_max + 2)*sizeof(complex *));
-  complex **D1_lmlxM1 = (complex **) malloc((n_max + 2)*sizeof(complex *));
+  complex **D1_mlxl = (complex **) malloc((n_max + 2)*sizeof(complex *));
+  complex **D1_mlxlM1 = (complex **) malloc((n_max + 2)*sizeof(complex *));
 
-  complex **D3_lmlx = (complex **) malloc((n_max + 1)*sizeof(complex *));
-  complex **D3_lmlxM1 = (complex **) malloc((n_max + 1)*sizeof(complex *));
+  complex **D3_mlxl = (complex **) malloc((n_max + 1)*sizeof(complex *));
+  complex **D3_mlxlM1 = (complex **) malloc((n_max + 1)*sizeof(complex *));
 
-  complex **PsiZeta_lmlx = (complex **) malloc((n_max + 1)*sizeof(complex *));
-  complex **PsiZeta_lmlxM1 = (complex **) malloc((n_max + 1)*sizeof(complex *));
+  complex **PsiZeta_mlxl = (complex **) malloc((n_max + 1)*sizeof(complex *));
+  complex **PsiZeta_mlxlM1 = (complex **) malloc((n_max + 1)*sizeof(complex *));
 
   complex **Q = (complex **) malloc((n_max + 1)*sizeof(complex *));
 
@@ -177,16 +185,16 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   double **Tau = (double **) malloc((n_max + 1)*sizeof(double *));
 
   for (n = 0; n < (n_max + 2); n++) {
-    D1_lmlx[n] = (complex *) malloc((L + 1)*sizeof(complex));
-    D1_lmlxM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    D1_mlxl[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    D1_mlxlM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
   }
 
   for (n = 0; n < (n_max + 1); n++) {
-    D3_lmlx[n] = (complex *) malloc((L + 1)*sizeof(complex));
-    D3_lmlxM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    D3_mlxl[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    D3_mlxlM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
 
-    PsiZeta_lmlx[n] = (complex *) malloc((L + 1)*sizeof(complex));
-    PsiZeta_lmlxM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    PsiZeta_mlxl[n] = (complex *) malloc((L + 1)*sizeof(complex));
+    PsiZeta_mlxlM1[n] = (complex *) malloc((L + 1)*sizeof(complex));
 
     Q[n] = (complex *) malloc((L + 1)*sizeof(complex));
 
@@ -225,67 +233,74 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   //********************************************************//
   // Calculate D1, D3 and PsiZeta for z1 in the first layer //
   //********************************************************//
-  z1 = RCmul(x[1], m[1]);
+  if ((m[fl].r < 0) || (m[fl].i < 0)) {  // PEC layer
+    for (n = 1; n <= n_max; n++) {
+      D1_mlxl[n][fl] = Complex(0, -1);
+      D3_mlxl[n][fl] = Complex(0, 1);
+    }
+  } else { // Regular layer
+    z1 = RCmul(x[fl], m[fl]);
 
-  // Downward recurrence for D1 - equations (16a) and (16b)
-  D1_lmlx[n_max + 1][1] = Complex(0, 0);
-  for (n = n_max + 1; n > 0; n--) {
-    D1_lmlx[n - 1][1] = Csub(Cdiv(Complex(n, 0), z1), Cdiv(Complex(1, 0), Cadd(D1_lmlx[n][1], Cdiv(Complex(n, 0), z1))));
-  }
+    // Downward recurrence for D1 - equations (16a) and (16b)
+    D1_mlxl[n_max + 1][fl] = Complex(0, 0);
+    for (n = n_max + 1; n > 0; n--) {
+      D1_mlxl[n - 1][fl] = Csub(Cdiv(Complex(n, 0), z1), Cdiv(Complex(1, 0), Cadd(D1_mlxl[n][fl], Cdiv(Complex(n, 0), z1))));
+    }
 
-  // Upward recurrence for PsiZeta and D3 - equations (18a) - (18d)
-  PsiZeta_lmlx[0][1] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z1.r), sin(2*z1.r)), Complex(exp(-2*z1.i), 0))));
-  D3_lmlx[0][1] = Complex(0, 1);
-  for (n = 1; n <= n_max; n++) {
-    PsiZeta_lmlx[n][1] = Cmul(PsiZeta_lmlx[n - 1][1], Cmul(Csub(Cdiv(Complex(n, 0), z1), D1_lmlx[n - 1][1]), Csub(Cdiv(Complex(n, 0), z1), D3_lmlx[n - 1][1])));
+    // Upward recurrence for PsiZeta and D3 - equations (18a) - (18d)
+    PsiZeta_mlxl[0][fl] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z1.r), sin(2*z1.r)), Complex(exp(-2*z1.i), 0))));
+    D3_mlxl[0][fl] = Complex(0, 1);
+    for (n = 1; n <= n_max; n++) {
+      PsiZeta_mlxl[n][fl] = Cmul(PsiZeta_mlxl[n - 1][fl], Cmul(Csub(Cdiv(Complex(n, 0), z1), D1_mlxl[n - 1][fl]), Csub(Cdiv(Complex(n, 0), z1), D3_mlxl[n - 1][fl])));
 
-    D3_lmlx[n][1] = Cadd(D1_lmlx[n][1], Cdiv(Complex(0, 1), PsiZeta_lmlx[n][1]));
+      D3_mlxl[n][fl] = Cadd(D1_mlxl[n][fl], Cdiv(Complex(0, 1), PsiZeta_mlxl[n][fl]));
+    }
   }
 
   //******************************************************************//
   // Calculate Ha and Hb in the first layer - equations (7a) and (8a) //
   //******************************************************************//
   for (n = 1; n <= n_max; n++) {
-    Ha[n][1] = D1_lmlx[n][1];
-    Hb[n][1] = D1_lmlx[n][1];
+    Ha[n][fl] = D1_mlxl[n][fl];
+    Hb[n][fl] = D1_mlxl[n][fl];
   }
 
-  //*******************************************//
-  // Iteration from the layer 2 to the layer L //
-  //*******************************************//
-  for (l = 2; l <= L; l++) {
-    //**************************************************************//
-    //Calculate D1, D3 and PsiZeta for z1 and z2 in the layers 2..L //
-    //**************************************************************//
+  //*****************************************************//
+  // Iteration from the second layer to the last one (L) //
+  //*****************************************************//
+  for (l = fl + 1; l <= L; l++) {
+    //*****************************************************************//
+    //Calculate D1, D3 and PsiZeta for z1 and z2 in the layers fl+1..L //
+    //*****************************************************************//
     z1 = RCmul(x[l], m[l]);
     z2 = RCmul(x[l - 1], m[l]);
 
     // Downward recurrence for D1 - equations (16a) and (16b)
-    D1_lmlx[n_max + 1][l] = Complex(0, 0);
-    D1_lmlxM1[n_max + 1][l] = Complex(0, 0);
+    D1_mlxl[n_max + 1][l] = Complex(0, 0);
+    D1_mlxlM1[n_max + 1][l] = Complex(0, 0);
     for (n = n_max + 1; n > 0; n--) {
-      D1_lmlx[n - 1][l] = Csub(Cdiv(Complex(n, 0), z1), Cdiv(Complex(1, 0), Cadd(D1_lmlx[n][l], Cdiv(Complex(n, 0), z1))));
-      D1_lmlxM1[n - 1][l] = Csub(Cdiv(Complex(n, 0), z2), Cdiv(Complex(1, 0), Cadd(D1_lmlxM1[n][l], Cdiv(Complex(n, 0), z2))));
+      D1_mlxl[n - 1][l] = Csub(Cdiv(Complex(n, 0), z1), Cdiv(Complex(1, 0), Cadd(D1_mlxl[n][l], Cdiv(Complex(n, 0), z1))));
+      D1_mlxlM1[n - 1][l] = Csub(Cdiv(Complex(n, 0), z2), Cdiv(Complex(1, 0), Cadd(D1_mlxlM1[n][l], Cdiv(Complex(n, 0), z2))));
     }
 
     // Upward recurrence for PsiZeta and D3 - equations (18a) - (18d)
-    PsiZeta_lmlx[0][l] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z1.r), sin(2*z1.r)), Complex(exp(-2*z1.i), 0))));
-    PsiZeta_lmlxM1[0][l] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z2.r), sin(2*z2.r)), Complex(exp(-2*z2.i), 0))));
+    PsiZeta_mlxl[0][l] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z1.r), sin(2*z1.r)), Complex(exp(-2*z1.i), 0))));
+    PsiZeta_mlxlM1[0][l] = RCmul(0.5, Csub(Complex(1, 0), Cmul(Complex(cos(2*z2.r), sin(2*z2.r)), Complex(exp(-2*z2.i), 0))));
 
-    D3_lmlx[0][l] = Complex(0, 1);
-    D3_lmlxM1[0][l] = Complex(0, 1);
+    D3_mlxl[0][l] = Complex(0, 1);
+    D3_mlxlM1[0][l] = Complex(0, 1);
 
     for (n = 1; n <= n_max; n++) {
-      PsiZeta_lmlx[n][l] = Cmul(PsiZeta_lmlx[n - 1][l], Cmul(Csub(Cdiv(Complex(n, 0), z1), D1_lmlx[n - 1][l]), Csub(Cdiv(Complex(n, 0), z1), D3_lmlx[n - 1][l])));
-      PsiZeta_lmlxM1[n][l] = Cmul(PsiZeta_lmlxM1[n - 1][l], Cmul(Csub(Cdiv(Complex(n, 0), z2), D1_lmlxM1[n - 1][l]), Csub(Cdiv(Complex(n, 0), z2), D3_lmlxM1[n - 1][l])));
+      PsiZeta_mlxl[n][l] = Cmul(PsiZeta_mlxl[n - 1][l], Cmul(Csub(Cdiv(Complex(n, 0), z1), D1_mlxl[n - 1][l]), Csub(Cdiv(Complex(n, 0), z1), D3_mlxl[n - 1][l])));
+      PsiZeta_mlxlM1[n][l] = Cmul(PsiZeta_mlxlM1[n - 1][l], Cmul(Csub(Cdiv(Complex(n, 0), z2), D1_mlxlM1[n - 1][l]), Csub(Cdiv(Complex(n, 0), z2), D3_mlxlM1[n - 1][l])));
 
-      D3_lmlx[n][l] = Cadd(D1_lmlx[n][l], Cdiv(Complex(0, 1), PsiZeta_lmlx[n][l]));
-      D3_lmlxM1[n][l] = Cadd(D1_lmlxM1[n][l], Cdiv(Complex(0, 1), PsiZeta_lmlxM1[n][l]));
+      D3_mlxl[n][l] = Cadd(D1_mlxl[n][l], Cdiv(Complex(0, 1), PsiZeta_mlxl[n][l]));
+      D3_mlxlM1[n][l] = Cadd(D1_mlxlM1[n][l], Cdiv(Complex(0, 1), PsiZeta_mlxlM1[n][l]));
     }
 
-    //******************************************//
-    //Calculate Q, Ha and Hb in the layers 2..L //
-    //******************************************//
+    //*********************************************//
+    //Calculate Q, Ha and Hb in the layers fl+1..L //
+    //*********************************************//
 
     // Upward recurrence for Q - equations (19a) and (19b)
     Num = RCmul(exp(-2*(z1.i - z2.i)), Complex(cos(-2*z2.r) - exp(-2*z2.i), sin(-2*z2.r)));
@@ -293,8 +308,8 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
     Q[0][l] = Cdiv(Num, Denom);
 
     for (n = 1; n <= n_max; n++) {
-      Num = Cmul(Cadd(Cmul(z1, D1_lmlx[n][l]), Complex(n, 0)), Csub(Complex(n, 0), Cmul(z1, D3_lmlx[n - 1][l])));
-      Denom = Cmul(Cadd(Cmul(z2, D1_lmlxM1[n][l]), Complex(n, 0)), Csub(Complex(n, 0), Cmul(z2, D3_lmlxM1[n - 1][l])));
+      Num = Cmul(Cadd(Cmul(z1, D1_mlxl[n][l]), Complex(n, 0)), Csub(Complex(n, 0), Cmul(z1, D3_mlxl[n - 1][l])));
+      Denom = Cmul(Cadd(Cmul(z2, D1_mlxlM1[n][l]), Complex(n, 0)), Csub(Complex(n, 0), Cmul(z2, D3_mlxlM1[n - 1][l])));
 
       Tmp = (x[l - 1]*x[l - 1])/(x[l]*x[l]);
 
@@ -304,23 +319,33 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
     // Upward recurrence for Ha and Hb - equations (7b), (8b) and (12) - (15)
     for (n = 1; n <= n_max; n++) {
       //Ha
-      G1 = Csub(Cmul(m[l], Ha[n][l - 1]), Cmul(m[l - 1], D1_lmlxM1[n][l]));
-      G2 = Csub(Cmul(m[l], Ha[n][l - 1]), Cmul(m[l - 1], D3_lmlxM1[n][l]));
+      if ((l == (fl + 1)) && ((m[fl].r < 0) || (m[fl].i < 0))) { // The layer below the current one is a PEC
+        G1 = RCmul(-1.0, D1_mlxlM1[n][l]);
+        G2 = RCmul(-1.0, D3_mlxlM1[n][l]);
+      } else {
+        G1 = Csub(Cmul(m[l], Ha[n][l - 1]), Cmul(m[l - 1], D1_mlxlM1[n][l]));
+        G2 = Csub(Cmul(m[l], Ha[n][l - 1]), Cmul(m[l - 1], D3_mlxlM1[n][l]));
+      }
 
       Temp = Cmul(Q[n][l], G1);
 
-      Num = Csub(Cmul(G2, D1_lmlx[n][l]), Cmul(Temp, D3_lmlx[n][l]));
+      Num = Csub(Cmul(G2, D1_mlxl[n][l]), Cmul(Temp, D3_mlxl[n][l]));
       Denom = Csub(G2, Temp);
 
       Ha[n][l] = Cdiv(Num, Denom);
 
       //Hb
-      G1 = Csub(Cmul(m[l - 1], Hb[n][l - 1]), Cmul(m[l], D1_lmlxM1[n][l]));
-      G2 = Csub(Cmul(m[l - 1], Hb[n][l - 1]), Cmul(m[l], D3_lmlxM1[n][l]));
+      if ((l == (fl + 1)) && ((m[fl].r < 0) || (m[fl].i < 0))) { // The layer below the current one is a PEC
+        G1 = Hb[n][l - 1];
+        G2 = Hb[n][l - 1];
+      } else {
+        G1 = Csub(Cmul(m[l - 1], Hb[n][l - 1]), Cmul(m[l], D1_mlxlM1[n][l]));
+        G2 = Csub(Cmul(m[l - 1], Hb[n][l - 1]), Cmul(m[l], D3_mlxlM1[n][l]));
+      }
 
       Temp = Cmul(Q[n][l], G1);
 
-      Num = Csub(Cmul(G2, D1_lmlx[n][l]), Cmul(Temp, D3_lmlx[n][l]));
+      Num = Csub(Cmul(G2, D1_mlxl[n][l]), Cmul(Temp, D3_mlxl[n][l]));
       Denom = Csub(G2, Temp);
 
       Hb[n][l] = Cdiv(Num, Denom);
@@ -358,14 +383,32 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   //*********************************************************************//
   x2 = x[L]*x[L];
 
-  anP1 = calc_an(1, x[L], Ha[1][L], m[L], PsiXL[1], ZetaXL[1], PsiXL[0], ZetaXL[0]);
-  bnP1 = calc_bn(1, x[L], Hb[1][L], m[L], PsiXL[1], ZetaXL[1], PsiXL[0], ZetaXL[0]);
+  //********************************************************************//
+  //Expressions for calculating an and bn coefficients are not valid if //
+  //there is only one PEC layer (ie, for a simple PEC sphere).          //
+  //********************************************************************//
+  if ((fl < L) || ((m[L].r >= 0) && (m[L].i >= 0))) {
+    anP1 = calc_an(1, x[L], Ha[1][L], m[L], PsiXL[1], ZetaXL[1], PsiXL[0], ZetaXL[0]);
+    bnP1 = calc_bn(1, x[L], Hb[1][L], m[L], PsiXL[1], ZetaXL[1], PsiXL[0], ZetaXL[0]);
+  } else {
+    anP1 = calc_an(1, x[L], Complex(0, 0), Complex(1, 0), PsiXL[1], ZetaXL[1], PsiXL[0], ZetaXL[0]);
+    bnP1 = Cdiv(PsiXL[1], ZetaXL[1]);
+  }
   for (n = 1; n < n_max; n++) {
     an = anP1;
     bn = bnP1;
 
-    anP1 = calc_an(n + 1, x[L], Ha[n + 1][L], m[L], PsiXL[n + 1], ZetaXL[n + 1], PsiXL[n], ZetaXL[n]);
-    bnP1 = calc_bn(n + 1, x[L], Hb[n + 1][L], m[L], PsiXL[n + 1], ZetaXL[n + 1], PsiXL[n], ZetaXL[n]);
+    //********************************************************************//
+    //Expressions for calculating an and bn coefficients are not valid if //
+    //there is only one PEC layer (ie, for a simple PEC sphere).          //
+    //********************************************************************//
+    if ((fl < L) || ((m[L].r >= 0) && (m[L].i >= 0))) {
+      anP1 = calc_an(n + 1, x[L], Ha[n + 1][L], m[L], PsiXL[n + 1], ZetaXL[n + 1], PsiXL[n], ZetaXL[n]);
+      bnP1 = calc_bn(n + 1, x[L], Hb[n + 1][L], m[L], PsiXL[n + 1], ZetaXL[n + 1], PsiXL[n], ZetaXL[n]);
+    } else {
+      anP1 = calc_an(n + 1, x[L], Complex(0, 0), Complex(1, 0), PsiXL[n + 1], ZetaXL[n + 1], PsiXL[n], ZetaXL[n]);
+      bnP1 = Cdiv(PsiXL[n + 1], ZetaXL[n + 1]);
+    }
 
     // Equation (27)
     *Qext = *Qext + (double)(n + n + 1)*(an.r + bn.r);
@@ -391,7 +434,6 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
   }
 
   *Qext = 2*(*Qext)/x2;                                 // Equation (27)
-  //printf("Ssca=%g\n",*Qsca);
   *Qsca = 2*(*Qsca)/x2;                                 // Equation (28)
   *Qpr = *Qext - 4*(*Qpr)/x2;                           // Equation (29)
 
@@ -403,16 +445,16 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
 
   // Free the memory used for the arrays
   for (n = 0; n < (n_max + 2); n++) {
-    free(D1_lmlx[n]);
-    free(D1_lmlxM1[n]);
+    free(D1_mlxl[n]);
+    free(D1_mlxlM1[n]);
   }
 
   for (n = 0; n < (n_max + 1); n++) {
-    free(D3_lmlx[n]);
-    free(D3_lmlxM1[n]);
+    free(D3_mlxl[n]);
+    free(D3_mlxlM1[n]);
 
-    free(PsiZeta_lmlx[n]);
-    free(PsiZeta_lmlxM1[n]);
+    free(PsiZeta_mlxl[n]);
+    free(PsiZeta_mlxlM1[n]);
 
     free(Q[n]);
 
@@ -423,14 +465,14 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
     free(Tau[n]);
   }
 
-  free(D1_lmlx);
-  free(D1_lmlxM1);
+  free(D1_mlxl);
+  free(D1_mlxlM1);
 
-  free(D3_lmlx);
-  free(D3_lmlxM1);
+  free(D3_mlxl);
+  free(D3_mlxlM1);
 
-  free(PsiZeta_lmlx);
-  free(PsiZeta_lmlxM1);
+  free(PsiZeta_mlxl);
+  free(PsiZeta_mlxlM1);
 
   free(Q);
 
@@ -451,7 +493,7 @@ int nMieBase(int L, double x[], complex m[], int nTheta, double Theta[], double 
 }
 
 int isClose (double A, double B) {
-  double epsilon = 1e-13;
+  double epsilon = 1e-15;
   if (B == 0 && A == 0) return 1;
   if (A*(1+epsilon) > B && B*(1+epsilon) > A) return 1;
   return 0;

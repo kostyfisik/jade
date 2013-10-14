@@ -38,10 +38,14 @@ namespace gnuplot{
     std::string fname = plot_name_ + ".plt";
     fp = fopen(fname.c_str(), "w");
     std::string plt_format = "# " + plot_name_ + "\n" +
-      "set terminal png nocrop size " +
+      //"set terminal png nocrop size " +
+      "set terminal svg size " +
       std::to_string(plot_size_x_) + ","
-      + std::to_string(plot_size_y_) + "\n" +
-      "set output \"" + plot_name_ + ".png\"\n"+
+      + std::to_string(plot_size_y_) + " dynamic enhanced\n" +
+      + "set object 1 rect from screen 0, 0, 0 to screen 1, 1, 0 behind\n" +
+      + "set object 1 rect fc  rgb \"white\"  fillstyle solid 1.0\n"
+      //"set output \"" + plot_name_ + ".png\"\n"+
+      "set output \"" + plot_name_ + ".svg\"\n"+
       "set xlabel \"" + x_label_name_ + "\"\n"+
       "set ylabel \"" + y_label_name_ + "\"\n" +
       "set key below\n";
