@@ -154,7 +154,7 @@ namespace nmie {
         fails++;
         continue;
       }
-      printf("%3.1f ",WL);
+      //printf("%3.1f ",WL);
       spectra.push_back({wavelength_, Qext, Qsca, Qabs, Qbk});
     }  // end of for each WL in spectra
     printf("fails %li\n",fails);
