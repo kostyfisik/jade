@@ -73,7 +73,7 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double layer_thickness = 0.015*a;
 double layer_thickness = 0.0;
 int number_of_layers = 8;
-int total_generations = 120;
+int total_generations = 1200;
 void SetTarget();
 void SetThickness();
 double SetInitialModel();

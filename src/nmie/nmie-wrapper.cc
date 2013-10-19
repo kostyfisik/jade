@@ -111,7 +111,7 @@ namespace nmie {
     double *x = &(size_parameter_.front());
     complex *m = &(index_.front());
     int terms = 0;
-    terms = nMie(L, x, m, nt, Theta,
+    terms = nMieFast(L, x, m, nt, Theta,
                  &Qext, &Qsca, &Qabs, &Qbk, &Qpr, &g, &Albedo,
                  S1,S2);
     free(Theta);
