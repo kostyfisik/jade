@@ -58,8 +58,8 @@ jade::SubPopulation sub_population;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-//bool isUsingPEC = true;
-bool isUsingPEC = false;
+bool isUsingPEC = true;
+//bool isUsingPEC = false;
 bool isOnlyIndexOptimization = true;
 //bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
@@ -104,12 +104,12 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
-    for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
+    // for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
       double initial_RCS = SetInitialModel(n, k);
-      for (double total_thickness = 0.02; total_thickness < 0.9;
+      for (double total_thickness = 0.4; total_thickness < 0.5;
            total_thickness += thickness_step) {
         //double total_thickness = 0.45;
-        for (number_of_layers = 16; number_of_layers < 20; number_of_layers *=2) {
+        for (number_of_layers = 32; number_of_layers < 40; number_of_layers *=2) {
           layer_thickness = total_thickness / number_of_layers;
           SetOptimizer();
           sub_population.RunOptimization();
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
           sub_population.PrintResult("-- ");
         }  // end of changing number of layers
       }  // end of total coating thickness sweep
-    }  // end of k sweep
+    // }  // end of k sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
