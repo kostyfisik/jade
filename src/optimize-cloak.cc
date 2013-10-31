@@ -58,8 +58,8 @@ jade::SubPopulation sub_population;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-bool isUsingPEC = true;
-//bool isUsingPEC = false;
+//bool isUsingPEC = true;
+bool isUsingPEC = false;
 bool isOnlyIndexOptimization = true;
 //bool isOnlyIndexOptimization = false;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
@@ -72,11 +72,18 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 //double layer_thickness = 0.015*a;
 double layer_thickness = 0.0;
+double n = 4;
+double k = 0;
 int number_of_layers = 8;
-int total_generations = 1200;
-void SetTarget();
+// Production parameters
+//int total_generations = 1200;
+//double thickness_step = 0.02;
+// Test parameters
+int total_generations = 120;
+double thickness_step = 0.2;
+void SetTarget(double n, double k);
 void SetThickness();
-double SetInitialModel();
+double SetInitialModel(double n, double k);
 void SetOptimizer();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
 double EvaluateScatter(std::vector<double> input);
@@ -96,27 +103,31 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    double initial_RCS = SetInitialModel();
-    for (double total_thickness = 0.02; total_thickness < 0.9; total_thickness+=0.02) {
-      //double total_thickness = 0.45;
-      for (number_of_layers = 4; number_of_layers < 60; number_of_layers *=2) {
-        layer_thickness = total_thickness / number_of_layers;
-        SetOptimizer();
-        sub_population.RunOptimization();
-        auto current = sub_population.GetFinalFitness();
-        // Output results
-        int output_rank = 0;
-        for (unsigned int i = 0; i < current.size(); ++i)
-          if (current[output_rank] > current[i]) output_rank = i;
-        if (rank == output_rank) {
-          for (auto c : current) printf("All %g\n",c);
-          PrintCoating(current, initial_RCS, sub_population);
-        }  // end of output for process with best final fitness
-        PrintGnuPlotIndex(initial_RCS, sub_population);
-        PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
-        sub_population.PrintResult("-- ");
-      }  // end of changing number of layers
-    }  // end of total coating thickness sweep
+    if (isUsingPEC) {n = -1.0; k = -1.0;}
+    for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
+      double initial_RCS = SetInitialModel(n, k);
+      for (double total_thickness = 0.02; total_thickness < 0.9;
+           total_thickness += thickness_step) {
+        //double total_thickness = 0.45;
+        for (number_of_layers = 16; number_of_layers < 20; number_of_layers *=2) {
+          layer_thickness = total_thickness / number_of_layers;
+          SetOptimizer();
+          sub_population.RunOptimization();
+          auto current = sub_population.GetFinalFitness();
+          // Output results
+          int output_rank = 0;
+          for (unsigned int i = 0; i < current.size(); ++i)
+            if (current[output_rank] > current[i]) output_rank = i;
+          if (rank == output_rank) {
+            for (auto c : current) printf("All %g\n",c);
+            PrintCoating(current, initial_RCS, sub_population);
+          }  // end of output for process with best final fitness
+          PrintGnuPlotIndex(initial_RCS, sub_population);
+          PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
+          sub_population.PrintResult("-- ");
+        }  // end of changing number of layers
+      }  // end of total coating thickness sweep
+    }  // end of k sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -138,8 +149,8 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
-           a, total_coating_width,
+           "TargetR%g-index-n%gk%g-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
+           a, n, k, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Layer #");
@@ -155,9 +166,9 @@ void PrintGnuPlotIndex(double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-double SetInitialModel() {
+double SetInitialModel(double n, double k) {
   // Set common parameters for all wavelengths.
-  SetTarget();
+  SetTarget(n, k);
   multi_layer_mie.SetQfaild(1000.0);  // Searching for minima
   multi_layer_mie.SetWavelength(lambda_work);
   double Qext, Qsca, Qabs, Qbk;
@@ -195,12 +206,8 @@ void SetOptimizer() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void SetTarget() {
-  if (isUsingPEC) {
-    multi_layer_mie.AddTargetLayer(a, {-1.0, -1.0});
-  } else {      
-    multi_layer_mie.AddTargetLayer(a, {2.0, 0.0001});
-  }
+void SetTarget(double n, double k) {
+  multi_layer_mie.AddTargetLayer(a, {n, k});
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -313,8 +320,8 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
-           a, total_coating_width,
+           "TargetR%g-index-n%gk%g-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
+           a, n, k, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
