@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     // for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
       double initial_RCS = SetInitialModel(n, k);
-      for (double total_thickness = 0.0; total_thickness < 0.5;
+      for (double total_thickness = 0.02; total_thickness < 0.3;
            total_thickness += thickness_step) {
         //double total_thickness = 0.45;
         for (number_of_layers = 4; number_of_layers < 20; number_of_layers *=2) {
@@ -190,7 +190,7 @@ void SetOptimizer() {
     dimension = number_of_layers * 2;
     sub_population.FitnessFunction = &EvaluateScatter;
   }
-  long total_population = dimension * 3;
+  long total_population = dimension * 30;
   sub_population.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
   double from_n = 1.0, to_n = 8.0;
