@@ -80,7 +80,8 @@ if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
  echo -e $usage_msg
  exit 0
 fi 
-jade_bin="run-optimize-cloak"
+jade_bin="run-size-sweep"
+#jade_bin="run-optimize-cloak"
 #jade_bin="run-quasi-pec-spectra"
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!

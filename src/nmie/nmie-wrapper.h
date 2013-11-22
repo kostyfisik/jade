@@ -40,6 +40,8 @@ namespace nmie {
    public:
     void SetWavelength(double wavelength) {wavelength_ = wavelength;};
     void AddTargetLayer(double thickness, complex layer_index);
+    void ClearTarget() {target_thickness_.clear();
+      target_index_.clear();};
     void SetCoatingThickness(std::vector<double> thickness);
     void SetCoatingIndex(std::vector<complex> index);
     void SetQfaild (double Q) {Qfaild_ = Q;};
