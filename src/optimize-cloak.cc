@@ -76,11 +76,11 @@ double n = 4;
 double k = 0;
 int number_of_layers = 8;
 // Production parameters
-//int total_generations = 1200;
-//double thickness_step = 0.02;
-// Test parameters
-int total_generations = 120;
-double thickness_step = 0.2;
+int total_generations = 1200;
+double thickness_step = 0.02;
+// // Test parameters
+// int total_generations = 120;
+// double thickness_step = 0.2;
 void SetTarget(double n, double k);
 void SetThickness();
 double SetInitialModel(double n, double k);
@@ -106,10 +106,10 @@ int main(int argc, char *argv[]) {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     // for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
       double initial_RCS = SetInitialModel(n, k);
-      for (double total_thickness = 0.4; total_thickness < 0.5;
+      for (double total_thickness = 0.0; total_thickness < 0.5;
            total_thickness += thickness_step) {
         //double total_thickness = 0.45;
-        for (number_of_layers = 32; number_of_layers < 40; number_of_layers *=2) {
+        for (number_of_layers = 4; number_of_layers < 20; number_of_layers *=2) {
           layer_thickness = total_thickness / number_of_layers;
           SetOptimizer();
           sub_population.RunOptimization();
