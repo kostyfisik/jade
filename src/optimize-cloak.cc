@@ -76,7 +76,7 @@ double n = 4;
 double k = 0;
 int number_of_layers = 8;
 // Production parameters
-int total_generations = 1200;
+int total_generations = 600;
 double thickness_step = 0.02;
 // // Test parameters
 // int total_generations = 120;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
       for (double total_thickness = 0.02; total_thickness < 0.3;
            total_thickness += thickness_step) {
         //double total_thickness = 0.45;
-        for (number_of_layers = 4; number_of_layers < 20; number_of_layers *=2) {
+        for (number_of_layers = 4; number_of_layers < 10; number_of_layers *=2) {
           layer_thickness = total_thickness / number_of_layers;
           SetOptimizer();
           sub_population.RunOptimization();
