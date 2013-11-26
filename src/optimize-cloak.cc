@@ -76,7 +76,7 @@ double n = 4;
 double k = 0;
 int number_of_layers = 8;
 // Production parameters
-int total_generations = 600;
+int total_generations = 100;
 double thickness_step = 0.02;
 // // Test parameters
 // int total_generations = 120;
@@ -106,10 +106,10 @@ int main(int argc, char *argv[]) {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     // for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
       double initial_RCS = SetInitialModel(n, k);
-      for (double total_thickness = 0.02; total_thickness < 0.3;
-           total_thickness += thickness_step) {
-        //double total_thickness = 0.45;
-        for (number_of_layers = 4; number_of_layers < 10; number_of_layers *=2) {
+      // for (double total_thickness = 2.4; total_thickness < 0.3;
+      //      total_thickness += thickness_step) {
+        double total_thickness = 2.4;
+        for (number_of_layers = 96; number_of_layers < 100; number_of_layers *=2) {
           layer_thickness = total_thickness / number_of_layers;
           SetOptimizer();
           sub_population.RunOptimization();
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
           PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
           sub_population.PrintResult("-- ");
         }  // end of changing number of layers
-      }  // end of total coating thickness sweep
+        // }  // end of total coating thickness sweep
     // }  // end of k sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
