@@ -75,12 +75,13 @@ double layer_thickness = 0.0;
 double n = 4;
 double k = 0;
 int number_of_layers = 8;
-// Production parameters
-int total_generations = 100;
-double thickness_step = 0.02;
-// // Test parameters
-// int total_generations = 120;
-// double thickness_step = 0.2;
+// // Production parameters
+// int total_generations = 100;
+// double thickness_step = 0.02;
+// Test parameters
+int total_generations = 120;
+double thickness_step = 0.2;
+
 void SetTarget(double n, double k);
 void SetThickness();
 double SetInitialModel(double n, double k);
@@ -108,8 +109,8 @@ int main(int argc, char *argv[]) {
       double initial_RCS = SetInitialModel(n, k);
       // for (double total_thickness = 2.4; total_thickness < 0.3;
       //      total_thickness += thickness_step) {
-        double total_thickness = 2.4;
-        for (number_of_layers = 96; number_of_layers < 100; number_of_layers *=2) {
+        double total_thickness = 0.6;
+        for (number_of_layers = 4; number_of_layers < 5; number_of_layers *=2) {
           layer_thickness = total_thickness / number_of_layers;
           SetOptimizer();
           sub_population.RunOptimization();
@@ -190,7 +191,7 @@ void SetOptimizer() {
     dimension = number_of_layers * 2;
     sub_population.FitnessFunction = &EvaluateScatter;
   }
-  long total_population = dimension * 30;
+  long total_population = dimension * 3;
   sub_population.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
   double from_n = 1.0, to_n = 8.0;
@@ -199,7 +200,7 @@ void SetOptimizer() {
   sub_population.SetTotalGenerationsMax(total_generations);
   sub_population.SwitchOffPMCRADE();
 
-  sub_population.SetBestShareP(0.02);
+  sub_population.SetBestShareP(0.1);
   sub_population.SetAdapitonFrequencyC(1.0/20.0);
 
 }

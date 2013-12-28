@@ -293,7 +293,7 @@ BuildJADE
 #############################################################################
 #   Run
 #############################################################################
-echo "Executing on host -> $HOST <-"
+echo "Executing $jade_bin on host -> $HOST <-"
 if [[ $isBuildOnly = $yes ]]; then
     cd $path_bin
     mv run-jade-test jade-test.bin

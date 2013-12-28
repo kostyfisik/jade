@@ -442,7 +442,7 @@ namespace jade {
     mutation_F_.resize(subpopulation_);
     crossover_CR_.resize(subpopulation_);
     return kDone;
-  }  // end of void SubPopulation::Test()
+  }  // end of void SubPopulation::Init()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
