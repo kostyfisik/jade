@@ -70,11 +70,11 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 //double layer_thickness = 0.015*a;
 //double total_thickness = 1.6;
-int number_of_layers = 4;
+int number_of_layers = 6;
 // double layer_thickness = total_thickness /
 //   static_cast<double>(number_of_layers);
-double min_layer_thickness = 0.05;
-double max_layer_thickness =0.4;
+double min_layer_thickness = 0.03;
+double max_layer_thickness =0.34;
 double n = 4;
 double k = 0;
 // // Production parameters
@@ -325,9 +325,18 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
   for (int i = 0; i < number_of_layers; ++i)
     printf("%5.4g\t",best_x[i]);
   printf("\n");
+  int shift = isStratFromLowIndex ? 1 : 0;
+  printf ("Index:\t");
+  for (int i = 0; i < number_of_layers; ++i) {
+    if ( (i+shift) % 2 ) printf("%5.4g\t",low_index);
+    else printf("%5.4g\t", hi_index);
+  }  // end of for each layer
+  printf("\n");  
   double total_coating_width = 0.0;
   for (auto w : best_x) total_coating_width += w;
   printf("Total coating width: %g\n", total_coating_width);
+  printf("Layer width limits min/max: %g/%g\n", min_layer_thickness, max_layer_thickness);
+  
 }
 // ********************************************************************** //
 // ********************************************************************** //
