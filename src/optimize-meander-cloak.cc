@@ -58,23 +58,17 @@ bool isUsingPEC = true;
 //bool isUsingPEC = false;
 bool isStratFromLowIndex = true;
 //bool isStratFromLowIndex = false;
-double low_index = 1;
+double low_index = 2;
 double hi_index = 8;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
-//double a = 1; // Krasnok PEC
 double a = 0.75*lambda_work;  // 2.8125 cm
-//double a = lambda_work;  // 
-//double b = pi*pow2(a);
-//size param = 2 pi r/wl = 2pi0.75 = 4.71
-//double layer_thickness = 0.015*a;
-//double total_thickness = 1.6;
 int number_of_layers = 6;
 // double layer_thickness = total_thickness /
 //   static_cast<double>(number_of_layers);
-double min_layer_thickness = 0.03;
-double max_layer_thickness =0.34;
+double min_layer_thickness = 0.0;
+double max_layer_thickness =1.0;
 double n = 4;
 double k = 0;
 // // Production parameters
@@ -101,7 +95,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-double loss_index = 1e-11;
+double loss_index = 1e-7;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
@@ -129,7 +123,7 @@ int main(int argc, char *argv[]) {
             PrintCoating(current, initial_RCS, sub_population);
           }  // end of output for process with best final fitness
           PrintGnuPlotIndex(initial_RCS, sub_population);
-          PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
+          // PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
           sub_population.PrintResult("-- ");
           //}  // end of changing number of layers
         // }  // end of total coating thickness sweep
@@ -156,9 +150,10 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-index-n%gk%g-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
-           a, n, k, total_coating_width,
-           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
+           "TargetR%g-index-n%gk%g-FinalRCS%7.4fdiff%+4.1f%%-CoatingW%06.3f-n%lu-s%015.12f-index",
+           a, n, k,
+           best_RCS, (best_RCS/initial_RCS-1.0)*100.0, total_coating_width, best_x.size(), index_sum);
+  
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Layer #");
   wrapper.SetYLabelName("Index");
@@ -336,6 +331,7 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
   for (auto w : best_x) total_coating_width += w;
   printf("Total coating width: %g\n", total_coating_width);
   printf("Layer width limits min/max: %g/%g\n", min_layer_thickness, max_layer_thickness);
+  printf("Layer index limits min/max: %g/%g\n", low_index, hi_index);
   
 }
 // ********************************************************************** //
