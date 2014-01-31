@@ -25,8 +25,8 @@
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
 /// Springer, 2009.  Crossover rate was patched according to PMCRADE
 /// approach supposed by Jie Li, Wujie Zhu, Mengjun Zhou, and Hua Wang
-/// in <<Power Mean Based Crossover Rate Adaptive Differential
-/// Evolution>> in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
+/// in 'Power Mean Based Crossover Rate Adaptive Differential
+/// Evolution' in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
 /// 7003, pp. 34–41, 2011
 #include "./jade.h"
 #include <mpi.h>

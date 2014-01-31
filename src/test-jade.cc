@@ -258,8 +258,8 @@ int main(int argc, char *argv[]) {
 }  // end of main
 // ************************************************************************* //
 /// @page ChangeLog
-/// #ChangeLog
-/// ## Version 0.0.1
+/// ## ChangeLog
+/// ### Version 0.0.1
 /// - CMake files are configured for ease of use.
 // ************************************************************************* //
 // ************************************************************************* //
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 /// [Ioffe Institute]: http://www.ioffe.ru/index_en.html
 ///                    "Ioffe Physical Technical Instute"
 ///
-/// #Parallel adaptive differential evolution software
+/// ### Parallel adaptive differential evolution software
 ///
 /// JADE++ is a free (GPLv3+) high performance implementation of
 /// adaptive differential evolution optimization algorithm from
@@ -292,7 +292,7 @@ int main(int argc, char *argv[]) {
 /// Contact Ladutenko Konstantin <kostyfisik at gmail (.)  com>
 /// with any questions about JADE++.
 ///
-/// #Prerequisites
+/// ### Prerequisites
 /// - **MPI** (to use JADE++, to compile it) <br><br>
 ///   JADE++ needs some MPI realization to be compiled and to be
 ///   run. It was developed using [OpenMPI]. For Debian/Ubuntu systems

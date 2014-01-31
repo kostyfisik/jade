@@ -27,8 +27,8 @@
 /// Evolution. A Robust Approach to Multimodal Problem Optimization'
 /// Springer, 2009. Crossover rate was patched according to PMCRADE
 /// approach supposed by Jie Li, Wujie Zhu, Mengjun Zhou, and Hua Wang
-/// in <<Power Mean Based Crossover Rate Adaptive Differential
-/// Evolution>> in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
+/// in 'Power Mean Based Crossover Rate Adaptive Differential
+/// Evolution' in H. Deng et al. (Eds.): AICI 2011, Part II, LNAI
 /// 7003, pp. 34–41, 2011
 
 #include <random>
@@ -173,11 +173,11 @@ namespace jade {
     /// @todo Select random generator enginge for best results in DE!
     std::mt19937_64 generator_;
     //std::ranlux48 generator_;
-    /// @brief randn(\mu, \sigma^2 ) denotes a random value from a normal
-    /// distribution of mean \mu and variance \sigma^2
+    /// @brief randn(&mu;, &sigma^2; ) denotes a random value from a normal
+    /// distribution of mean &mu; and variance &sigma^2;
     double randn(double mean, double stddev);
-    /// @brief randc(\mu, \delta ) a random value from a Cauchy distribution
-    /// with location and scale parameters \mu and \delta
+    /// @brief randc(&mu;, &delta; ) a random value from a Cauchy distribution
+    /// with location and scale parameters &mu; and &delta;
     double randc(double location, double scale);
     /// @brief randint(1, D) is an integer randomly chosen from 1 to D
     long randint(long lbound, long ubound);                  // NOLINT

@@ -1,38 +1,34 @@
-// * Посчитать от нулевой толщины до d крит.
-// * Нужна зависимость d критического от максимального eps
-// * сделать для d крит разбиение на 128 слоев
-// *Только ветка 1
 ///
-/// @file   optimize-cloak.cc
+/// @file   optimize-meander-cloak.cc
 /// @author Ladutenko Konstantin <kostyfisik at gmail (.) com>
-/// @date   Tue Sep  3 00:37:05 2013
-/// @copyright 2013 Ladutenko Konstantin
+/// @date   Thu Jan 30 21:14:37 2014
+/// @copyright 2014 Ladutenko Konstantin
 ///
-/// optimize-cloak is free software: you can redistribute it and/or modify
+/// optimize-meander-cloak is free software: you can redistribute it and/or modify
 /// it under the terms of the GNU General Public License as published by
 /// the Free Software Foundation, either version 3 of the License, or
 /// (at your option) any later version.
 ///
-/// optimize-cloak is distributed in the hope that it will be useful,
+/// optimize-meander-cloak is distributed in the hope that it will be useful,
 /// but WITHOUT ANY WARRANTY; without even the implied warranty of
 /// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 /// GNU General Public License for more details.
 ///
 /// You should have received a copy of the GNU General Public License
-/// along with optimize-cloak.  If not, see <http://www.gnu.org/licenses/>.
+/// along with optimize-meander-cloak.  If not, see <http://www.gnu.org/licenses/>.
 ///
-/// optimize-cloak uses nmie.c from scattnlay by Ovidio Pena
+/// optimize-meander-cloak uses nmie.c from scattnlay by Ovidio Pena
 /// <ovidio@bytesfall.com> as a linked library. He has an additional condition to 
 /// his library:
-//    The only additional condition is that we expect that all publications         //
-//    describing  work using this software , or all commercial products             //
-//    using it, cite the following reference:                                       //
-//    [1] O. Pena and U. Pal, "Scattering of electromagnetic radiation by           //
-//        a multilayered sphere," Computer Physics Communications,                  //
-//        vol. 180, Nov. 2009, pp. 2348-2354.                                       //
+// The only additional condition is that we expect that all publications         //
+// describing  work using this software , or all commercial products             //
+// using it, cite the following reference:                                       //
+// [1] O. Pena and U. Pal, "Scattering of electromagnetic radiation by           //
+//     a multilayered sphere," Computer Physics Communications,                  //
+//     vol. 180, Nov. 2009, pp. 2348-2354.                                       //
 ///
-/// @brief Simulate scattering from dielectric sphere covered with gold/dielectric
-/// double shell using scattnlay lib (or gold shell inside dielectric ball)
+/// @brief Simulate scattering from PEC sphere covered with dielectric
+/// multilayered shell
 /// 
 #include <mpi.h>
 #include <iostream>
@@ -60,8 +56,10 @@ jade::SubPopulation sub_population;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 bool isUsingPEC = true;
 //bool isUsingPEC = false;
-bool isOnlyIndexOptimization = true;
-//bool isOnlyIndexOptimization = false;
+bool isStratFromLowIndex = true;
+//bool isStratFromLowIndex = false;
+double low_index = 1;
+double hi_index = 8;
 // Semouchkina APPLIED PHYSICS LETTERS 102, 113506 (2013)
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
@@ -71,23 +69,28 @@ double a = 0.75*lambda_work;  // 2.8125 cm
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
 //double layer_thickness = 0.015*a;
-double layer_thickness = 0.0;
+//double total_thickness = 1.6;
+int number_of_layers = 4;
+// double layer_thickness = total_thickness /
+//   static_cast<double>(number_of_layers);
+double min_layer_thickness = 0.05;
+double max_layer_thickness =0.4;
 double n = 4;
 double k = 0;
-int number_of_layers = 8;
 // // Production parameters
 // int total_generations = 100;
 // double thickness_step = 0.02;
 // Test parameters
-int total_generations = 120;
+int total_generations = 300;
+int population_multiplicator = 10;
 double thickness_step = 0.2;
 
 void SetTarget(double n, double k);
-void SetThickness();
+void SetMeanderIndex();
 double SetInitialModel(double n, double k);
 void SetOptimizer();
-double EvaluateScatterOnlyIndex(std::vector<double> input);
-double EvaluateScatter(std::vector<double> input);
+
+double EvaluateScatterOnlyThickness(std::vector<double> input);
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
@@ -109,9 +112,11 @@ int main(int argc, char *argv[]) {
       double initial_RCS = SetInitialModel(n, k);
       // for (double total_thickness = 2.4; total_thickness < 0.3;
       //      total_thickness += thickness_step) {
-        double total_thickness = 0.6;
-        for (number_of_layers = 4; number_of_layers < 5; number_of_layers *=2) {
-          layer_thickness = total_thickness / number_of_layers;
+      //for (number_of_layers = 8; number_of_layers < 15; number_of_layers *=2) {
+      //          number_of_layers = 4;
+          // layer_thickness = total_thickness /
+          //   static_cast<double>(number_of_layers);
+          // minimal_thickness = layer_thickness * 0.001;
           SetOptimizer();
           sub_population.RunOptimization();
           auto current = sub_population.GetFinalFitness();
@@ -126,7 +131,7 @@ int main(int argc, char *argv[]) {
           PrintGnuPlotIndex(initial_RCS, sub_population);
           PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
           sub_population.PrintResult("-- ");
-        }  // end of changing number of layers
+          //}  // end of changing number of layers
         // }  // end of total coating thickness sweep
     // }  // end of k sweep
   } catch( const std::invalid_argument& ia ) {
@@ -144,8 +149,9 @@ void PrintGnuPlotIndex(double initial_RCS,
                   jade::SubPopulation sub_population) {
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
-  auto best_x = sub_population.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness*number_of_layers;
+  auto best_x = sub_population.GetBest(&best_RCS);  
+  double total_coating_width = 0.0;
+  for (auto w : best_x) total_coating_width += w;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
@@ -183,19 +189,14 @@ double SetInitialModel(double n, double k) {
 // ********************************************************************** //
 void SetOptimizer() {
   long dimension = 0;
-  if (isOnlyIndexOptimization) {
-    SetThickness();
-    dimension = number_of_layers;
-    sub_population.FitnessFunction = &EvaluateScatterOnlyIndex;
-  } else {
-    dimension = number_of_layers * 2;
-    sub_population.FitnessFunction = &EvaluateScatter;
-  }
-  long total_population = dimension * 3;
+  SetMeanderIndex();
+  dimension = number_of_layers;
+  sub_population.FitnessFunction = &EvaluateScatterOnlyThickness;
+  long total_population = dimension * population_multiplicator;
   sub_population.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  double from_n = 1.0, to_n = 8.0;
-  sub_population.SetAllBounds(from_n, to_n);
+  sub_population.SetAllBounds(min_layer_thickness,
+                              max_layer_thickness);
   sub_population.SetTargetToMinimum();
   sub_population.SetTotalGenerationsMax(total_generations);
   sub_population.SwitchOffPMCRADE();
@@ -213,13 +214,21 @@ void SetTarget(double n, double k) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void SetThickness() {
-  std::vector<double> thickness;
-  thickness.clear();
+void SetMeanderIndex() {
+  std::vector<complex> cindex;
+  double k = loss_index;
+  int shift = isStratFromLowIndex ? 1 : 0;
   if (number_of_layers < 0)
     throw std::invalid_argument("Number of coating layers should be >= 0!");
-  for (int i = 0; i < number_of_layers; ++i) thickness.push_back(layer_thickness);
-  multi_layer_mie.SetCoatingThickness(thickness);
+  if (low_index > hi_index)
+    throw std::invalid_argument("low_index should be less the hi_index!");
+  for (int i = 0; i < number_of_layers; ++i) {
+    if ( (i+shift) % 2 ) cindex.push_back({low_index,k});
+    else cindex.push_back({hi_index, k});
+  }  // end of for each layer
+  multi_layer_mie.SetCoatingIndex(cindex);
+  // for (auto i : cindex) printf("%g ", i.r);
+  // printf("\n");
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -244,16 +253,11 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-double EvaluateScatter(std::vector<double> input) {
+double EvaluateScatterOnlyThickness(std::vector<double> input) {
   std::vector<double> thickness;
-  std::vector<complex> cindex;
-  double k = loss_index;
   for (int i = 0; i < number_of_layers; ++i) {
-    cindex.push_back({input[i], k});
-    if (input[i+number_of_layers] < 1.0) input[i+number_of_layers] = 1.0; 
-    thickness.push_back(input[i+number_of_layers]*layer_thickness);
+    thickness.push_back(input[i]);
   }
-  multi_layer_mie.SetCoatingIndex(cindex);
   multi_layer_mie.SetCoatingThickness(thickness);
   double Qext, Qsca, Qabs, Qbk;
   try {
@@ -264,8 +268,35 @@ double EvaluateScatter(std::vector<double> input) {
     //std::cerr << "Invalid argument: " << ia.what() << std::endl;
   }  
   double total_r = multi_layer_mie.GetTotalRadius();
+  // printf("total_r = %g, Qsca = %g\n", total_r, Qsca);
+  // throw std::invalid_argument("Break point!");
   return Qsca*pi*pow2(total_r);
 }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+// double EvaluateScatter(std::vector<double> input) {
+//   std::vector<double> thickness;
+//   std::vector<complex> cindex;
+//   double k = loss_index;
+//   for (int i = 0; i < number_of_layers; ++i) {
+//     cindex.push_back({input[i], k});
+//     if (input[i+number_of_layers] < 1.0) input[i+number_of_layers] = 1.0; 
+//     thickness.push_back(input[i+number_of_layers]*layer_thickness);
+//   }
+//   multi_layer_mie.SetCoatingIndex(cindex);
+//   multi_layer_mie.SetCoatingThickness(thickness);
+//   double Qext, Qsca, Qabs, Qbk;
+//   try {
+//     multi_layer_mie.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+//   } catch( const std::invalid_argument& ia ) {
+//     printf(".");
+//     // Will catch if  multi_layer_mie fails or other errors.
+//     //std::cerr << "Invalid argument: " << ia.what() << std::endl;
+//   }  
+//   double total_r = multi_layer_mie.GetTotalRadius();
+//   return Qsca*pi*pow2(total_r);
+// }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -290,22 +321,12 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
   for (int i = 0; i < number_of_layers; ++i)
     printf("% 5i\t",i+1);
   printf ("\n");
-  printf ("Index:\t");
+  printf ("Width:\t");
   for (int i = 0; i < number_of_layers; ++i)
     printf("%5.4g\t",best_x[i]);
   printf("\n");
   double total_coating_width = 0.0;
-  if (!isOnlyIndexOptimization) {
-    printf ("Width:\t");
-    for (int i = 0; i < number_of_layers; ++i) {
-      double width = best_x[i+number_of_layers]*layer_thickness;
-      printf("%5.4g\t",width);
-      total_coating_width += width;
-    }
-    printf("\n");
-  } else {
-    total_coating_width = layer_thickness*number_of_layers;
-  }
+  for (auto w : best_x) total_coating_width += w;
   printf("Total coating width: %g\n", total_coating_width);
 }
 // ********************************************************************** //
@@ -316,7 +337,8 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness*number_of_layers;
+  double total_coating_width = 0.0;
+  for (auto w : best_x) total_coating_width += w;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
