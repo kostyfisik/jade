@@ -464,3 +464,7 @@ chmod +x run-gnuplot*.sh
 for file in `ls run-gnuplot*`; do 
  ./$file
 done   
+
+cp $path_jade/scripts/prepare-overview.py $path_bin
+cd path_bin
+./prepare-overview.py

@@ -106,7 +106,8 @@ int main(int argc, char *argv[]) {
   try {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     double initial_RCS = SetInitialModel(n, k);
-    for (double total_thickness = 0.02; total_thickness < 0.9;
+    //    for (double total_thickness = 0.02; total_thickness < 0.9;
+    for (double total_thickness = 0.38; total_thickness < 0.42;
          total_thickness += thickness_step) {
       //double total_thickness = 0.6;
       for (number_of_layers = 4; number_of_layers < 30; number_of_layers *=2) {
