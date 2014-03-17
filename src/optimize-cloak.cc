@@ -66,7 +66,7 @@ bool isOnlyIndexOptimization = true;
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 //double a = 1; // Krasnok PEC
-double a = 0.75*lambda_work;  // 2.8125 cm
+double a = 0.75*lambda_work*1.5;  // 2.8125 cm
 //double a = lambda_work;  // 
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
@@ -79,7 +79,7 @@ int number_of_layers = 8;
 // int total_generations = 100;
 // double thickness_step = 0.02;
 // Test parameters
-int total_generations = 120;
+int total_generations = 1200;
 double thickness_step = 0.02;
 
 void SetTarget(double n, double k);
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     double initial_RCS = SetInitialModel(n, k);
     //    for (double total_thickness = 0.02; total_thickness < 0.9;
-    for (double total_thickness = 0.38; total_thickness < 0.42;
+    for (double total_thickness = 0.02; total_thickness < 0.9;
          total_thickness += thickness_step) {
       //double total_thickness = 0.6;
       for (number_of_layers = 4; number_of_layers < 30; number_of_layers *=2) {
@@ -150,7 +150,7 @@ void PrintGnuPlotIndex(double initial_RCS,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
+           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
@@ -321,7 +321,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%g-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
+           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
            a, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
