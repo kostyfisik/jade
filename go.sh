@@ -466,5 +466,7 @@ for file in `ls run-gnuplot*`; do
 done   
 
 cp $path_jade/scripts/prepare-overview.py $path_bin
+cp $path_jade/scripts/filter.py $path_bin
 cd path_bin
+./filter.py
 ./prepare-overview.py

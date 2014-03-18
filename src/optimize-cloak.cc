@@ -66,7 +66,7 @@ bool isOnlyIndexOptimization = true;
 double lambda_work = 3.75; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 //double a = 1; // Krasnok PEC
-double a = 0.75*lambda_work*1.5;  // 2.8125 cm
+double a = 0.75*lambda_work*0.5;  // 2.8125 cm
 //double a = lambda_work;  // 
 //double b = pi*pow2(a);
 //size param = 2 pi r/wl = 2pi0.75 = 4.71
