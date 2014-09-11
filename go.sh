@@ -229,6 +229,12 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$m
     echo path_clang: $path_clang33
     export OMPI_CC=$path_clang33/bin/clang
     export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include -stdlib=libc++"
+    if  [[ $HOST == "tig-laptop3" ]]; then
+	path_clang33=/usr 
+	export OMPI_CC=$path_clang33/bin/clang
+	export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/inclde/c++/v1 -stdlib=libc++"
+    fi
+
 else
     path_gcc48=/home/mmedia/soft/gcc/gcc48
     if [[ -a $path_gcc48 && $useGCC48 = $yes ]]; then
