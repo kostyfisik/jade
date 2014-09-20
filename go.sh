@@ -211,7 +211,17 @@ if [[ $mode = $mode_pgo ]]; then
     echo Using pgo.
     isPGO=$yes
 fi 
+if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
+    echo Setting MPI path on rh-lum.metalab.ifmo.ru !
+    ompi_path_bin=/usr/lib64/openmpi/bin/
+    ompi_path_lib=/usr/lib64/openmpi/lib/
+    if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
+        PATH="${PATH:+"$PATH:"}$ompi_path_bin"
+    fi
+    export LD_LIBRARY_PATH=$ompi_path_lib
+fi
 # Set compiler
+
 if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$mode_single ]]; then
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
@@ -256,6 +266,7 @@ else
         export OMPI_CXX=g++
     fi
 fi 
+
 # Select OMPI_CXXFLAGS
 #debug
 #flags_O2="-std=c++11"

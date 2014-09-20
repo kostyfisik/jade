@@ -107,10 +107,10 @@ int main(int argc, char *argv[]) {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     double initial_RCS = SetInitialModel(n, k);
     //    for (double total_thickness = 0.02; total_thickness < 0.9;
-    for (double total_thickness = 0.02; total_thickness < 0.9;
+    for (double total_thickness = 0.02; total_thickness < 0.6;
          total_thickness += thickness_step) {
       //double total_thickness = 0.6;
-      for (number_of_layers = 1; number_of_layers < 5; number_of_layers +=1) {
+      for (number_of_layers = 4; number_of_layers < 30; number_of_layers *=2) {
         layer_thickness = total_thickness / number_of_layers;
         SetOptimizer();
         sub_population.RunOptimization();
@@ -194,7 +194,7 @@ void SetOptimizer() {
   long total_population = dimension * 3;
   sub_population.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  double from_n = 1.0, to_n = 8.0;
+  double from_n = 1.0, to_n = 20.0;
   sub_population.SetAllBounds(from_n, to_n);
   sub_population.SetTargetToMinimum();
   sub_population.SetTotalGenerationsMax(total_generations);
