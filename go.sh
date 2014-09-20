@@ -42,7 +42,8 @@ MPI_options=
 #   Parse input parameters   
 #############################################################################
 mode=$1; config_file=$2; wrong_params=$3
-HOST=`cat /etc/hostname`
+#HOST=`cat /etc/hostname`
+HOST=`hostname`
 if [[ $config_file ]]; then
     echo ================ !ERROR! =================
     echo Should be no more than single  input parameter
@@ -221,8 +222,14 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$m
         path_clang33=
     elif  [[ $HOST == "deb00" || $HOST == "tig-laptop2" ]]; then
         path_clang33=/home/mmedia/soft/clang/clang33        
-    elif  [[ $HOST == "rh-lum" ]]; then
+    elif  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
         path_clang33=/home/tig/clang/clang33        
+	ompi_path_bin=/usr/lib64/openmpi/bin/
+	ompi_path_lib=/usr/lib64/openmpi/lib/
+	if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
+            PATH="${PATH:+"$PATH:"}$ompi_path_bin"
+	fi
+	export LD_LIBRARY_PATH=$ompi_path_lib
     else
         path_clang33=
     fi
@@ -323,7 +330,7 @@ function TuneJADEOptionsMPI {
         if [[ $JADE_MPI_nodes = "unset" ]]; then JADE_MPI_nodes=8; fi
     elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=4; fi            
-    elif  [[ $HOST == "rh-lum" ]]; then
+    elif  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=12; fi            
     else
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=2; fi

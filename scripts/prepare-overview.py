@@ -14,7 +14,7 @@ for dirname, dirnames, filenames in os.walk('.'):
             width = sign[23:28]
             rcs = sign[37:44]
             layers_num = 'n00'
-            for num in [4,8,16,32,64]:
+            for num in [1,2,3,4,8,16,32,64]:
                 if sign.find('-n'+str(num)+'-') > -1:
                     layers_num= 'R'+str(r)+'-n'+str(num)+'-owerview'
                     if not os.path.isfile(layers_num+'.dat'):
