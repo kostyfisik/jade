@@ -32,3 +32,7 @@
 
 # Temp
 *~
+
+# Build and bin dirs
+bin
+build
