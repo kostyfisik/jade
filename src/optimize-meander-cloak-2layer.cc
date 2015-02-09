@@ -65,7 +65,7 @@ double lambda_work = 0.532; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 double a = 0.75*lambda_work;  // 2.8125 cm
 int number_of_layers = 2;
-double total_thickness = 0;
+double total_thickness = 0.001;
 double layer_thickness = total_thickness /
   static_cast<double>(number_of_layers);
 double min_layer_thickness = 0.0;
@@ -76,8 +76,8 @@ double k = 0;
 // int total_generations = 100;
 // double thickness_step = 0.02;
 // Test parameters
-int total_generations = 300;
-int population_multiplicator = 10;
+int total_generations = 1500;
+int population_multiplicator = 60;
 double thickness_step = 0.003;
 
 void SetTarget(double n, double k);
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     std::vector< std::vector<double> > spectra2;
     int output_rank = 0;
         
-    for (total_thickness = 0.003; total_thickness < 0.2;
+    for (total_thickness = 0.003; total_thickness < 0.12;
 	 total_thickness += thickness_step) {
       //for (number_of_layers = 8; number_of_layers < 15; number_of_layers *=2) {
       //          number_of_layers = 4;
@@ -130,6 +130,7 @@ int main(int argc, char *argv[]) {
 	if (current[output_rank] > current[i]) output_rank = i;
       if (rank == output_rank) {
 	for (auto c : current) printf("All %g\n",c);
+	printf("####### total_thickness = %g\n",total_thickness);
 	PrintCoating(current, initial_RCS, sub_population);
       }  // end of output for process with best final fitness
       //PrintGnuPlotIndex(initial_RCS, sub_population);
@@ -295,6 +296,8 @@ double EvaluateScatterOnlyThickness(std::vector<double> input) {
   if (number_of_layers != 2) 
         throw std::invalid_argument("Number of coating layers should be = 2!");
   if (input[0]<0.001) input[0]=0.001;
+  if (input[0]>0.999) input[0]=0.999;
+  
   thickness.push_back(input[0]*total_thickness);
   thickness.push_back((1.0-input[0])*total_thickness);
   
