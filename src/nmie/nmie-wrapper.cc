@@ -144,6 +144,7 @@ namespace nmie {
     std::vector< std::vector<double> > spectra;
     double step_WL = (to_WL - from_WL)/ static_cast<double>(samples);
     double wavelength_backup = wavelength_;
+    //printf("%g ", step_WL);
     long fails = 0;
     for (double WL = from_WL; WL < to_WL; WL += step_WL) {
       double Qext, Qsca, Qabs, Qbk;
