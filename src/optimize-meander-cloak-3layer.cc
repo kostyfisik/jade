@@ -298,15 +298,15 @@ double EvaluateScatterOnlyThickness(std::vector<double> input) {
   //Two layers only!!
   if (number_of_layers != 3) 
         throw std::invalid_argument("Number of coating layers should be = 2!");
-  if (input[0]<0.001) input[0]=0.001;
-  if (input[0]>0.999) input[0]=0.999;
-  if (input[1]<0.001) input[1]=0.001;
-  if (input[1]>0.999) input[1]=0.999;
+  if (input[0]<0.00001) input[0]=0.00001;
+  if (input[0]>0.99999) input[0]=0.99999;
+  if (input[1]<0.00001) input[1]=0.00001;
+  if (input[1]>0.99999) input[1]=0.99999;
   
   thickness.push_back(input[0]*total_thickness);
-  thickness.push_back(input[1]*total_thickness);
-  double last_share = 1.0-input[0]-input[1];
-  if (last_share < 0.001) last_share = 0.001;
+  thickness.push_back((1.0-input[0])*input[1]*total_thickness);
+  double last_share = (1.0-input[0])*(1.0-input[1]);
+  if (last_share < 0.00001) last_share = 0.00001;
   thickness.push_back(last_share*total_thickness);
   
 // for (int i = 0; i < number_of_layers; ++i) {
