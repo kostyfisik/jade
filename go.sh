@@ -22,8 +22,8 @@
 usage_msg="\nUsage: JADE++ can be (re-)compiled and run with call \n
 $./go.sh [mode]\n
 Possible modes:\n
-new     \t - Default. Make new build and run.
-old     \t - Re-build and run.
+new     \t - Make new build and run.
+old     \t - Default. Re-build and run.
 test    \t - Re-build and run JADE++ on a set of test functions.
 single  \t - Re-build and run JADE++ on a single test function.
 Possible enviroment parameters:\n
@@ -66,7 +66,7 @@ compiler_gcc="gcc";
 #compiler_clang="clang"
 usedCompiler=$compiler_gcc # or clang
 useGCC48=$yes  # use gcc 4.8 if it is available in build area of scripts folder
-isNew=$yes;
+isNew=$no;
 isTest=$no ;  isProfile=$no ; isPGO=$no
 isBuildOnly=$no;
 # if [[ $mode = $mode_build || $config_file = $mode_build ]]; then
@@ -83,7 +83,8 @@ if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
 fi 
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
-jade_bin="run-coating-w-sweep"
+#jade_bin="run-coating-w-sweep"
+jade_bin="run-coating-w-sweep-2layers"
 #jade_bin="run-optimize-meander-cloak"
 #jade_bin="run-quasi-pec-spectra"
 if [[ $mode = $mode_test ]]; then
