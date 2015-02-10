@@ -64,7 +64,7 @@ double hi_index = 8;
 double lambda_work = 0.532; // cm
 //    double f_work = 30/lambda_work; // 8 GHz
 double a = 0.75*lambda_work;  // 2.8125 cm
-int number_of_layers = 5;
+int number_of_layers = 4;
 double total_thickness = 0.001;
 double layer_thickness = total_thickness /
   static_cast<double>(number_of_layers);
@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
     std::vector< std::vector<double> > spectra2;
     std::vector< std::vector<double> > spectra3;
     std::vector< std::vector<double> > spectra4;
-    std::vector< std::vector<double> > spectra5;
     int output_rank = 0;
         
     for (total_thickness = 0.003; total_thickness < 0.12;
@@ -129,8 +128,7 @@ int main(int argc, char *argv[]) {
       spectra1.push_back({total_thickness, best_x[0]});
       spectra2.push_back({total_thickness, best_x[1]});
       spectra3.push_back({total_thickness, best_x[2]});
-      spectra4.push_back({total_thickness, best_x[3]});
-      spectra5.push_back({total_thickness, best_RCS});
+      spectra4.push_back({total_thickness, best_RCS});
       // Output results
       for (unsigned int i = 0; i < current.size(); ++i)
 	if (current[output_rank] > current[i]) output_rank = i;
@@ -147,8 +145,7 @@ int main(int argc, char *argv[]) {
     PrintGnuPlotThickness(spectra1, 0.1, "1st layer share");
     PrintGnuPlotThickness(spectra2, 0.2, "2st layer share");
     PrintGnuPlotThickness(spectra3, 0.3, "3st layer share");
-    PrintGnuPlotThickness(spectra4, 0.4, "4st layer share");
-    PrintGnuPlotThickness(spectra5, 0.5, "Total RCS");
+    PrintGnuPlotThickness(spectra4, 0.4, "Total RCS");
     // }  // end of k sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie fails or other errors.
@@ -233,7 +230,7 @@ void SetOptimizer() {
   SetMeanderIndex();
   dimension = number_of_layers;
   //Three layers only!!
-  dimension = 4;
+  dimension = 3;
   sub_population.FitnessFunction = &EvaluateScatterOnlyThickness;
   long total_population = dimension * population_multiplicator;
   sub_population.Init(total_population, dimension);
@@ -301,26 +298,21 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
 double EvaluateScatterOnlyThickness(std::vector<double> input) {
   std::vector<double> thickness;
   
-  if (number_of_layers != 5) 
-        throw std::invalid_argument("Number of coating layers should be = 5!");
+  if (number_of_layers != 4) 
+        throw std::invalid_argument("Number of coating layers should be = 4!");
   if (input[0]<0.00001) input[0]=0.00001;
   if (input[0]>0.99999) input[0]=0.99999;
   if (input[1]<0.00001) input[1]=0.00001;
   if (input[1]>0.99999) input[1]=0.99999;
   if (input[2]<0.00001) input[2]=0.00001;
   if (input[2]>0.99999) input[2]=0.99999;
-  if (input[3]<0.00001) input[2]=0.00001;
-  if (input[3]>0.99999) input[2]=0.99999;
   
   thickness.push_back(input[0]*total_thickness);
   thickness.push_back((1.0-input[0])*input[1]*total_thickness);
   double last_share = (1.0-input[0])*(1.0-input[1])*input[2];
   if (last_share < 0.00001) last_share = 0.00001;
   thickness.push_back(last_share*total_thickness);
-  last_share = (1.0-input[0])*(1.0-input[1])*(1.0-input[2])*input[3];
-  if (last_share < 0.00001) last_share = 0.00001;
-  thickness.push_back(last_share*total_thickness);
-  last_share = (1.0-input[0])*(1.0-input[1])*(1.0-input[2])*(1.0-input[3]);
+  last_share = (1.0-input[0])*(1.0-input[1])*(1.0-input[2]);
   if (last_share < 0.00001) last_share = 0.00001;
   thickness.push_back(last_share*total_thickness);
   
