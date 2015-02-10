@@ -239,7 +239,7 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$m
         path_clang33=/home/mmedia/soft/clang/clang33        
     elif  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
 	echo rh-lum
-        # path_clang33=/home/tig/clang/clang33        
+        path_clang33=/usr/bin        
 	# ompi_path_bin=/usr/lib64/openmpi/bin/
 	# ompi_path_lib=/usr/lib64/openmpi/lib/
 	# if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
