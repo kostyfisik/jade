@@ -217,12 +217,12 @@ if [[ $mode = $mode_pgo ]]; then
 fi 
 if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
     echo Setting MPI path on rh-lum.metalab.ifmo.ru !
-    ompi_path_bin=/usr/lib64/openmpi/bin/
-    ompi_path_lib=/usr/lib64/openmpi/lib/
-    if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
-        PATH="${PATH:+"$PATH:"}$ompi_path_bin"
-    fi
-    export LD_LIBRARY_PATH=$ompi_path_lib
+    # ompi_path_bin=/usr/lib64/openmpi/bin/
+    # ompi_path_lib=/usr/lib64/openmpi/lib/
+    # if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
+    #     PATH="${PATH:+"$PATH:"}$ompi_path_bin"
+    # fi
+    # export LD_LIBRARY_PATH=$ompi_path_lib
 fi
 # Set compiler
 
@@ -237,13 +237,14 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$m
     elif  [[ $HOST == "deb00" || $HOST == "tig-laptop2" ]]; then
         path_clang33=/home/mmedia/soft/clang/clang33        
     elif  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
-        path_clang33=/home/tig/clang/clang33        
-	ompi_path_bin=/usr/lib64/openmpi/bin/
-	ompi_path_lib=/usr/lib64/openmpi/lib/
-	if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
-            PATH="${PATH:+"$PATH:"}$ompi_path_bin"
-	fi
-	export LD_LIBRARY_PATH=$ompi_path_lib
+	echo rh-lum
+        # path_clang33=/home/tig/clang/clang33        
+	# ompi_path_bin=/usr/lib64/openmpi/bin/
+	# ompi_path_lib=/usr/lib64/openmpi/lib/
+	# if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
+        #     PATH="${PATH:+"$PATH:"}$ompi_path_bin"
+	# fi
+	# export LD_LIBRARY_PATH=$ompi_path_lib
     else
         path_clang33=
     fi
