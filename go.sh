@@ -199,6 +199,7 @@ if [[ ( $mode = $mode_old1 || $mode = $mode_old2 || $mode = $mode_test || $mode=
     isNew=$no
     echo Recompile mode is on.
 else
+    isNew=$yes
     echo Cleaning build path.
     rm -r $path_build/* >/dev/null 2>&1
 fi 
