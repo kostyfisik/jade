@@ -88,9 +88,10 @@ fi
 #jade_bin="run-optimize-meander-cloak"
 #jade_bin="run-optimize-meander-cloak-2layer"
 #jade_bin="run-optimize-meander-cloak-3layer"
-jade_bin="run-optimize-meander-cloak-4layer"
+#jade_bin="run-optimize-meander-cloak-4layer"
 #jade_bin="run-optimize-meander-cloak-5layer"
 #jade_bin="run-quasi-pec-spectra"
+jade_bin="run-jade-test-feed"
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
     jade_bin="run-jade-test"

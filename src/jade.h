@@ -48,6 +48,7 @@ namespace jade {
     /// @brief Class initialization.
     int Init(long total_population, long dimension);              // NOLINT
     /// @brief Vizualize used random distributions (to do manual check).
+    void SetFeed(std::vector<std::vector<double> > x_feed_vectors);
     void CheckRandom();
     /// @brief Find optimum value of fitness function.
     int RunOptimization();
@@ -74,9 +75,10 @@ namespace jade {
     std::vector<double> GetFinalFitness();
     std::vector<double> GetBest(double *best_fitness);
     int ErrorStatus() {return error_status_;};
-    void SwitchOffPMCRADE(){isPMCRADE = false;};
+    void SwitchOffPMCRADE(){isPMCRADE_ = false;};
    private:
-    bool isPMCRADE = true;
+    bool isPMCRADE_ = true;
+    bool isFeed_ = false;
     int CreateInitialPopulation();
     int PrintPopulation();
     int PrintEvaluated();
@@ -124,6 +126,8 @@ namespace jade {
     long dimension_ = -1;                                              // NOLINT
     /// @brief Current generation of evalution process;
     long current_generation_ = -1;                                     // NOLINT
+    /// @brief Several feed vectors.
+    std::vector<std::vector<double> > x_feed_vectors_;
     /// @brief Current state vectors of all individuals in subpopulation.
     std::vector<std::vector<double> > x_vectors_current_;
     /// @brief State vectors of all individuals in subpopulation in

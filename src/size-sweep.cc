@@ -88,7 +88,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
 // ********************************************************************** //
 double loss_index = 1e-11;
 int main(int argc, char *argv[]) {
-  int rank;
+  //int rank;
   try {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
     double r_begin = a;

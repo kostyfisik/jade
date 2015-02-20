@@ -166,7 +166,7 @@ void PrintGnuPlotThickness(std::vector< std::vector<double> > spectra,
   gnuplot::GnuplotWrapper wrapper;
   //  auto best_x = sub_population.GetBest(&best_RCS);
   double total_coating_width = layer_thickness*number_of_layers;
-  double index_sum = 0.0;
+  //double index_sum = 0.0;
   //for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,

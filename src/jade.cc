@@ -117,7 +117,7 @@ namespace jade {
     if (successful_mutation_parameters_S_F_.size() == 0) return kDone;  
     double mean_a_CR = sum / static_cast<double>(elements);
     // Original JADE adaption of mu_CR.
-    if (!isPMCRADE) {
+    if (!isPMCRADE_) {
       adaptor_crossover_mu_CR_ =
         (1 - adaptation_frequency_c_) *  adaptor_crossover_mu_CR_
         + adaptation_frequency_c_ * mean_a_CR;
@@ -142,7 +142,7 @@ namespace jade {
           + adaptation_frequency_c_ * mean_pow2_CR;
       }
       // end of PMCRADE patch
-    }  // end of if isPMCRADE
+    }  // end of if isPMCRADE_
     double sum_F = 0.0, sum_F2 = 0.0;
     for (auto F : successful_mutation_parameters_S_F_) {
       sum_F += F;
@@ -479,6 +479,12 @@ namespace jade {
     }  // end of output
     return kDone;
   }  // end of int SubPopulation::PrintSingleVector(std::vector<double> x)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  void SubPopulation::SetFeed(std::vector<std::vector<double> > x_feed_vectors) {
+    isFeed_  = true;
+  }
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //

@@ -90,10 +90,10 @@ void PrintGnuPlotThickness(std::vector< std::vector<double> > spectra,
 // ********************************************************************** //
 double loss_index = 1e-11;
 int main(int argc, char *argv[]) {
-  int rank;
+  // int rank;
   try {
     if (isUsingPEC) {n = -1.0; k = -1.0;}
-    double r_begin = a;
+    // double r_begin = a;
     lambda_work = 0.532; // nm
     double meta_n = 0.8, meta_k = 1e-11;
     for (meta_n = 1.0; meta_n > 0.6; meta_n-=0.01) {
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
       std::vector< std::vector<double> > spectra;
       for (layer_thickness = step_thickness; layer_thickness < 0.13; layer_thickness+=step_thickness) {
 	multi_layer_mie.ClearTarget();
-	double initial_RCS = SetInitialModel(n, k);
+	// double initial_RCS = SetInitialModel(n, k);
 	multi_layer_mie.AddTargetLayer(layer_thickness/4.0, {meta_n,meta_k});
 	multi_layer_mie.AddTargetLayer(layer_thickness/4.0, {meta_n,meta_k});
 	multi_layer_mie.AddTargetLayer(layer_thickness/4.0, {meta_n,meta_k});
@@ -149,7 +149,7 @@ void PrintGnuPlotThickness(std::vector< std::vector<double> > spectra,
   gnuplot::GnuplotWrapper wrapper;
   //  auto best_x = sub_population.GetBest(&best_RCS);
   double total_coating_width = layer_thickness*number_of_layers;
-  double index_sum = 0.0;
+  // double index_sum = 0.0;
   //for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
@@ -174,7 +174,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   double best_RCS = 0.0;
   //  auto best_x = sub_population.GetBest(&best_RCS);
   double total_coating_width = layer_thickness*number_of_layers;
-  double index_sum = 0.0;
+  // double index_sum = 0.0;
   //for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
