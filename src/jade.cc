@@ -449,6 +449,8 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
     if (isFeed_) {
+      if ((subpopulation_ - x_feed_vectors_.size()) <1)
+	throw std::invalid_argument("Too large feed!");
       x_vectors_current_.resize(subpopulation_ - x_feed_vectors_.size());
     }  // End of adding feed
     for (auto &x : x_vectors_current_)

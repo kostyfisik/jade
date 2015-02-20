@@ -47,7 +47,6 @@
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
 
-void SetTarget(double n, double k);
 void SetThickness();
 double SetInitialModel();
 void SetOptimizer();
@@ -68,13 +67,14 @@ void Output();
 nmie::MultiLayerMie multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 
-double lambda_work = 3.75; // cm
-double a = 0.75*lambda_work;  // 2.8125 cm - size of PEC core
-int total_generations = 20;
-double layer_thickness = 0.2;
-int max_number_of_layers_ = 8;
+double lambda_work_ = 3.75; // cm
+double a_ = 0.75*lambda_work_;  // 2.8125 cm - size of PEC core
+int total_generations_ = 200;
+double layer_thickness_ = 0.1;
+int max_number_of_layers_ = 10;
 
-double min_index = 1e-11;
+double min_index_ = 1e-11;
+double default_index = 1.0;
 int number_of_layers_ = 0;
 double initial_RCS_ = 0.0;
 // ********************************************************************** //
@@ -84,9 +84,17 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   try {
     initial_RCS_ = SetInitialModel();
+    std::vector< std::vector<double> > feed_vector(1, std::vector<double>(1,1.0));
+
     for (number_of_layers_ = 1; number_of_layers_ < max_number_of_layers_; ++number_of_layers_) {
       SetOptimizer();
+      for (auto &feed : feed_vector) {
+	while (feed.size()<number_of_layers_) feed.push_back(default_index);
+      }
+      sub_population_.SetFeed(feed_vector);
       sub_population_.RunOptimization();
+      double best_RCS = 0.0;
+      feed_vector.push_back(sub_population_.GetBest(&best_RCS));
       Output();         // Output results
     }  // end of changing number of layers
   } catch( const std::invalid_argument& ia ) {
@@ -123,13 +131,13 @@ void PrintGnuPlotIndex(double initial_RCS,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness*number_of_layers_;
+  double total_coating_width = layer_thickness_*number_of_layers_;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%7.4fdiff%+4.1f%%-n%lu-s%015.12f-index",
-           a, total_coating_width,
+           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%7.4fdiff%+05.1f%%-n%02lu-s%015.12f-index",
+           a_, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Layer #");
@@ -147,9 +155,9 @@ void PrintGnuPlotIndex(double initial_RCS,
 // ********************************************************************** //
 double SetInitialModel() {
   // Set common parameters for all wavelengths.
-  multi_layer_mie_.AddTargetLayer(a, {-1.0, -1.0});  // Set PEC core
+  multi_layer_mie_.AddTargetLayer(a_, {-1.0, -1.0});  // Set PEC core
   multi_layer_mie_.SetQfaild(1000.0);  // Searching for minima
-  multi_layer_mie_.SetWavelength(lambda_work);
+  multi_layer_mie_.SetWavelength(lambda_work_);
   double Qext, Qsca, Qabs, Qbk;
   multi_layer_mie_.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
   double total_r = multi_layer_mie_.GetTotalRadius();
@@ -170,7 +178,7 @@ void SetOptimizer() {
   double from_n = 1.0, to_n = 20.0;
   sub_population_.SetAllBounds(from_n, to_n);
   sub_population_.SetTargetToMinimum();
-  sub_population_.SetTotalGenerationsMax(total_generations);
+  sub_population_.SetTotalGenerationsMax(total_generations_);
   sub_population_.SwitchOffPMCRADE();
 
   sub_population_.SetBestShareP(0.1);
@@ -180,18 +188,12 @@ void SetOptimizer() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void SetTarget(double n, double k) {
-  multi_layer_mie_.AddTargetLayer(a, {n, k});
-}
-// ********************************************************************** //
-// ********************************************************************** //
-// ********************************************************************** //
 void SetThickness() {
   std::vector<double> thickness;
   thickness.clear();
   if (number_of_layers_ < 0)
     throw std::invalid_argument("Number of coating layers should be >= 0!");
-  for (int i = 0; i < number_of_layers_; ++i) thickness.push_back(layer_thickness);
+  for (int i = 0; i < number_of_layers_; ++i) thickness.push_back(layer_thickness_);
   multi_layer_mie_.SetCoatingThickness(thickness);
 }
 // ********************************************************************** //
@@ -201,7 +203,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   double Qext, Qsca, Qabs, Qbk;
   std::vector<complex> cindex;
   cindex.clear();
-  double k = min_index;
+  double k = min_index_;
   for (auto n : input) cindex.push_back({n, k});
   multi_layer_mie_.SetCoatingIndex(cindex);
   try {
@@ -222,7 +224,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
   auto best_x = sub_population_.GetBest(&best_RCS);
   // Setting Mie model to the best state.
   sub_population_.FitnessFunction(best_x);
-  return multi_layer_mie_.GetSpectra(lambda_work*0.5, lambda_work*1.5, 1000);
+  return multi_layer_mie_.GetSpectra(lambda_work_*0.5, lambda_work_*1.5, 1000);
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -231,7 +233,7 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population) {
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
-  printf("Target R=%g, WL=%g\n", a, lambda_work);
+  printf("Target R=%g, WL=%g\n", a_, lambda_work_);
   printf("Initial RCS: %g\n", initial_RCS);
   printf("Final RCS: %g (%4.1f%%)\n", best_RCS, (best_RCS/initial_RCS-1.0)*100.0);
   printf ("Layer:\t");
@@ -243,7 +245,7 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
     printf("%5.4g\t",best_x[i]);
   printf("\n");
   double total_coating_width = 0.0;
-  total_coating_width = layer_thickness*number_of_layers_;
+  total_coating_width = layer_thickness_*number_of_layers_;
   printf("Total coating width: %g\n", total_coating_width);
 }
 // ********************************************************************** //
@@ -254,13 +256,13 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population_.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness*number_of_layers_;
+  double total_coating_width = layer_thickness_*number_of_layers_;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%07.4fdiff%+4.1f%%-n%lu-s%015.12f-spectra",
-           a, total_coating_width,
+           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%07.4fdiff%+05.1f%%-n%02lu-s%015.12f-spectra",
+           a_, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
