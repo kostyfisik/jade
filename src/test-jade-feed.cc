@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     //int total_population = 100;  /// Total number of individuals in population.
     jade::SubPopulation sub_population;
     sub_population.Init(total_population, dimension);
-    std::vector<double> feed(dimension, 1.0);
+    std::vector<double> feed(dimension, 1.01);
     std::vector< std::vector<double> > feed_vector(2, feed);
     sub_population.SetFeed(feed_vector);
     
@@ -95,14 +95,14 @@ int main(int argc, char *argv[]) {
     sub_population.SetAllBoundsVectors({0, 0.1}, {1.5, 1.1});
     sub_population.SetTargetToMinimum();
     //sub_population.SetTargetToMaximum();
-    sub_population.SetTotalGenerationsMax(10);
+    sub_population.SetTotalGenerationsMax(100);
     sub_population.SetBestShareP(0.05);
     sub_population.SetAdapitonFrequencyC(0.1);
     sub_population.SetDistributionLevel(0);
     //sub_population.PrintParameters("f1");
     sub_population.RunOptimization();
     //  sub_population.PrintResult("Alena");
-    sub_population.PrintResult("Rosenbrock function");
+    sub_population.PrintResult("Rosenbrock function with feed");
     // if (rank == 0) {
     //   //for (double x = lbound; x < ubound; x+= (ubound - lbound)/100.0) {
     //   double step = 0.0000001;

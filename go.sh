@@ -83,6 +83,7 @@ if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
 fi 
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
+jade_bin="run-optimize-feed-cloak"
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
 #jade_bin="run-optimize-meander-cloak"
@@ -91,7 +92,7 @@ fi
 #jade_bin="run-optimize-meander-cloak-4layer"
 #jade_bin="run-optimize-meander-cloak-5layer"
 #jade_bin="run-quasi-pec-spectra"
-jade_bin="run-jade-test-feed"
+#jade_bin="run-jade-test-feed"
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
     jade_bin="run-jade-test"

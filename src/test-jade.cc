@@ -182,12 +182,17 @@ int main(int argc, char *argv[]) {
   for (int counts = 0; counts < 50; ++counts) {
     if (fitness30D[0].size() >= total_repeats) break;
     if (rank == 0) printf("30D\n");
-    int dimenstion = 30;  /// Number of parameters to optimize.
+    int dimension = 30;  /// Number of parameters to optimize.
     int total_population = 100;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
       // if (i != 1) continue;
       jade::SubPopulation sub_population;
-      if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
+      if (sub_population.Init(total_population, dimension) == jade::kDone) {
+
+	// std::vector<double> feed(dimension, 0.0);
+	// std::vector< std::vector<double> > feed_vector(2, feed);
+	// sub_population.SetFeed(feed_vector);
+
         sub_population.FitnessFunction = f[i];
         /// Low and upper bound for all dimenstions;
         sub_population.SetAllBounds(lbound[i], ubound[i]);
@@ -217,12 +222,17 @@ int main(int argc, char *argv[]) {
       }
     }  // end of for all test functions
     if (rank == 0) printf("100D\n");
-    dimenstion = 100;  /// Number of parameters to optimize.
+    dimension = 100;  /// Number of parameters to optimize.
     total_population = 400;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
       // if (i != 1) continue;
       jade::SubPopulation sub_population;
-      if (sub_population.Init(total_population, dimenstion) == jade::kDone) {
+      if (sub_population.Init(total_population, dimension) == jade::kDone) {
+
+	// std::vector<double> feed(dimension, 0.0);
+	// std::vector< std::vector<double> > feed_vector(2, feed);
+	// sub_population.SetFeed(feed_vector);
+
         sub_population.FitnessFunction = f[i];
         /// Low and upper bound for all dimenstions;
         sub_population.SetAllBounds(lbound[i], ubound[i]);
