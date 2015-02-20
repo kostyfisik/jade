@@ -441,26 +441,30 @@ namespace jade {
 	throw std::invalid_argument
 	  ("Feed and optimization dimenstion should be the same size!");
     x_feed_vectors_.clear();
-    for (auto x : x_feed_vectors)
+    for (auto &x : x_feed_vectors)
       x_feed_vectors_.push_back(x);
   }  // end of void SubPopulation::SetFeed()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
+    if (isFeed_) {
+      x_vectors_current_.resize(subpopulation_ - x_feed_vectors_.size());
+    }  // End of adding feed
     for (auto &x : x_vectors_current_)
       for (long i = 0; i < dimension_; ++i) {
-        if (x_lbound_[i] > x_ubound_[i]) {
-          error_status_ = kError;
-          return kError;
-        }
+        if (x_lbound_[i] > x_ubound_[i])
+	  throw std::invalid_argument("Wrong order of bounds!");
         x[i] = rand(x_lbound_[i], x_ubound_[i]);                            // NOLINT
       }  // end of for each dimension
     // //debug
     // for (auto x : x_vectors_current_[0]) if (process_rank_ == kOutput) printf("%g ",x);
     if (isFeed_) {
-    
-    }  // And of adding feed to
+      for (auto x: x_feed_vectors_)
+	x_vectors_current_.push_back(x);
+      if (x_vectors_current_.size() != subpopulation_)
+	throw std::invalid_argument("Population is not full after feed!");	
+    }  // And of adding feed
     return kDone;
   }  // end of int SubPopulation::CreateInitialPopulation()
   // ********************************************************************** //
