@@ -2,6 +2,7 @@
 import os
 from glob import glob
 WL_work = 3.75
+print "Filter is on for WL =", WL_work
 for dirname, dirnames, filenames in os.walk('.'):
     # print path to all filenames.
     for filename in filenames:

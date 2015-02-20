@@ -484,6 +484,9 @@ namespace jade {
   // ********************************************************************** //
   void SubPopulation::SetFeed(std::vector<std::vector<double> > x_feed_vectors) {
     isFeed_  = true;
+    if (dimension_ == -1) 
+      throw std::invalid_argument("You should set dimension before feed!");
+    x_feed_vectors_.clear();
   }
   // ********************************************************************** //
   // ********************************************************************** //

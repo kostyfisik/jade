@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os
 from glob import glob
-WL_work = 3.75
-os.system("rm R*-owerview.dat")            
+#WL_work = 3.75
+os.system("rm -f R*-owerview.dat")            
 for dirname, dirnames, filenames in os.walk('.'):
     # print path to all filenames.
     for filename in filenames:

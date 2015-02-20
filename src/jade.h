@@ -34,6 +34,7 @@
 #include <random>
 #include <utility>
 #include <list>
+#include <stdexcept>
 #include <string>
 #include <vector>
 namespace jade {
