@@ -81,7 +81,10 @@ int main(int argc, char *argv[]) {
     //int total_population = 100;  /// Total number of individuals in population.
     jade::SubPopulation sub_population;
     sub_population.Init(total_population, dimension);
-    sub_population.SetFeed({{0.0,0.0}});
+    std::vector<double> feed(dimension, 1.0);
+    std::vector< std::vector<double> > feed_vector(2, feed);
+    sub_population.SetFeed(feed_vector);
+    
     sub_population.FitnessFunction = &func_single;
     /// Low and upper bound for all dimensions;
     // double lbound = 0.0;

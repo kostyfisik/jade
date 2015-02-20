@@ -119,9 +119,9 @@ namespace jade {
     long total_population_ = 0;                                        // NOLINT
     /// @brief Number of individuals in subpopulation
     long subpopulation_ = 0;                                  // NOLINT
-    /// @brief All individuals are indexed. First and last index of
-    /// individuals in subpopulations.
-    long index_first_ = -1, index_last_ = -1;                          // NOLINT
+    /* /// @brief All individuals are indexed. First and last index of */
+    /* /// individuals in subpopulations. */
+    /* long index_first_ = -1, index_last_ = -1;                          // NOLINT */
     /// @brief Dimension of the optimization task (number of variables
     /// to optimize).
     long dimension_ = -1;                                              // NOLINT

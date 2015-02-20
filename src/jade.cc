@@ -360,75 +360,25 @@ namespace jade {
   /// %todo Change returned kError to meangfull error code.
   int SubPopulation::Init(long total_population, long dimension) {// NOLINT
     total_population_  = total_population;
-    if (total_population_ < 1) {
-      error_status_ = kError;
-      return kError;
-    }
+    if (total_population_ < 1)
+      throw std::invalid_argument("You should set population > 0!");
     dimension_ = dimension;
-    if (dimension_ < 1) {
-      error_status_ = kError;
-      return kError;
-    };
+    if (dimension_ < 1) 
+      throw std::invalid_argument("You should set dimension > 0!");
     MPI_Comm_rank(MPI_COMM_WORLD, &process_rank_);
     MPI_Comm_size(MPI_COMM_WORLD, &number_of_processes_);
-    if (process_rank_ < 0) {
-      error_status_ = kError;
-      return kError;
-    };
-    if (number_of_processes_ < 1) {
-      error_status_ = kError;
-      return kError;
-    };
+    if (process_rank_ < 0)
+      throw std::invalid_argument("MPI problem: process_rank_ < 0!");
+    if (number_of_processes_ < 1)
+      throw std::invalid_argument("MPI problem: number_of_processes_ < 1!");
     std::random_device rd;
     generator_.seed(rd());
+
     // //debug
     // CheckRandom();
-    if (number_of_processes_ > total_population_) {
-      error_status_ = kError;
-      return kError;
-    };
-    if (number_of_processes_ == total_population_) subpopulation_ = 1;
-    // //debug section
-    // if (process_rank_ == 0) {
-    //   for (long popul = 1; popul < 10000; popul++) {
-    //     total_population_ = popul;
-    //     for (int procs = 1; procs < 300; procs++) {
-    //       if (procs >= popul) break;
-    //       number_of_processes_ = procs;
-    //       long popul_eval = 0;
-    //       for (int rank = 0; rank < procs; rank++) {
-    //         process_rank_ = rank;
-    // //end of debug section
-    double subpopulation_size = static_cast <double> (total_population_)
-      / static_cast<double>(number_of_processes_);
-    double subpopulation_start = static_cast<double>(process_rank_)
-      * subpopulation_size;
-    double subpopulation_finish = static_cast<double>(process_rank_ + 1)
-      * subpopulation_size;
-    // Evaluate index!
-    index_first_ = ceil(subpopulation_start);
-    index_last_ = ceil(subpopulation_finish) - 1;
-    // HACK! try to deal with double rounding unstability.
-    if (process_rank_ + 1 == number_of_processes_)
-      index_last_ = total_population_ - 1;
-    if (distribution_level_ != 0)
-      subpopulation_ = index_last_ - index_first_ + 1;
+
     subpopulation_ = total_population;
-    if (subpopulation_ == 0) {
-      error_status_ = kError;
-      return kError;
-    }
-    // //debug section
-    //         if (process_rank_ == kOutput) printf("%li-%li ", index_first_, index_last_);
-    //         popul_eval += index_last_ - index_first_ + 1;
-    //       }
-    //       if (popul != popul_eval)
-    //         if (process_rank_ == kOutput) printf("procs %i for popul %li (%li)\n",
-    //                procs, popul, popul_eval);
-    //     }
-    //   }
-    // }
-    // //end of debug section
+
     current_generation_ = 0;
     x_vectors_current_.resize(subpopulation_);
     for (auto &x : x_vectors_current_) x.resize(dimension_);
@@ -486,8 +436,14 @@ namespace jade {
     isFeed_  = true;
     if (dimension_ == -1) 
       throw std::invalid_argument("You should set dimension before feed!");
+    for (auto x : x_feed_vectors)
+      if (x.size() != dimension_) 
+	throw std::invalid_argument
+	  ("Feed and optimization dimenstion should be the same size!");
     x_feed_vectors_.clear();
-  }
+    for (auto x : x_feed_vectors)
+      x_feed_vectors_.push_back(x);
+  }  // end of void SubPopulation::SetFeed()
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -502,6 +458,9 @@ namespace jade {
       }  // end of for each dimension
     // //debug
     // for (auto x : x_vectors_current_[0]) if (process_rank_ == kOutput) printf("%g ",x);
+    if (isFeed_) {
+    
+    }  // And of adding feed to
     return kDone;
   }  // end of int SubPopulation::CreateInitialPopulation()
   // ********************************************************************** //
