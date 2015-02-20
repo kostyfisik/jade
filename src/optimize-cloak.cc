@@ -193,7 +193,7 @@ void SetOptimizer() {
   }
   long total_population = dimension * 3;
   sub_population.Init(total_population, dimension);
-  /// Low and upper bound for all dimenstions;
+  /// Low and upper bound for all dimensions;
   double from_n = 1.0, to_n = 20.0;
   sub_population.SetAllBounds(from_n, to_n);
   sub_population.SetTargetToMinimum();

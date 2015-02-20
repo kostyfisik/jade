@@ -60,7 +60,7 @@ template<class T> inline T pow2(const T value) {return value*value;}
 //   return f;
 // }
 
-/// %brief Rosenbrock function
+/// %brief Rosenbrock function (f5)
 double func_single(std::vector<double> x) {
   long D = x.size();
   double sum = 0.0;
@@ -74,22 +74,22 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    /// Settings for optimization algorithm;
-  int dimenstion = 10;  /// Number of parameters to optimize.
-  int total_population = 5 * dimenstion;  /// Total number of individuals in population.
+  int dimension = 30;  /// Number of parameters to optimize.
+  int total_population = 5 * dimension;  /// Total number of individuals in population.
   //int total_population = 100;  /// Total number of individuals in population.
   jade::SubPopulation sub_population;
-  sub_population.Init(total_population, dimenstion);
+  sub_population.Init(total_population, dimension);
   sub_population.FitnessFunction = &func_single;
-  /// Low and upper bound for all dimenstions;
+  /// Low and upper bound for all dimensions;
   // double lbound = 0.0;
   // double ubound = 1.1;
   //  sub_population.SetAllBoundsVectors({0, 0.1}, {1.5, 1.1});
-  sub_population.SetAllBounds(-100.0, 100.0);
+  sub_population.SetAllBounds(-30.0, 30.0);
 
   sub_population.SetAllBoundsVectors({0, 0.1}, {1.5, 1.1});
   sub_population.SetTargetToMinimum();
   //sub_population.SetTargetToMaximum();
-  sub_population.SetTotalGenerationsMax(300);
+  sub_population.SetTotalGenerationsMax(1000);
   sub_population.SetBestShareP(0.05);
   sub_population.SetAdapitonFrequencyC(0.1);
   sub_population.SetDistributionLevel(0);

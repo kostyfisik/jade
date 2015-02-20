@@ -112,8 +112,8 @@ int main(int argc, char *argv[]) {
     std::vector< std::vector<double> > spectra3;
     int output_rank = 0;
         
-    for (total_thickness = 0.003; total_thickness < 0.12;
-	 total_thickness += thickness_step) {
+    for (total_thickness = 0.015; total_thickness < 0.18;
+	 total_thickness += thickness_step/10.0) {
       //for (number_of_layers = 8; number_of_layers < 15; number_of_layers *=2) {
       //          number_of_layers = 4;
       // layer_thickness = total_thickness /
