@@ -72,6 +72,7 @@ double a_ = 0.75*lambda_work_;  // 2.8125 cm - size of PEC core
 int total_generations_ = 200;
 double layer_thickness_ = 0.1;
 int max_number_of_layers_ = 10;
+double from_epsilon_ = 1.0, to_epsilon_ = 20.0;
 
 double min_index_ = 1e-11;
 double default_index = 1.0;
@@ -94,6 +95,7 @@ int main(int argc, char *argv[]) {
       sub_population_.SetFeed(feed_vector);
       sub_population_.RunOptimization();
       double best_RCS = 0.0;
+      feed_vector.clear();
       feed_vector.push_back(sub_population_.GetBest(&best_RCS));
       Output();         // Output results
     }  // end of changing number of layers
@@ -175,8 +177,7 @@ void SetOptimizer() {
   long total_population = dimension * 3;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimensions;
-  double from_n = 1.0, to_n = 20.0;
-  sub_population_.SetAllBounds(from_n, to_n);
+  sub_population_.SetAllBounds(from_epsilon_, to_epsilon_);
   sub_population_.SetTargetToMinimum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   sub_population_.SwitchOffPMCRADE();
@@ -203,8 +204,13 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   double Qext, Qsca, Qabs, Qbk;
   std::vector<complex> cindex;
   cindex.clear();
-  double k = min_index_;
-  for (auto n : input) cindex.push_back({n, k});
+  double k = min_index_, n=min_index_;
+  for (double epsilon : input) {
+    // sqrt(epsilon) = n + i*k
+    if (epsilon > 0.0) n=std::sqrt(epsilon);
+    else k = std::sqrt(-epsilon);
+    cindex.push_back({n, k});
+  }
   multi_layer_mie_.SetCoatingIndex(cindex);
   try {
     multi_layer_mie_.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
