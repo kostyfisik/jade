@@ -51,12 +51,9 @@ double SetInitialModel();
 void SetOptimizer();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
-void PrintCoating(std::vector<double> current, double initial_RCS,
-                    jade::SubPopulation sub_population);
-void PrintGnuPlotIndex(double initial_RCS,
-                  jade::SubPopulation sub_population);
-void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
-                         double initial_RCS);
+void PrintCoating(std::vector<double> current, double initial_RCS, jade::SubPopulation sub_population);
+void PrintGnuPlotIndex(double initial_RCS, jade::SubPopulation sub_population);
+void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra, double initial_RCS);
 void Output();
 // ********************************************************************** //
 // ********************************************************************** //
@@ -107,12 +104,15 @@ int main(int argc, char *argv[]) {
       feed_vector.push_back(sub_population_.GetBest(&best_RCS));
       Output();         // Output results
 
+      
+      //multi_layer_mie_.SetMaxTermsNumber(15);
       multi_layer_mie_.SetCoatingWidth({0.1,0.1});
-      printf("With %g  coating (26.24).\n",
+      printf("With %g  coating= (26.24).\n",
 	     EvaluateScatterOnlyIndex({-0.29, 24.6}));
       multi_layer_mie_.SetCoatingWidth({0.1,0.1,0.1});
-      printf("With %g  coating (26.24).\n",
+      printf("With %g  coating> (26.24).\n",
 	     EvaluateScatterOnlyIndex({-0.29, 24.6, 1.0}));
+      //multi_layer_mie_.SetMaxTermsNumber(-1);
 
       // 26.24: 25||   -0.29   +24.60 
       // 28.48: 38||   -0.29   +24.60    +1.00
@@ -146,8 +146,7 @@ void Output() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintGnuPlotIndex(double initial_RCS,
-                  jade::SubPopulation sub_population) {
+void PrintGnuPlotIndex(double initial_RCS, jade::SubPopulation sub_population) {
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
@@ -246,7 +245,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
     multi_layer_mie_.RunMieCalculations();
     Qsca = multi_layer_mie_.GetQsca();
   } catch( const std::invalid_argument& ia ) {
-    sub_population_.GetWorst(&Qfailed_);
+    auto best_x = sub_population_.GetWorst(&Qfailed_);
     Qsca = Qfailed_;
     printf(".");
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -268,8 +267,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintCoating(std::vector<double> current, double initial_RCS,
-                    jade::SubPopulation sub_population) {
+void PrintCoating(std::vector<double> current, double initial_RCS, jade::SubPopulation sub_population) {
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
   printf("Target R=%g, WL=%g\n", a_, lambda_work_);
@@ -290,8 +288,7 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
-                         double initial_RCS) {
+void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra, double initial_RCS) {
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population_.GetBest(&best_RCS);

@@ -43,8 +43,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  int SubPopulation::Selection(std::vector<double> crossover_u,
-                               long i)  {
+  int SubPopulation::Selection(std::vector<double> crossover_u, long i)  {
     bool is_evaluated = false;
     double f_current = 0.0;
     for (auto f : evaluated_fitness_for_current_vectors_) {
@@ -201,8 +200,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v,
-                                                long i) {
+  std::vector<double> SubPopulation::Crossover(std::vector<double> mutation_v, long i) {
     const double CR_i = crossover_CR_[i];
     std::vector<double> crossover_u, x_current;
     crossover_u.resize(dimension_);
@@ -299,8 +297,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXRandomCurrent(long *index,
-                                              long forbidden_index) {
+  std::vector<double> SubPopulation::GetXRandomCurrent(long *index, long forbidden_index) {
     long random_n = randint(0, subpopulation_-1);
     while (random_n == forbidden_index) random_n = randint(0, subpopulation_-1);
     (*index) = random_n;
@@ -309,8 +306,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent(
-                   long forbidden_index1, long forbidden_index2) {
+  std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent(long forbidden_index1, long forbidden_index2) {
     long archive_size = archived_best_A_.size();
     long random_n = randint(0, subpopulation_ + archive_size - 1);
     while (random_n == forbidden_index1 || random_n == forbidden_index2)
