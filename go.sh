@@ -66,7 +66,7 @@ compiler_gcc="gcc";
 #compiler_clang="clang"
 usedCompiler=$compiler_gcc # or clang
 useGCC48=$no  # use gcc 4.8 if it is available in build area of scripts folder
-isNew=$no;
+isNew=$yes;
 isTest=$no ;  isProfile=$no ; isPGO=$no
 isBuildOnly=$no;
 # if [[ $mode = $mode_build || $config_file = $mode_build ]]; then
@@ -76,7 +76,7 @@ path_jade=$PWD;   path_bin=$path_jade/bin;   path_build=$path_jade/build
 path_src=$path_jade/src
 # Should be same as in cmake config in $path_src
 
-if [[ ! $mode ]]; then  mode=$mode_new1; fi
+if [[ ! $mode ]]; then  mode=$mode_new2; fi
 if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
  echo -e $usage_msg
  exit 0
@@ -181,7 +181,7 @@ if [[ ! -d $path_src ]]; then
     echo ================ !ERROR! =================
     exit
 fi
-force_new_build=$no
+force_new_build=$yes
 if [[ -a $path_build ]]; then
     echo Found build folder.
 else
@@ -287,16 +287,24 @@ flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
 #flags_debug_gcc="-ftemplate-depth-30 -std=c++11  -da -Q"
 flags_debug_gcc="-ftemplate-depth-30 -std=c++11 -g -O0" 
 flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall  -std=c++11 -stdlib=libc++" 
+flags_with_google=" -Ofast -std=c++11 -lm -lrt /usr/lib/libtcmalloc.so.4 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -march=native -mtune=native -msse4.2"
 # TODO option -flto   -- Do we need it?
-export OMPI_CXXFLAGS=$flags_debug_gcc
-#export OMPI_CXXFLAGS=$flags_O2
+#export OMPI_CXXFLAGS=$flags_debug_gcc
+export OMPI_CXXFLAGS=$flags_with_google
+
+if [[ $mode = $mode_new1 ]]; then
+    export OMPI_CXXFLAGS=$flags_O2
+fi
+
 if [[ $mode = $mode_debug ]]; then
     echo Using debug mode.
     export OMPI_CXXFLAGS=$flags_debug
 fi
 if [[ $mode = $mode_new3 ]]; then
-    export OMPI_CXXFLAGS=$flags_O3
+    export OMPI_CXXFLAGS=$flags_with_google
 fi
+echo Using flags: $OMPI_CXXFLAGS
+echo ============ End of compile settings =============
 #############################################################################
 #   Build
 #############################################################################

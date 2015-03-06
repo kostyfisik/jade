@@ -684,8 +684,7 @@ namespace jade {
       AllGatherVectorDouble(to_send);      
     }
     return recieve_double_;
-  }
-  // end of sdt::vector<double> SubPopulation::GetFinalFitness();
+  }  // end of sdt::vector<double> SubPopulation::GetFinalFitness();
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -693,9 +692,15 @@ namespace jade {
     auto x = evaluated_fitness_for_current_vectors_.front();
     (*best_fitness) = x.first;
     return x_vectors_current_[x.second];
-  }
-  // end of std::vector<double> SubPopulation::GetBest(double *best_fitness)
-
+  }  // end of std::vector<double> SubPopulation::GetBest(double *best_fitness)
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  std::vector<double> SubPopulation::GetWorst(double *worst_fitness) {
+    auto x = evaluated_fitness_for_current_vectors_.back();
+    (*worst_fitness) = x.first;
+    return x_vectors_current_[x.second];
+  }  // end of std::vector<double> SubPopulation::GetWorst(double *worst_fitness)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //

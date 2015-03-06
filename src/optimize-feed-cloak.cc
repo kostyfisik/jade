@@ -80,7 +80,7 @@ double Qfailed_ = 1000;
 int total_generations_ = 1200;
 int population_multiplicator_ = 3;
 double layer_width_ = 0.1;
-int max_number_of_layers_ = 5;
+int max_number_of_layers_ = 9;
 double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
 int main(int argc, char *argv[]) {
@@ -164,8 +164,8 @@ void PrintGnuPlotIndex(double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 double SetInitialModel() {
-  // Set common parameters for all wavelengths.
-  multi_layer_mie_.AddTargetLayer(a_, {-1.0, -1.0});  // Set PEC core
+  // Set PEC core
+  multi_layer_mie_.SetTargetPEC(a_);
   multi_layer_mie_.SetWavelength(lambda_work_);
   multi_layer_mie_.RunMieCalculations();
   double Qsca = multi_layer_mie_.GetQsca();
@@ -223,10 +223,10 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   }
   multi_layer_mie_.SetCoatingIndex(cindex);
   try {
-    // multi_layer_mie_.RunMieCalculations();
-    // Qsca = multi_layer_mie_.GetQsca();
-    Qsca = 0;
+    multi_layer_mie_.RunMieCalculations();
+    Qsca = multi_layer_mie_.GetQsca();
   } catch( const std::invalid_argument& ia ) {
+    sub_population_.GetWorst(&Qfailed_);
     Qsca = Qfailed_;
     printf(".");
     // Will catch if  multi_layer_mie_ fails or other errors.

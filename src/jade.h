@@ -75,6 +75,7 @@ namespace jade {
     int PrintResult(std::string comment);
     std::vector<double> GetFinalFitness();
     std::vector<double> GetBest(double *best_fitness);
+    std::vector<double> GetWorst(double *worst_fitness);
     int ErrorStatus() {return error_status_;};
     void SwitchOffPMCRADE(){isPMCRADE_ = false;};
    private:
