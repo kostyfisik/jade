@@ -70,17 +70,17 @@ jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 
 double lambda_work_ = 3.75; // cm
 double a_ = 0.75*lambda_work_;  // 2.8125 cm - size of PEC core
-// double min_index_ = 1e-11;
-double min_index_ = 1.0;
+double min_index_ = 1e-11;
+//double min_index_ = 1.0;
 double default_index = 1.0;
 int number_of_layers_ = 0;
 double initial_RCS_ = 0.0;
 
 double Qfailed_ = 1000;
 int total_generations_ = 1200;
-int population_multiplicator_ = 3;
+int population_multiplicator_ = 13;
 double layer_width_ = 0.1;
-int max_number_of_layers_ = 9;
+int max_number_of_layers_ = 2;
 double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
 int main(int argc, char *argv[]) {
@@ -106,6 +106,16 @@ int main(int argc, char *argv[]) {
       feed_vector.clear();
       feed_vector.push_back(sub_population_.GetBest(&best_RCS));
       Output();         // Output results
+
+      multi_layer_mie_.SetCoatingWidth({0.1,0.1});
+      printf("With %g  coating (26.24).\n",
+	     EvaluateScatterOnlyIndex({-0.29, 24.6}));
+      multi_layer_mie_.SetCoatingWidth({0.1,0.1,0.1});
+      printf("With %g  coating (26.24).\n",
+	     EvaluateScatterOnlyIndex({-0.29, 24.6, 1.0}));
+
+      // 26.24: 25||   -0.29   +24.60 
+      // 28.48: 38||   -0.29   +24.60    +1.00
     }  // end of changing number of layers
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -171,6 +181,15 @@ double SetInitialModel() {
   double Qsca = multi_layer_mie_.GetQsca();
   double total_r = multi_layer_mie_.GetTotalRadius();
   double initial_RCS = Qsca*pi*pow2(total_r);
+  multi_layer_mie_.SetCoatingWidth({0.1});
+  multi_layer_mie_.SetCoatingIndex({{1.0,0.0}});
+  multi_layer_mie_.RunMieCalculations();
+  double Qsca1 = multi_layer_mie_.GetQsca();
+  double total_r1 = multi_layer_mie_.GetTotalRadius();
+  double initial_RCS1 = Qsca1*pi*pow2(total_r1);
+  printf("With %g (r=%g) and without %g (r=%g)air coating.\n",
+	 initial_RCS1, total_r1, 
+	 initial_RCS, total_r);
   return initial_RCS;
 }
 // ********************************************************************** //
@@ -219,6 +238,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
     else k = std::sqrt(-epsilon);
     if (n < min_index_) n = min_index_;
     if (k < min_index_) k = min_index_;
+    //printf("eps= %g, n=%g, k=%g\n", epsilon, n, k);
     cindex.push_back(std::complex<double>(n, k));
   }
   multi_layer_mie_.SetCoatingIndex(cindex);

@@ -181,7 +181,7 @@ if [[ ! -d $path_src ]]; then
     echo ================ !ERROR! =================
     exit
 fi
-force_new_build=$yes
+force_new_build=$no
 if [[ -a $path_build ]]; then
     echo Found build folder.
 else
