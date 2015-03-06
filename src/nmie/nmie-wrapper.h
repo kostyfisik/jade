@@ -34,15 +34,15 @@
 ///
 #include "ucomplex.h"
 #include <vector>
-namespace nmie {
+namespace nmie_old {
   const double PI=3.14159265358979323846;
   class MultiLayerMie {
    public:
     void SetWavelength(double wavelength) {wavelength_ = wavelength;};
-    void AddTargetLayer(double thickness, complex layer_index);
-    void ClearTarget() {target_thickness_.clear();
+    void AddTargetLayer(double width, complex layer_index);
+    void ClearTarget() {target_width_.clear();
       target_index_.clear();};
-    void SetCoatingThickness(std::vector<double> thickness);
+    void SetCoatingWidth(std::vector<double> width);
     void SetCoatingIndex(std::vector<complex> index);
     void SetQfaild (double Q) {Qfaild_ = Q;};
     void RunMie(double *Qext, double *Qsca, double *Qabs, double *Qbk);
@@ -55,7 +55,7 @@ namespace nmie {
     double wavelength_ = 1.0;
     double Qfaild_ = 1000.0;
     double total_radius_ = 0.0;
-    std::vector<double> target_thickness_, coating_thickness_;
+    std::vector<double> target_width_, coating_width_;
     std::vector<complex> target_index_, coating_index_;
     std::vector<double> size_parameter_;
     std::vector<complex> index_;

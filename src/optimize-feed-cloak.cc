@@ -41,13 +41,12 @@
 #include <stdexcept>
 #include <string>
 #include "./gnuplot-wrapper/gnuplot-wrapper.h"
-//#include "./nmie/ucomplex.h"
-#include "./nmie/nmie-wrapper.h"
+#include "./nmie/nmie.h"
 //#include "./nmie/Au-dispersion.h"
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
 
-void SetThickness();
+void SetWidth();
 double SetInitialModel();
 void SetOptimizer();
 double EvaluateScatterOnlyIndex(std::vector<double> input);
@@ -66,20 +65,23 @@ void Output();
 // sub_population_.
 nmie::MultiLayerMie multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
+// ********************************************************************** //
+// ********************************************************************** //
 
 double lambda_work_ = 3.75; // cm
 double a_ = 0.75*lambda_work_;  // 2.8125 cm - size of PEC core
-int total_generations_ = 200;
-double layer_thickness_ = 0.1;
-int max_number_of_layers_ = 10;
-double from_epsilon_ = 1.0, to_epsilon_ = 20.0;
-
-double min_index_ = 1e-11;
+// double min_index_ = 1e-11;
+double min_index_ = 1.0;
 double default_index = 1.0;
 int number_of_layers_ = 0;
 double initial_RCS_ = 0.0;
-// ********************************************************************** //
-// ********************************************************************** //
+
+double Qfailed_ = 1000;
+int total_generations_ = 1200;
+int population_multiplicator_ = 3;
+double layer_width_ = 0.1;
+int max_number_of_layers_ = 5;
+double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
@@ -91,9 +93,15 @@ int main(int argc, char *argv[]) {
       SetOptimizer();
       for (auto &feed : feed_vector) {
 	while (feed.size()<number_of_layers_) feed.push_back(default_index);
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        if (rank == 0) {
+	  for (auto index:feed) printf(" %+7.2f", index);
+	  printf("\n");
+	}
       }
       sub_population_.SetFeed(feed_vector);
-      sub_population_.RunOptimization();
+      //sub_population_.RunOptimization();
       double best_RCS = 0.0;
       feed_vector.clear();
       feed_vector.push_back(sub_population_.GetBest(&best_RCS));
@@ -121,8 +129,8 @@ void Output() {
           for (auto c : current) printf("All %g\n",c);
           PrintCoating(current, initial_RCS_, sub_population_);
         }  // end of output for process with best final fitness
-        PrintGnuPlotIndex(initial_RCS_, sub_population_);
-        PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS_);
+        // PrintGnuPlotIndex(initial_RCS_, sub_population_);
+        // PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS_);
         sub_population_.PrintResult("-- ");
 } 
 // ********************************************************************** //
@@ -133,7 +141,7 @@ void PrintGnuPlotIndex(double initial_RCS,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness_*number_of_layers_;
+  double total_coating_width = layer_width_*number_of_layers_;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
@@ -143,13 +151,13 @@ void PrintGnuPlotIndex(double initial_RCS,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Layer #");
-  wrapper.SetYLabelName("Index");
+  wrapper.SetYLabelName("Epsilon");
   wrapper.SetDrawStyle("with histeps lw 2");
   wrapper.SetXRange({0.51, number_of_layers_+0.49});
   for (int i = 0; i < number_of_layers_; ++i) 
     wrapper.AddMultiPoint({i+1.0, best_x[i]});
   wrapper.AddColumnName("Layer N");
-  wrapper.AddColumnName("Index");
+  wrapper.AddColumnName("Epsilon");
   wrapper.MakeOutput();
 }
 // ********************************************************************** //
@@ -158,27 +166,28 @@ void PrintGnuPlotIndex(double initial_RCS,
 double SetInitialModel() {
   // Set common parameters for all wavelengths.
   multi_layer_mie_.AddTargetLayer(a_, {-1.0, -1.0});  // Set PEC core
-  multi_layer_mie_.SetQfaild(1000.0);  // Searching for minima
   multi_layer_mie_.SetWavelength(lambda_work_);
-  double Qext, Qsca, Qabs, Qbk;
-  multi_layer_mie_.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+  // multi_layer_mie_.RunMieCalculations();
+  // double Qsca = multi_layer_mie_.GetQsca();
   double total_r = multi_layer_mie_.GetTotalRadius();
-  double initial_RCS = Qsca*pi*pow2(total_r);
-  return initial_RCS;
+  // double initial_RCS = Qsca*pi*pow2(total_r);
+  // return initial_RCS;
+  return 0.0;
 }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 void SetOptimizer() {
   long dimension = 0;
-  SetThickness();
+  SetWidth();
   dimension = number_of_layers_;
   sub_population_.FitnessFunction = &EvaluateScatterOnlyIndex;
-  long total_population = dimension * 3;
+  long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimensions;
   sub_population_.SetAllBounds(from_epsilon_, to_epsilon_);
-  sub_population_.SetTargetToMinimum();
+  sub_population_.SetTargetToMinimum(); //Check SetQFailed!!!
+  Qfailed_ = 1000.0;
   sub_population_.SetTotalGenerationsMax(total_generations_);
   sub_population_.SwitchOffPMCRADE();
 
@@ -189,32 +198,37 @@ void SetOptimizer() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void SetThickness() {
-  std::vector<double> thickness;
-  thickness.clear();
+void SetWidth() {
+  std::vector<double> width;
+  width.clear();
   if (number_of_layers_ < 0)
     throw std::invalid_argument("Number of coating layers should be >= 0!");
-  for (int i = 0; i < number_of_layers_; ++i) thickness.push_back(layer_thickness_);
-  multi_layer_mie_.SetCoatingThickness(thickness);
+  for (int i = 0; i < number_of_layers_; ++i) width.push_back(layer_width_);
+  multi_layer_mie_.SetCoatingWidth(width);
 }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 double EvaluateScatterOnlyIndex(std::vector<double> input) {
-  double Qext, Qsca, Qabs, Qbk;
-  std::vector<complex> cindex;
+  double Qsca;
+  std::vector<std::complex<double>> cindex;
   cindex.clear();
   double k = min_index_, n=min_index_;
   for (double epsilon : input) {
     // sqrt(epsilon) = n + i*k
     if (epsilon > 0.0) n=std::sqrt(epsilon);
     else k = std::sqrt(-epsilon);
-    cindex.push_back({n, k});
+    if (n < min_index_) n = min_index_;
+    if (k < min_index_) k = min_index_;
+    cindex.push_back(std::complex<double>(n, k));
   }
   multi_layer_mie_.SetCoatingIndex(cindex);
   try {
-    multi_layer_mie_.RunMie(&Qext, &Qsca, &Qabs, &Qbk);
+    // multi_layer_mie_.RunMieCalculations();
+    // Qsca = multi_layer_mie_.GetQsca();
+    Qsca = 0;
   } catch( const std::invalid_argument& ia ) {
+    Qsca = Qfailed_;
     printf(".");
     // Will catch if  multi_layer_mie_ fails or other errors.
     //std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -244,14 +258,14 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
   printf("Final RCS: %g (%4.1f%%)\n", best_RCS, (best_RCS/initial_RCS-1.0)*100.0);
   printf ("Layer:\t");
   for (int i = 0; i < number_of_layers_; ++i)
-    printf("% 5i\t",i+1);
+    printf("% 7i\t",i+1);
   printf ("\n");
-  printf ("Index:\t");
+  printf ("Epsil:\t");
   for (int i = 0; i < number_of_layers_; ++i)
-    printf("%5.4g\t",best_x[i]);
+    printf("%+7.2f\t",best_x[i]);
   printf("\n");
   double total_coating_width = 0.0;
-  total_coating_width = layer_thickness_*number_of_layers_;
+  total_coating_width = layer_width_*number_of_layers_;
   printf("Total coating width: %g\n", total_coating_width);
 }
 // ********************************************************************** //
@@ -262,7 +276,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population_.GetBest(&best_RCS);
-  double total_coating_width = layer_thickness_*number_of_layers_;
+  double total_coating_width = layer_width_*number_of_layers_;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];

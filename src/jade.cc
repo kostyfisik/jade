@@ -398,13 +398,22 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::PrintPopulation() {
     if (process_rank_ == kOutput) {
-      for (long i = 0; i < subpopulation_; ++i) {
-        printf("n%li:", i);
-        for (long c = 0; c < dimension_; ++c) {
-          printf(" %5.2f ", x_vectors_current_[i][c]);
-        }
-        printf("\n");
-      }  // end of for each individual
+      for (auto x : evaluated_fitness_for_current_vectors_) {
+	long n = x.second;
+	double fitness = x.first;
+        printf("%6.2f:% 3li||", fitness, n);
+        for (long c = 0; c < dimension_; ++c) 
+          printf(" %+7.2f ", x_vectors_current_[n][c]);
+	printf("\n");      
+      }
+
+      // for (long i = 0; i < subpopulation_; ++i) {
+      //   printf("n%li:", i);
+      //   for (long c = 0; c < dimension_; ++c) {
+      //     printf(" %5.2f ", x_vectors_current_[i][c]);
+      //   }
+      //   printf("\n");
+      // }  // end of for each individual
     }  // end of if output
     return kDone;
   }  // end of int SubPupulation::PrintPopulation()
@@ -448,11 +457,9 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::CreateInitialPopulation() {
-    if (isFeed_) {
-      if ((subpopulation_ - x_feed_vectors_.size()) <1)
-	throw std::invalid_argument("Too large feed!");
-      x_vectors_current_.resize(subpopulation_ - x_feed_vectors_.size());
-    }  // End of adding feed
+    if ((subpopulation_ - x_feed_vectors_.size()) <1)
+      throw std::invalid_argument("Too large feed!");
+    x_vectors_current_.resize(subpopulation_ - x_feed_vectors_.size());
     for (auto &x : x_vectors_current_)
       for (long i = 0; i < dimension_; ++i) {
         if (x_lbound_[i] > x_ubound_[i])
@@ -461,12 +468,22 @@ namespace jade {
       }  // end of for each dimension
     // //debug
     // for (auto x : x_vectors_current_[0]) if (process_rank_ == kOutput) printf("%g ",x);
-    if (isFeed_) {
-      for (auto x: x_feed_vectors_)
-	x_vectors_current_.push_back(x);
-      if (x_vectors_current_.size() != subpopulation_)
-	throw std::invalid_argument("Population is not full after feed!");	
-    }  // And of adding feed
+    for (auto x: x_feed_vectors_) {
+      x_vectors_current_.push_back(x);
+        if (process_rank_ == kOutput) {
+	  printf("--=-- Feed:\n");
+	  for (auto index:x) printf(" %+7.2f", index);
+	  printf("\n");
+	}	
+    }
+    if (x_vectors_current_.size() != subpopulation_)
+      throw std::invalid_argument("Population is not full after feed!");	
+    x_feed_vectors_.clear();
+    if (process_rank_ == kOutput) {
+      printf("==--== Initial population:\n");    
+      EvaluateCurrentVectors();
+      PrintPopulation();
+    }
     return kDone;
   }  // end of int SubPopulation::CreateInitialPopulation()
   // ********************************************************************** //

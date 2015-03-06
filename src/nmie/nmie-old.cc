@@ -46,7 +46,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "ucomplex.h"
-#include "nmie.h"
+#include "nmie-old.h"
 
 #define round(x) ((x) >= 0 ? (int)((x) + 0.5):(int)((x) - 0.5))
 

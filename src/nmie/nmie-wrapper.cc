@@ -31,32 +31,32 @@
 ///
 #include "ucomplex.h"
 #include "nmie-wrapper.h"
-#include "nmie.h"
+#include "nmie-old.h"
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
 #include <vector>
-namespace nmie {  
+namespace nmie_old {  
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  void MultiLayerMie::AddTargetLayer(double thickness, complex layer_index) {
-    if (thickness <= 0)
-      throw std::invalid_argument("Layer thickness should be positive!");
-    target_thickness_.push_back(thickness);
+  void MultiLayerMie::AddTargetLayer(double width, complex layer_index) {
+    if (width <= 0)
+      throw std::invalid_argument("Layer width should be positive!");
+    target_width_.push_back(width);
     target_index_.push_back(layer_index);
   }  // end of void  MultiLayerMie::AddTargetLayer(...)
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  void MultiLayerMie::SetCoatingThickness(std::vector<double> thickness) {
-    coating_thickness_.clear();
-    for (auto w : thickness)
+  void MultiLayerMie::SetCoatingWidth(std::vector<double> width) {
+    coating_width_.clear();
+    for (auto w : width)
       if (w <= 0)
-        throw std::invalid_argument("Coating thickness should be positive!");
-      else coating_thickness_.push_back(w);
+        throw std::invalid_argument("Coating width should be positive!");
+      else coating_width_.push_back(w);
   }
-  // end of void MultiLayerMie::SetCoatingThickness(...);
+  // end of void MultiLayerMie::SetCoatingwidth(...);
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -74,11 +74,11 @@ namespace nmie {
     size_parameter_.clear();
     size_parameter_.push_back(0.0);
     double radius = 0.0;
-    for (auto width : target_thickness_) {
+    for (auto width : target_width_) {
       radius += width;
       size_parameter_.push_back(2*PI*radius / wavelength_);
     }
-    for (auto width : coating_thickness_) {
+    for (auto width : coating_width_) {
       radius += width;
       size_parameter_.push_back(2*PI*radius / wavelength_);
     }

@@ -65,7 +65,7 @@ yes="yes";        no="no"
 compiler_gcc="gcc";
 #compiler_clang="clang"
 usedCompiler=$compiler_gcc # or clang
-useGCC48=$yes  # use gcc 4.8 if it is available in build area of scripts folder
+useGCC48=$no  # use gcc 4.8 if it is available in build area of scripts folder
 isNew=$no;
 isTest=$no ;  isProfile=$no ; isPGO=$no
 isBuildOnly=$no;
@@ -231,7 +231,8 @@ if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
 fi
 # Set compiler
 
-if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode=$mode_single ]]; then
+if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode = $mode_single ]]; then
+    echo $mode
     echo Using \'clang\' compiler.
     usedCompiler=$compiler_clang
     #path_clang33=/home/mmedia/soft/clang/clang+llvm-3.3-amd64-debian6/bin/
@@ -280,12 +281,15 @@ fi
 # Select OMPI_CXXFLAGS
 #debug
 #flags_O2="-std=c++11"
-flags_O2="-O2 -Wall -std=c++11"
+flags_O2="-O2 -Wall -std=c++11 "
 #flags_O2="-O2 -ftemplate-depth-30 -Wall -std=c++11"
 flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
+#flags_debug_gcc="-ftemplate-depth-30 -std=c++11  -da -Q"
+flags_debug_gcc="-ftemplate-depth-30 -std=c++11 -g -O0" 
 flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall  -std=c++11 -stdlib=libc++" 
 # TODO option -flto   -- Do we need it?
-export OMPI_CXXFLAGS=$flags_O2
+export OMPI_CXXFLAGS=$flags_debug_gcc
+#export OMPI_CXXFLAGS=$flags_O2
 if [[ $mode = $mode_debug ]]; then
     echo Using debug mode.
     export OMPI_CXXFLAGS=$flags_debug
