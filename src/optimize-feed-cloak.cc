@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 	}
       }
       sub_population_.SetFeed(feed_vector);
-      //sub_population_.RunOptimization();
+      sub_population_.RunOptimization();
       double best_RCS = 0.0;
       feed_vector.clear();
       feed_vector.push_back(sub_population_.GetBest(&best_RCS));
@@ -129,8 +129,8 @@ void Output() {
           for (auto c : current) printf("All %g\n",c);
           PrintCoating(current, initial_RCS_, sub_population_);
         }  // end of output for process with best final fitness
-        // PrintGnuPlotIndex(initial_RCS_, sub_population_);
-        // PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS_);
+        PrintGnuPlotIndex(initial_RCS_, sub_population_);
+        PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS_);
         sub_population_.PrintResult("-- ");
 } 
 // ********************************************************************** //
@@ -141,7 +141,7 @@ void PrintGnuPlotIndex(double initial_RCS,
   gnuplot::GnuplotWrapper wrapper;
   double best_RCS = 0.0;
   auto best_x = sub_population.GetBest(&best_RCS);
-  double total_coating_width = layer_width_*number_of_layers_;
+  double total_coating_width = layer_width_ * number_of_layers_;
   double index_sum = 0.0;
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
@@ -167,12 +167,11 @@ double SetInitialModel() {
   // Set common parameters for all wavelengths.
   multi_layer_mie_.AddTargetLayer(a_, {-1.0, -1.0});  // Set PEC core
   multi_layer_mie_.SetWavelength(lambda_work_);
-  // multi_layer_mie_.RunMieCalculations();
-  // double Qsca = multi_layer_mie_.GetQsca();
+  multi_layer_mie_.RunMieCalculations();
+  double Qsca = multi_layer_mie_.GetQsca();
   double total_r = multi_layer_mie_.GetTotalRadius();
-  // double initial_RCS = Qsca*pi*pow2(total_r);
-  // return initial_RCS;
-  return 0.0;
+  double initial_RCS = Qsca*pi*pow2(total_r);
+  return initial_RCS;
 }
 // ********************************************************************** //
 // ********************************************************************** //
