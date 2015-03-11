@@ -77,13 +77,25 @@ double Qfailed_ = 1000;
 int total_generations_ = 1200;
 int population_multiplicator_ = 13;
 double layer_width_ = 0.1;
-int max_number_of_layers_ = 2;
+int max_number_of_layers_ = 12;
 double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   try {
     initial_RCS_ = SetInitialModel();
+    //multi_layer_mie_.SetMaxTermsNumber(15);
+    multi_layer_mie_.SetCoatingWidth({0.1,0.1});
+    printf("With %g  coating= (26.24).\n",
+	   EvaluateScatterOnlyIndex({-0.29, 24.6}));
+    multi_layer_mie_.SetCoatingWidth({0.1,0.1,0.1});
+    printf("With %g  coating> (26.24).\n",
+	   EvaluateScatterOnlyIndex({-0.29, 24.6, 1.0}));
+    //multi_layer_mie_.SetMaxTermsNumber(-1);
+
+      // 26.24: 25||   -0.29   +24.60 
+      // 28.48: 38||   -0.29   +24.60    +1.00
+
     std::vector< std::vector<double> > feed_vector(1, std::vector<double>(1,1.0));
 
     for (number_of_layers_ = 1; number_of_layers_ < max_number_of_layers_; ++number_of_layers_) {
@@ -105,17 +117,6 @@ int main(int argc, char *argv[]) {
       Output();         // Output results
 
       
-      //multi_layer_mie_.SetMaxTermsNumber(15);
-      multi_layer_mie_.SetCoatingWidth({0.1,0.1});
-      printf("With %g  coating= (26.24).\n",
-	     EvaluateScatterOnlyIndex({-0.29, 24.6}));
-      multi_layer_mie_.SetCoatingWidth({0.1,0.1,0.1});
-      printf("With %g  coating> (26.24).\n",
-	     EvaluateScatterOnlyIndex({-0.29, 24.6, 1.0}));
-      //multi_layer_mie_.SetMaxTermsNumber(-1);
-
-      // 26.24: 25||   -0.29   +24.60 
-      // 28.48: 38||   -0.29   +24.60    +1.00
     }  // end of changing number of layers
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -155,7 +156,7 @@ void PrintGnuPlotIndex(double initial_RCS, jade::SubPopulation sub_population) {
   for (auto i : best_x) index_sum+=i;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%7.4fdiff%+05.1f%%-n%02lu-s%015.12f-index",
+           "TargetR%6.4f-CoatingW%06.3f-FinalRCS%07.4fdiff%+05.1f%%-n%02lu-s%015.12f-index",
            a_, total_coating_width,
            best_RCS, (best_RCS/initial_RCS-1.0)*100.0, best_x.size(), index_sum);
   wrapper.SetPlotName(plot_name);
@@ -232,6 +233,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   cindex.clear();
   double k = min_index_, n=min_index_;
   for (double epsilon : input) {
+    k = min_index_, n=min_index_;
     // sqrt(epsilon) = n + i*k
     if (epsilon > 0.0) n=std::sqrt(epsilon);
     else k = std::sqrt(-epsilon);
@@ -247,7 +249,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   } catch( const std::invalid_argument& ia ) {
     auto best_x = sub_population_.GetWorst(&Qfailed_);
     Qsca = Qfailed_;
-    printf(".");
+    printf("#");
     // Will catch if  multi_layer_mie_ fails or other errors.
     //std::cerr << "Invalid argument: " << ia.what() << std::endl;
   }  
