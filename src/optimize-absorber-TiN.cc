@@ -84,6 +84,7 @@ double step_r_ = max_r_ / 3.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+const double eps_=1e-11;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
@@ -97,9 +98,9 @@ int main(int argc, char *argv[]) {
     TiN_.ReadFromFile("TiN.txt").ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
     if (core_index_.GetIndex().size()
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
-    // if (rank == 0) {  printf("\nSi:\n");  Si_.PrintData(); printf("\nGaAs:\n");
-    //   GaAs_.PrintData();  printf("\nTiN:\n");   TiN_.PrintData(); }
-    initial_Qabs_ = EvaluateFitness({1.0,0.0});  // Only core
+    // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nTiN:\n");   TiN_.PrintData(); }
+    initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
+    printf("Initial Qabs = %g/n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
     for (total_r_ = step_r_; total_r_ < max_r_; total_r_+=step_r_) {

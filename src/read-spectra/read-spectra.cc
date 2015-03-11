@@ -57,7 +57,7 @@ namespace read_spectra {
 	      [](const std::vector<double>& a, const std::vector<double>& b) {
 		return a.front() < b.front();
 	      });
-
+    return *this;
   }  // end of void ReadSpectra::ReadFromFile(std::string fname)
   // ********************************************************************** //
   // ********************************************************************** //
@@ -103,6 +103,7 @@ namespace read_spectra {
       throw std::invalid_argument("No points in spectra for the defined range!/n");
     if (data_complex_.size() != samples)
       throw std::invalid_argument("Was not able to get all samples!/n");
+    return *this;
   }
   // ********************************************************************** //
   // ********************************************************************** //
@@ -119,6 +120,7 @@ namespace read_spectra {
       auto tmp = std::make_pair(wl, std::complex<double>(n,k));
       data_complex_index_.push_back(tmp);	
     }
+    return *this;
   }
 
   // ********************************************************************** //
