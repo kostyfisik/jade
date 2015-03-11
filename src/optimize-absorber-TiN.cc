@@ -105,10 +105,21 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    //    Si_.ReadFromFile("Si.txt");
+    double from_wl = 300.0, to_wl = 310.0, samples = 3;
+    Si_.ReadFromFile("Si.txt");
+    Si_.ResizeToComplex(from_wl, to_wl, samples);
     GaAs_.ReadFromFile("GaAs.txt");
-    if (rank == 0) GaAs_.PrintData();
-    //TiN_.ReadFromFile("TiN.txt");
+    GaAs_.ResizeToComplex(from_wl, to_wl, samples);
+    TiN_.ReadFromFile("TiN.txt");
+    TiN_.ResizeToComplex(from_wl, to_wl, samples);
+    if (rank == 0) {
+      printf("\nSi:\n");
+      Si_.PrintData();
+      printf("\nGaAs:\n");
+      GaAs_.PrintData();
+      printf("\nTiN:\n");
+      TiN_.PrintData();
+    }
     // for (k = 0.0; k < 1.0; k = (k+0.0001)*2.0)  {
     //double initial_RCS = SetInitialModel(n, k);
     std::vector< std::vector<double> > spectra1;

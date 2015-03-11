@@ -61,10 +61,54 @@ namespace read_spectra {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
+  /// Cut the spectra to the range and convert is to std::complex<double>
+  void ReadSpectra::ResizeToComplex(double from_wl, double to_wl, int samples) {
+    if (data_.size() < 2) throw std::invalid_argument("Nothing to resize!/n");
+    if (data_.front()[0] > from_wl || data_.front()[0] > to_wl ||
+	data_.back()[0] < from_wl || data_.back()[0] < to_wl ||
+	from_wl >= to_wl)
+      throw std::invalid_argument("Invalid range to resize spectra!/n");
+    if (samples < 2) throw std::invalid_argument("Not enough samples!/n");
+    std::vector<double> wl_sampled(samples, 0.0);
+    for (int i =0; i<samples; ++i)
+      wl_sampled[i] = from_wl
+	+ (to_wl-from_wl)*static_cast<double>(i)/static_cast<double>(samples-1);
+    data_complex_.clear();
+    int j = 0;
+    for (int i = 0; i < data_.size(); ++i) {
+      const double& wl_i = data_[i][0];
+      const double& wl_s = wl_sampled[j];
+      if (wl_i < wl_s) continue;
+      else {
+	const double& wl_prev = data_[i-1][0];	
+	const double& re_prev = data_[i-1][1];
+	const double& im_prev = data_[i-1][2];
+	const double& re_i = data_[i][1];
+	const double& im_i = data_[i][2];
+	// Linear approximation
+	double re_s = re_i - (re_i-re_prev)*(wl_i-wl_s)/(wl_i-wl_prev);
+	double im_s = im_i - (im_i-im_prev)*(wl_i-wl_s)/(wl_i-wl_prev);
+
+	auto tmp = std::make_pair(wl_s, std::complex<double>(re_s,im_s));
+	data_complex_.push_back(tmp);	
+	       
+	++j;
+	// All sampled wavelengths has a value
+	if (j >= wl_sampled.size()) break;  
+      }
+    }
+    if (data_complex_.size() == 0)
+      throw std::invalid_argument("No points in spectra fro defined range!/n");
+  }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
   void ReadSpectra::PrintData() {
-    for (auto row : data_) {
-      for (auto cell : row) printf("%g\t", cell);
-      printf("\n");
+    if (data_complex_.size() == 0) 
+      throw std::invalid_argument("Nothing to print!");
+    for (auto row : data_complex_) {
+      printf("wl:%g\tre:%g\tim:%g\n", row.first, row.second.real(),
+	     row.second.imag());
     }  // end of for each row
   }
   // ********************************************************************** //

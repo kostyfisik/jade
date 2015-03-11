@@ -25,14 +25,17 @@
 #include <vector>
 #include <string>
 #include <complex>
+#include <utility>
 namespace read_spectra {
   class ReadSpectra {  // will throw for any error
    public:
     void ReadFromFile(std::string filename);
+    void ResizeToComplex(double from_wl, double to_wl, int samples);
     std::complex<double> at(double wavelength);
     void PrintData();    
   private:
     std::vector< std::vector<double> > data_;
+    std::vector< std::pair< double, std::complex<double> > > data_complex_;
   };  // end of class ReadSpectra
 }  // end of namespase read_spectra
 #endif  // SRC_READ_SPECTRA_READ_SPECTRA_H_
