@@ -29,13 +29,18 @@
 namespace read_spectra {
   class ReadSpectra {  // will throw for any error
    public:
-    void ReadFromFile(std::string filename);
-    void ResizeToComplex(double from_wl, double to_wl, int samples);
+    ReadSpectra& ReadFromFile(std::string filename);
+    ReadSpectra& ResizeToComplex(double from_wl, double to_wl, int samples);
+    ReadSpectra& ToIndex();
     std::complex<double> at(double wavelength);
     void PrintData();    
+    std::vector< std::pair< double, std::complex<double> > >&
+      GetIndex(){return data_complex_index_;};
   private:
     std::vector< std::vector<double> > data_;
     std::vector< std::pair< double, std::complex<double> > > data_complex_;
+    std::vector< std::pair< double, std::complex<double> > > data_complex_index_;
+    void PermittivityToIndex();
   };  // end of class ReadSpectra
 }  // end of namespase read_spectra
 #endif  // SRC_READ_SPECTRA_READ_SPECTRA_H_

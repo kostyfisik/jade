@@ -33,10 +33,11 @@
 #include <vector>
 #include "read-spectra.h"
 namespace read_spectra {
+  template<class T> inline T pow2(const T value) {return value*value;}
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  void ReadSpectra::ReadFromFile(std::string fname) {
+  ReadSpectra& ReadSpectra::ReadFromFile(std::string fname) {
     //std::cout<<"Reading file: "<< fname << std::endl;
     std::ifstream infile(fname.c_str());
     data_.clear();
@@ -61,8 +62,8 @@ namespace read_spectra {
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
-  /// Cut the spectra to the range and convert is to std::complex<double>
-  void ReadSpectra::ResizeToComplex(double from_wl, double to_wl, int samples) {
+  /// Cut the spectra to the range and convert it to std::complex<double>
+  ReadSpectra& ReadSpectra::ResizeToComplex(double from_wl, double to_wl, int samples) {
     if (data_.size() < 2) throw std::invalid_argument("Nothing to resize!/n");
     if (data_.front()[0] > from_wl || data_.front()[0] > to_wl ||
 	data_.back()[0] < from_wl || data_.back()[0] < to_wl ||
@@ -93,13 +94,33 @@ namespace read_spectra {
 	data_complex_.push_back(tmp);	
 	       
 	++j;
+	--i; // Next sampled point(j) can be in the same i .. i-1 region
 	// All sampled wavelengths has a value
 	if (j >= wl_sampled.size()) break;  
       }
     }
     if (data_complex_.size() == 0)
-      throw std::invalid_argument("No points in spectra fro defined range!/n");
+      throw std::invalid_argument("No points in spectra for the defined range!/n");
+    if (data_complex_.size() != samples)
+      throw std::invalid_argument("Was not able to get all samples!/n");
   }
+  // ********************************************************************** //
+  // ********************************************************************** //
+  // ********************************************************************** //
+  /// from relative permittivity to refractive index
+  ReadSpectra& ReadSpectra::ToIndex() {
+    data_complex_index_.clear();
+    for (auto row : data_complex_) {
+      const double wl = row.first;
+      const double e1 = row.second.real();
+      const double e2 = row.second.imag();
+      const double n = std::sqrt( (std::sqrt(pow2(e1)+pow2(e2)) + e1) /2.0 );
+      const double k = std::sqrt( (std::sqrt(pow2(e1)+pow2(e2)) - e1) /2.0 );
+      auto tmp = std::make_pair(wl, std::complex<double>(n,k));
+      data_complex_index_.push_back(tmp);	
+    }
+  }
+
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
