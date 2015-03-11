@@ -73,7 +73,7 @@ isBuildOnly=$no;
 #     isBuildOnly=$yes    
 # fi
 path_jade=$PWD;   path_bin=$path_jade/bin;   path_build=$path_jade/build
-path_src=$path_jade/src
+path_src=$path_jade/src;   path_data=$path_jade/data
 # Should be same as in cmake config in $path_src
 
 if [[ ! $mode ]]; then  mode=$mode_new2; fi
@@ -83,7 +83,10 @@ if [[ $mode = "help" || $mode = "--help" || $mode = "-h" ]]; then
 fi 
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
-jade_bin="run-optimize-feed-cloak"
+
+#jade_bin="run-optimize-feed-cloak"
+jade_bin="run-optimize-absorber-TiN"
+
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
 #jade_bin="run-optimize-meander-cloak"
@@ -93,6 +96,7 @@ jade_bin="run-optimize-feed-cloak"
 #jade_bin="run-optimize-meander-cloak-5layer"
 #jade_bin="run-quasi-pec-spectra"
 #jade_bin="run-jade-test-feed"
+
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
     jade_bin="run-jade-test"
@@ -341,6 +345,13 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
+if [[ $jade_bin = "run-optimize-absorber-TiN" ]]; then
+    echo Copy dispersion files...
+    cp $path_data/Si.txt $path_bin
+    cp $path_data/GaAs.txt $path_bin
+    cp $path_data/TiN.txt $path_bin
+    ls $path_bin
+fi
 if [[ $isBuildOnly = $yes ]]; then
     cd $path_bin
     mv run-jade-test jade-test.bin
@@ -516,5 +527,5 @@ cp $path_jade/scripts/prepare-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
 #echo $path_bin
 cd $path_bin
-./filter.py
+#./filter.py  # No longer needed?
 ./prepare-overview.py
