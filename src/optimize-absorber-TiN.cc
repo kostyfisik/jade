@@ -75,12 +75,13 @@ double max_r_ = 150; // nm
 double max_TiN_width_ = 10; // nm
 // Set dispersion
 double from_wl_ = 300.0, to_wl_ = 900.0;
-int samples_ = 3;
-bool isGaAs = false; // Select Si of GaAs as a material for core and shell
+int samples_ = 301;
+//bool isGaAs = false; // Select Si of GaAs as a material for core and shell
+bool isGaAs = true;
 // Set optimizer
-int total_generations_ = 150;
-int population_multiplicator_ = 6;
-double step_r_ = max_r_ / 3.0;
+int total_generations_ = 50;
+int population_multiplicator_ = 4;
+double step_r_ = max_r_ / 30.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -100,18 +101,17 @@ int main(int argc, char *argv[]) {
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
     // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nTiN:\n");   TiN_.PrintData(); }
     SetOptimizer();
-    initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
-    printf("Initial Qabs = %g/n", initial_Qabs_);
+    if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
-    for (total_r_ = step_r_; total_r_ < max_r_; total_r_+=step_r_) {
+    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+      if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
+      initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
+      if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
       sub_population_.RunOptimization();
-      //auto current = sub_population_.GetFinalFitness();
-    //  double best_RCS = 0.0;
-    //   auto best_x = sub_population_.GetBest(&best_RCS);
-    //   spectra1.push_back({total_thickness, best_x[0]});
-    //   spectra2.push_back({total_thickness, best_RCS});
-    //   // Output results
+      auto current = sub_population_.GetFinalFitness();
+      //  double best_RCS = 0.0;
+      //   // Output results
     //   for (unsigned int i = 0; i < current.size(); ++i)
     // 	if (current[output_rank] > current[i]) output_rank = i;
       //if (rank == output_rank) {
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     // 	printf("####### total_thickness = %g\n",total_thickness);
     // 	PrintCoating(current, initial_RCS, sub_population_);
       //}  // end of output for process with best final fitness
-    //   // PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
+      PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
     //   //sub_population_.PrintResult("-- ");
     }  // end of total coating thickness sweep
     // PrintGnuPlotThickness(spectra1, 0.1, "1st layer share");
@@ -144,7 +144,7 @@ void SetOptimizer() {
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  sub_population_.SetAllBounds(0.0, 1.0);
+  sub_population_.SetAllBounds(eps_, 1.0-eps_);
   sub_population_.SetTargetToMaximum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   //sub_population.SwitchOffPMCRADE();
@@ -160,10 +160,19 @@ double EvaluateFitness(std::vector<double> input) {
   if (input.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
   core_share_ = input[0];
   TiN_share_ = input[1];
-  const double TiN_width = (max_r_>max_TiN_width_ ? max_TiN_width_ : max_r_) * TiN_share_;
-  const double core_width = (max_r_ - TiN_width) * core_share_;
-  const double shell_width = max_r_ - core_width - TiN_width;
-
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;
+  if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
+    printf("core_share = %g\n",core_share_);
+    printf("TiN_share = %g\n",TiN_share_);
+    printf("total_r_ = %g\n",total_r_);
+    
+    printf("TiN <=0:   %g\n", TiN_width);
+    printf("core <=0:   %g\n",core_width);
+    printf("shell <=0:   %g\n",shell_width);
+  }
+  
   auto core_data = core_index_.GetIndex();
   auto TiN_data = TiN_.GetIndex();
   double max_Qabs = 0.0, Qabs = 0.0;
@@ -181,7 +190,7 @@ double EvaluateFitness(std::vector<double> input) {
       multi_layer_mie_.RunMieCalculations();
       Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
-      printf("#");
+      printf(".");
     }
     if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
@@ -192,11 +201,51 @@ double EvaluateFitness(std::vector<double> input) {
 // ********************************************************************** //
 // ********************************************************************** //
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
-  double best_RCS;
-  auto best_x = sub_population_.GetBest(&best_RCS);
+  auto best_x = sub_population_.GetBest(&Qabs_);
   // Setting Mie model to the best state.
-  sub_population_.FitnessFunction(best_x);
-  return multi_layer_mie_.GetSpectra(0.5, 1.5, 1000);
+  if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
+  core_share_ = best_x[0];
+  TiN_share_ = best_x[1];
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;
+  if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
+    printf("core_share = %g\n",core_share_);
+    printf("TiN_share = %g\n",TiN_share_);
+    printf("total_r_ = %g\n",total_r_);
+    
+    printf("TiN <=0:   %g\n", TiN_width);
+    printf("core <=0:   %g\n",core_width);
+    printf("shell <=0:   %g\n",shell_width);
+  }
+  
+  auto core_data = core_index_.GetIndex();
+  auto TiN_data = TiN_.GetIndex();
+  double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
+  std::vector< std::vector<double> > spectra;
+  for (int i=0; i < core_data.size(); ++i) {
+    const double& wl = core_data[i].first;
+    const std::complex<double>& core = core_data[i].second;
+    const std::complex<double>& TiN = TiN_data[i].second;
+    const std::complex<double>& shell = core;
+    multi_layer_mie_.ClearTarget();
+    multi_layer_mie_.AddTargetLayer(core_width, core);
+    multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
+    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    multi_layer_mie_.SetWavelength(wl);
+    try {
+      multi_layer_mie_.RunMieCalculations();
+      Qabs = multi_layer_mie_.GetQabs();
+      Qext = multi_layer_mie_.GetQext();
+      Qsca = multi_layer_mie_.GetQsca();
+      Qabs = multi_layer_mie_.GetQabs();
+      spectra.push_back({wl,Qext,Qsca,Qabs,Qbk});
+    } catch( const std::invalid_argument& ia ) {
+      printf(".");
+    }
+    if (Qabs > max_Qabs) max_Qabs = Qabs;
+  }  // end of for all points of the spectrum
+  return spectra;
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -237,11 +286,11 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TotalR%06.2f-Qabs%06.3f:%+4.1f%%-core%07.2f:%+4.1f-TiN%07.2f:%+4.1fshell%07.2f:%+4.1f-spectra",
-           total_r_, Qabs_, (Qabs_/initial_Qabs_-1.0)*100.0,
-	   (max_r_ - max_TiN_width_*TiN_share_)*core_share_, core_share_,
-	   max_TiN_width_*TiN_share_, TiN_share_,
-	   (max_r_ - max_TiN_width_*TiN_share_)*(1.0-core_share_), (1.0-core_share_));
+           "TotalR%06.fnm-Qabs%06.3f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-spectra",
+           total_r_, Qabs_,
+	   (total_r_ - max_TiN_width_*TiN_share_)*core_share_,
+	   max_TiN_width_*TiN_share_,
+	   (total_r_ - max_TiN_width_*TiN_share_)*(1.0-core_share_));
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
   wrapper.SetYLabelName("Mie efficiency");

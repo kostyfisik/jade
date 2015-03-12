@@ -157,7 +157,7 @@ namespace jade {
   // ********************************************************************** //
   // ********************************************************************** //
   int SubPopulation::RunOptimization() {
-    if (process_rank_ == kOutput) printf("Start optimization..\n");
+    //if (process_rank_ == kOutput) printf("Start optimization..\n");
     if (error_status_) return error_status_;
     adaptor_mutation_mu_F_ = 0.5;
     adaptor_crossover_mu_CR_ = 0.5;
@@ -394,6 +394,7 @@ namespace jade {
   // ********************************************************************** //
   int SubPopulation::PrintPopulation() {
     if (process_rank_ == kOutput) {
+      printf("\n");	
       for (auto x : evaluated_fitness_for_current_vectors_) {
 	long n = x.second;
 	double fitness = x.first;
@@ -475,11 +476,11 @@ namespace jade {
     if (x_vectors_current_.size() != subpopulation_)
       throw std::invalid_argument("Population is not full after feed!");	
     x_feed_vectors_.clear();
-    if (process_rank_ == kOutput) {
-      printf("==--== Initial population:\n");    
-      EvaluateCurrentVectors();
-      PrintPopulation();
-    }
+    // if (process_rank_ == kOutput) {
+    //   printf("==--== Initial population:\n");    
+    //   EvaluateCurrentVectors();
+    //   PrintPopulation();
+    // }
     return kDone;
   }  // end of int SubPopulation::CreateInitialPopulation()
   // ********************************************************************** //
