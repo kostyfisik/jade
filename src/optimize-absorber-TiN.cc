@@ -99,14 +99,14 @@ int main(int argc, char *argv[]) {
     if (core_index_.GetIndex().size()
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
     // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nTiN:\n");   TiN_.PrintData(); }
+    SetOptimizer();
     initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
     printf("Initial Qabs = %g/n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
     for (total_r_ = step_r_; total_r_ < max_r_; total_r_+=step_r_) {
-      SetOptimizer();
-    //   sub_population_.RunOptimization();
-    //   auto current = sub_population_.GetFinalFitness();
+      sub_population_.RunOptimization();
+      //auto current = sub_population_.GetFinalFitness();
     //  double best_RCS = 0.0;
     //   auto best_x = sub_population_.GetBest(&best_RCS);
     //   spectra1.push_back({total_thickness, best_x[0]});
@@ -114,11 +114,11 @@ int main(int argc, char *argv[]) {
     //   // Output results
     //   for (unsigned int i = 0; i < current.size(); ++i)
     // 	if (current[output_rank] > current[i]) output_rank = i;
-    //   if (rank == output_rank) {
-    // 	for (auto c : current) printf("All %g\n",c);
+      //if (rank == output_rank) {
+      //	for (auto c : current) printf("All %g\n",c);
     // 	printf("####### total_thickness = %g\n",total_thickness);
     // 	PrintCoating(current, initial_RCS, sub_population_);
-    //   }  // end of output for process with best final fitness
+      //}  // end of output for process with best final fitness
     //   // PrintGnuPlotSpectra(EvaluateSpectraForBestDesign(), initial_RCS);
     //   //sub_population_.PrintResult("-- ");
     }  // end of total coating thickness sweep
