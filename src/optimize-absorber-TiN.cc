@@ -80,8 +80,8 @@ int samples_ = 301;
 bool isGaAs = true;
 // Set optimizer
 int total_generations_ = 150;
-int population_multiplicator_ = 8;
-double step_r_ = max_r_ / 30.0;
+int population_multiplicator_ = 14;
+double step_r_ = max_r_ / 60.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -285,12 +285,12 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;
   snprintf(plot_name, 300,
            "TotalR%06.fnm-Qabs%06.3f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-spectra",
-           total_r_, Qabs_,
-	   (total_r_ - max_TiN_width_*TiN_share_)*core_share_,
-	   max_TiN_width_*TiN_share_,
-	   (total_r_ - max_TiN_width_*TiN_share_)*(1.0-core_share_));
+           total_r_, Qabs_,  core_width, TiN_width, shell_width);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
   wrapper.SetYLabelName("Mie efficiency");

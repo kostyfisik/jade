@@ -524,7 +524,10 @@ for file in `ls run-gnuplot* 2>/dev/null`; do
 done   
 
 cp $path_jade/scripts/prepare-overview.py $path_bin
+cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
+mkdir $path_bin/src
+cp -r $path_jade/src $path_bin/src
 #echo $path_bin
 cd $path_bin
 #./filter.py  # No longer needed?
