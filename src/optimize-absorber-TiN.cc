@@ -66,6 +66,7 @@ read_spectra::ReadSpectra core_index_, TiN_;
 // ********************************************************************** //
 // ********************************************************************** //
 double lambda_best_ = 0.0; // nm
+int fails_ = 0;
 double core_share_ = 0.0, TiN_share_ = 0.0;
 double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
@@ -75,7 +76,7 @@ double max_r_ = 150; // nm
 double max_TiN_width_ = 10; // nm
 // Set dispersion
 double from_wl_ = 300.0, to_wl_ = 900.0;
-int samples_ = 301;
+int samples_ = 151;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
@@ -201,6 +202,7 @@ double EvaluateFitness(std::vector<double> input) {
 // ********************************************************************** //
 // ********************************************************************** //
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
+  fails_ = 0;
   auto best_x = sub_population_.GetBest(&Qabs_);
   // Setting Mie model to the best state.
   if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
@@ -242,6 +244,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
       spectra.push_back({wl,Qext,Qsca,Qabs,Qbk});
     } catch( const std::invalid_argument& ia ) {
       printf(".");
+      ++fails_;
     }
     if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
@@ -289,8 +292,8 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;
   snprintf(plot_name, 300,
-           "TotalR%06.fnm-Qabs%06.3f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-spectra",
-           total_r_, Qabs_,  core_width, TiN_width, shell_width);
+           "TotalR%06.fnm-Qabs%06.3f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-fails%d-spectra",
+           total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
   wrapper.SetYLabelName("Mie efficiency");
