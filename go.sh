@@ -528,4 +528,8 @@ cp $path_jade/scripts/filter.py $path_bin
 #echo $path_bin
 cd $path_bin
 #./filter.py  # No longer needed?
-./prepare-overview.py
+if [[ $jade_bin = "run-optimize-absorber-TiN" ]]; then
+    ./prepare-Qabs-overview.py
+else
+    ./prepare-overview.py
+fi

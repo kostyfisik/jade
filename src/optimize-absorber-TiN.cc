@@ -79,8 +79,8 @@ int samples_ = 301;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
-int total_generations_ = 50;
-int population_multiplicator_ = 4;
+int total_generations_ = 150;
+int population_multiplicator_ = 8;
 double step_r_ = max_r_ / 30.0;
 // ********************************************************************** //
 // ********************************************************************** //
