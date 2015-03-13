@@ -62,8 +62,8 @@ mode_single="single";
 # mode_custom="custom"; mode_debug="debug";       mode_build="build"
 # Default values
 yes="yes";        no="no"
-compiler_gcc="gcc";
-#compiler_clang="clang"
+#compiler_gcc="gcc";
+compiler_clang="clang"
 usedCompiler=$compiler_gcc # or clang
 useGCC48=$no  # use gcc 4.8 if it is available in build area of scripts folder
 isNew=$yes;
