@@ -120,7 +120,11 @@ int main(int argc, char *argv[]) {
     // 	printf("####### total_thickness = %g\n",total_thickness);
     // 	PrintCoating(current, initial_RCS, sub_population_);
       //}  // end of output for process with best final fitness
+
+      // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
+      
+      
     //   //sub_population_.PrintResult("-- ");
     }  // end of total coating thickness sweep
     // PrintGnuPlotThickness(spectra1, 0.1, "1st layer share");

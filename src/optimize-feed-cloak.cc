@@ -76,8 +76,8 @@ double initial_RCS_ = 0.0;
 double Qfailed_ = 1000;
 int total_generations_ = 1200;
 int population_multiplicator_ = 13;
-double layer_width_ = 0.1;
-int max_number_of_layers_ = 12;
+double layer_width_ = 0.05;
+int max_number_of_layers_ = 24;
 double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
 int main(int argc, char *argv[]) {
@@ -205,7 +205,6 @@ void SetOptimizer() {
   /// Low and upper bound for all dimensions;
   sub_population_.SetAllBounds(from_epsilon_, to_epsilon_);
   sub_population_.SetTargetToMinimum(); //Check SetQFailed!!!
-  Qfailed_ = 1000.0;
   sub_population_.SetTotalGenerationsMax(total_generations_);
   sub_population_.SwitchOffPMCRADE();
 
@@ -249,7 +248,7 @@ double EvaluateScatterOnlyIndex(std::vector<double> input) {
   } catch( const std::invalid_argument& ia ) {
     auto best_x = sub_population_.GetWorst(&Qfailed_);
     Qsca = Qfailed_;
-    printf("#");
+    printf(".");
     // Will catch if  multi_layer_mie_ fails or other errors.
     //std::cerr << "Invalid argument: " << ia.what() << std::endl;
   }  

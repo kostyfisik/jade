@@ -84,8 +84,8 @@ fi
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
 
-#jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-absorber-TiN"
+jade_bin="run-optimize-feed-cloak"
+#jade_bin="run-optimize-absorber-TiN"
 
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
@@ -526,12 +526,11 @@ done
 cp $path_jade/scripts/prepare-overview.py $path_bin
 cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
-mkdir $path_bin/src
-cp -r $path_jade/src $path_bin/src
+cp -r $path_jade/src $path_bin
 #echo $path_bin
 cd $path_bin
 #./filter.py  # No longer needed?
-if [[ $jade_bin = "run-optimize-absorber-TiN" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py
 else
     ./prepare-overview.py

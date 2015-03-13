@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import os
 from glob import glob
-#WL_work = 3.75
-os.system("rm -f R*-owerview.dat")            
+import numpy as np
+os.system("rm -f R*-overview.dat")            
 for dirname, dirnames, filenames in os.walk('.'):
     # print path to all filenames.
     for filename in filenames:
         isGood = False
         if '-spectra.dat' in filename:
-            # print filename
+            #print filename
             sign = filename[0:-12]
             r =  sign[7:13]
             width = sign[23:28]
@@ -16,7 +16,8 @@ for dirname, dirnames, filenames in os.walk('.'):
             layers_num = 'n00'
             for num in [1,2,3,4,8,16,32,64]:
                 if sign.find('-n'+str(num)+'-') > -1:
-                    layers_num= 'R'+str(r)+'-n'+str(num)+'-owerview'
+                    layers_num= 'R'+str(r)+'-n'+str(num)+'-overview'
+                    print layers_num
                     if not os.path.isfile(layers_num+'.dat'):
                         with open(layers_num+'.dat', "w") as myfile:
                             myfile.write('# '+layers_num+'\n')
