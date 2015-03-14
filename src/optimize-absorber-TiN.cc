@@ -72,7 +72,7 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-double max_r_ = 150; // nm
+double max_r_ = 159.0; // nm
 double max_TiN_width_ = 10; // nm
 // Set dispersion
 double from_wl_ = 300.0, to_wl_ = 900.0;
@@ -81,8 +81,8 @@ int samples_ = 151;
 bool isGaAs = true;
 // Set optimizer
 int total_generations_ = 150;
-int population_multiplicator_ = 14;
-double step_r_ = max_r_ / 60.0;
+int population_multiplicator_ = 60;
+double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
-    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    for (total_r_ = 10.0; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
       if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
@@ -296,7 +296,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;
   snprintf(plot_name, 300,
-           "TotalR%06.fnm-Qabs%06.3f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-fails%d-spectra",
+           "TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-fails%d-spectra",
            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");

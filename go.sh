@@ -84,8 +84,8 @@ fi
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
 
-jade_bin="run-optimize-feed-cloak"
-#jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-feed-cloak"
+jade_bin="run-optimize-absorber-TiN"
 
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
