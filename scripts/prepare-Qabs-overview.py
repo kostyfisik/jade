@@ -60,11 +60,13 @@ for dirname, dirnames, filenames in os.walk('.'):
             #s = row[-4]+row[-2]+row[-3]
             #s = row[-3]
             #print row
+            row = np.append(row,Q_max)
             row = np.append(row,wl_max)
             p = np.append(p,row)
             #print p
             isFirst = False
 p.shape = (len(p)/len(row),len(row))
+label.append('Qmax')
 label.append('WL_Qmax')
 # p = np.sort(p,axis=0) 
 #print p
@@ -90,6 +92,7 @@ if 'Qabs' in label:
     ax1.grid(b=True, which='major', color='0.8', linestyle='-')
     ax1.set_axisbelow(True)
     ax1.plot(p[:,0], p[:,1], 'o', linewidth=2.0, ms=4, label=label[1], markeredgecolor='none')
+    ax1.plot(p[:,0], p[:,-2], '^', linewidth=2.0, ms=4, label=label[-2], markeredgecolor='none')
     #fig.suptitle(label[1], fontsize=20)
     ax1.set_xlabel('%s, nm'%label[0], fontsize=16)
     ax1.set_ylabel(label[1], fontsize=16)
