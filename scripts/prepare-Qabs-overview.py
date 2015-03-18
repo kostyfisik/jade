@@ -19,7 +19,12 @@ def find_max(filename, column=3): #default column=3 equals for Qabs
              for line in f:
                  nums = line.split()
                  if len(nums)==5:
-                     row = [float(x) for x in nums]
+                     row = []
+                     for x in nums:
+                         if x.count('.') < 2:
+                             row.append(float(x))
+                         else:
+                             row.append(0.0)
                      if row[column] > Q_max:
                          wl_max = row[0]
                          Q_max = row[column]
