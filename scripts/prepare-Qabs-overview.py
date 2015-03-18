@@ -66,8 +66,8 @@ for dirname, dirnames, filenames in os.walk('.'):
             #print p
             isFirst = False
 p.shape = (len(p)/len(row),len(row))
-label.append('Qmax')
-label.append('WL_Qmax')
+label.append('Qabs_max')
+label.append('WL_Qabs_max')
 # p = np.sort(p,axis=0) 
 #print p
 ##################################################################################################
@@ -102,7 +102,7 @@ if 'Qabs' in label:
     ax2 = ax1.twinx()
     ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=4, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
     ax2.set_ylabel('%s, nm'%label[-1], fontsize=16)
-    ax2.legend(loc=6)
+    ax2.legend(loc=4)
     plt.savefig("overview-%s.svg"%label[1])
     #print p
 ##################################################################################################
@@ -125,7 +125,7 @@ if 'Qabs' in label:
     ax2 = ax1.twinx()
     ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=4, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
     ax2.set_ylabel('%s, nm'%label[-1], fontsize=16)
-    ax2.legend(loc=6)
+    ax2.legend(loc=9)
     # fig = plt.plot(p[:,0], p[:,1],'g^', linewidth=2.0)
     # fig.suptitle(label[1])
     plt.savefig("overview-%s.svg"%label[2])

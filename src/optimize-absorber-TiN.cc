@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
-    for (total_r_ = 10.0; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
       if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
