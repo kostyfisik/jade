@@ -62,6 +62,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 nmie::MultiLayerMie multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 read_spectra::ReadSpectra core_index_, TiN_;
+read_spectra::ReadSpectra plot_core_index_, plot_TiN_;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -75,8 +76,10 @@ double total_r_ = 0.0;
 double max_r_ = 159.0; // nm
 double max_TiN_width_ = 10; // nm
 // Set dispersion
-double from_wl_ = 300.0, to_wl_ = 900.0;
-int samples_ = 151;
+double from_wl_ = 600.0, to_wl_ = 600.0;
+int samples_ = 1;
+double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
+int plot_samples_ = 151;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
@@ -92,12 +95,18 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    if (isGaAs)
+    if (isGaAs) {
       core_index_.ReadFromFile("GaAs.txt");
-    else
+      plot_core_index_.ReadFromFile("GaAs.txt");
+    } else {
       core_index_.ReadFromFile("Si.txt");
+      plot_core_index_.ReadFromFile("Si.txt");      
+    }
     core_index_.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
+    plot_core_index_.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
     TiN_.ReadFromFile("TiN.txt").ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
+    plot_TiN_.ReadFromFile("TiN.txt")
+      .ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
     if (core_index_.GetIndex().size()
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
     // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nTiN:\n");   TiN_.PrintData(); }
@@ -105,30 +114,15 @@ int main(int argc, char *argv[]) {
     if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
     int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
-    for (total_r_ = 10.0; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
       if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
       sub_population_.RunOptimization();
       auto current = sub_population_.GetFinalFitness();
-      //  double best_RCS = 0.0;
-      //   // Output results
-    //   for (unsigned int i = 0; i < current.size(); ++i)
-    // 	if (current[output_rank] > current[i]) output_rank = i;
-      //if (rank == output_rank) {
-      //	for (auto c : current) printf("All %g\n",c);
-    // 	printf("####### total_thickness = %g\n",total_thickness);
-    // 	PrintCoating(current, initial_RCS, sub_population_);
-      //}  // end of output for process with best final fitness
-
       // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
-      
-      
-    //   //sub_population_.PrintResult("-- ");
     }  // end of total coating thickness sweep
-    // PrintGnuPlotThickness(spectra1, 0.1, "1st layer share");
-    // PrintGnuPlotThickness(spectra2, 0.2, "Total RCS");
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -225,8 +219,8 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
     printf("shell <=0:   %g\n",shell_width);
   }
   
-  auto core_data = core_index_.GetIndex();
-  auto TiN_data = TiN_.GetIndex();
+  auto core_data = plot_core_index_.GetIndex();
+  auto TiN_data = plot_TiN_.GetIndex();
   double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
   for (int i=0; i < core_data.size(); ++i) {

@@ -65,12 +65,14 @@ for dirname, dirnames, filenames in os.walk('.'):
             #s = row[-4]+row[-2]+row[-3]
             #s = row[-3]
             #print row
+            row = np.append(row,Q_max)
             row = np.append(row,wl_max)
             p = np.append(p,row)
             #print p
             isFirst = False
 p.shape = (len(p)/len(row),len(row))
-label.append('WL_Qmax')
+label.append('Qabs_max')
+label.append('WL_Qabs_max')
 # p = np.sort(p,axis=0) 
 #print p
 ##################################################################################################
@@ -92,7 +94,10 @@ mark = markers[3:3+len(label)]
 ##################################################################################################
 if 'Qabs' in label:
     fig, ax1 = plt.subplots()
-    ax1.plot(p[:,0], p[:,1], 'o', linewidth=2.0, label=label[1], markeredgecolor='none')
+    ax1.grid(b=True, which='major', color='0.8', linestyle='-')
+    ax1.set_axisbelow(True)
+    ax1.plot(p[:,0], p[:,1], 'o', linewidth=2.0, ms=4, label=label[1], markeredgecolor='none')
+    ax1.plot(p[:,0], p[:,-2], '^', linewidth=2.0, ms=4, label=label[-2], markeredgecolor='none')
     #fig.suptitle(label[1], fontsize=20)
     ax1.set_xlabel('%s, nm'%label[0], fontsize=16)
     ax1.set_ylabel(label[1], fontsize=16)
@@ -100,9 +105,9 @@ if 'Qabs' in label:
     # fig.suptitle(label[1])
     ax1.legend(loc='upper left')
     ax2 = ax1.twinx()
-    ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=5, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
+    ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=4, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
     ax2.set_ylabel('%s, nm'%label[-1], fontsize=16)
-    ax2.legend(loc=6)
+    ax2.legend(loc=4)
     plt.savefig("overview-%s.svg"%label[1])
     #print p
 ##################################################################################################
@@ -111,7 +116,7 @@ if 'Qabs' in label:
     fig, ax1 = plt.subplots()
     mark = markers[3:3+len(label)]
     for plot_num in range(2,len(label)-2):
-        plt.plot(p[:,0], p[:,plot_num], linestyle='None', marker=mark[plot_num], linewidth=2.0, label=label[plot_num], markeredgecolor='none')
+        plt.plot(p[:,0], p[:,plot_num], linestyle='None', ms=4, marker=mark[plot_num], linewidth=2.0, label=label[plot_num], markeredgecolor='none')
     #fig.suptitle(label[1], fontsize=20)
     # from matplotlib.font_manager import FontProperties
     # fontP = FontProperties()
@@ -120,10 +125,12 @@ if 'Qabs' in label:
     #plt.legend()
     plt.xlabel('%s, nm'%label[0], fontsize=16)
     plt.ylabel('Width, nm', fontsize=16)
+    ax1.grid(b=True, which='major', color='0.8', linestyle='-')
+    ax1.set_axisbelow(True)
     ax2 = ax1.twinx()
-    ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=5, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
+    ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=4, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
     ax2.set_ylabel('%s, nm'%label[-1], fontsize=16)
-    ax2.legend(loc=6)
+    ax2.legend(loc=9)
     # fig = plt.plot(p[:,0], p[:,1],'g^', linewidth=2.0)
     # fig.suptitle(label[1])
     plt.savefig("overview-%s.svg"%label[2])

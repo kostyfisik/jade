@@ -67,13 +67,17 @@ namespace read_spectra {
     if (data_.size() < 2) throw std::invalid_argument("Nothing to resize!/n");
     if (data_.front()[0] > from_wl || data_.front()[0] > to_wl ||
 	data_.back()[0] < from_wl || data_.back()[0] < to_wl ||
-	from_wl >= to_wl)
+	from_wl > to_wl)
       throw std::invalid_argument("Invalid range to resize spectra!/n");
-    if (samples < 2) throw std::invalid_argument("Not enough samples!/n");
+    if (samples < 1) throw std::invalid_argument("Not enough samples!/n");
     std::vector<double> wl_sampled(samples, 0.0);
-    for (int i =0; i<samples; ++i)
-      wl_sampled[i] = from_wl
-	+ (to_wl-from_wl)*static_cast<double>(i)/static_cast<double>(samples-1);
+    if (samples == 1) {
+      wl_sampled[0] = (from_wl + to_wl)/2.0;
+    } else {
+      for (int i =0; i<samples; ++i)
+	wl_sampled[i] = from_wl
+	  + (to_wl-from_wl)*static_cast<double>(i)/static_cast<double>(samples-1);
+    }  // end of setting wl_sampled
     data_complex_.clear();
     int j = 0;
     for (int i = 0; i < data_.size(); ++i) {

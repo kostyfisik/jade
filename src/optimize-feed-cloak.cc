@@ -75,8 +75,8 @@ double initial_RCS_ = 0.0;
 
 double Qfailed_ = 1000;
 int total_generations_ = 1200;
-int population_multiplicator_ = 13;
-double layer_width_ = 0.05;
+int population_multiplicator_ = 60;
+double layer_width_ = 0.2;
 int max_number_of_layers_ = 24;
 double from_epsilon_ = -100.0, to_epsilon_ = 100.0;
 // ********************************************************************** //
