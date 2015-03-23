@@ -537,3 +537,6 @@ if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cl
 else
     ./prepare-overview.py
 fi
+cd $path_jade
+rm bin.tar.bz2
+tar -cjvf bin.tar.bz2 bin
