@@ -226,7 +226,7 @@ if [[ $mode = $mode_pgo ]]; then
 fi 
 if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
     echo Setting MPI path on rh-lum.metalab.ifmo.ru !
-    scl enable devtoolset-1.1 bash
+    #scl enable devtoolset-1.1 bash
     # ompi_path_bin=/usr/lib64/openmpi/bin/
     # ompi_path_lib=/usr/lib64/openmpi/lib/
     # if [ -d "$ompi_path_bin" ] && [[ ":$PATH:" != *":$ompi_path_bin:"* ]]; then
