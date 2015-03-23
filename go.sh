@@ -530,6 +530,9 @@ cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
 cp -r $path_jade/src $path_bin
 #echo $path_bin
+cd $path_jade
+rm bin.tar.bz2
+tar -cjvf bin.tar.bz2 bin
 cd $path_bin
 #./filter.py  # No longer needed?
 if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cloak" ]]; then
@@ -537,6 +540,3 @@ if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cl
 else
     ./prepare-overview.py
 fi
-cd $path_jade
-rm bin.tar.bz2
-tar -cjvf bin.tar.bz2 bin

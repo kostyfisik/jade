@@ -100,9 +100,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     //std::string core_filename("GaAs.txt");
-    std::string core_filename("Si.txt");
+    //std::string core_filename("Si.txt");
+    std::string core_filename("Ag.txt");
     //std::string TiN_filename("TiN.txt");
-    std::string TiN_filename("Ag.txt");
+    //std::string TiN_filename("Ag.txt");
+    std::string TiN_filename("Si.txt");
     std::string shell_filename(core_filename);
     sign_ = core_filename.substr(0, core_filename.find("."))+"-"+
       TiN_filename.substr(0, core_filename.find("."))+"-"+
