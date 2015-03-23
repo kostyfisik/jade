@@ -63,6 +63,7 @@ nmie::MultiLayerMie multi_layer_mie_;
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 read_spectra::ReadSpectra core_index_, TiN_;
 read_spectra::ReadSpectra plot_core_index_, plot_TiN_;
+std::string sign_, full_sign_;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -73,11 +74,14 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-double max_r_ = 159.0; // nm
-double max_TiN_width_ = 10; // nm
+const double max_r_ = 159.0; // nm
+const double max_TiN_width_ = max_r_; // nm
+//double max_TiN_width_ = 10; // nm
 // Set dispersion
-double from_wl_ = 600.0, to_wl_ = 600.0;
-int samples_ = 1;
+//double from_wl_ = 600.0, to_wl_ = 600.0;
+//int samples_ = 1;
+double from_wl_ = 300.0, to_wl_ = 900.0;
+int samples_ = 301;
 double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
 int plot_samples_ = 151;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
@@ -95,17 +99,23 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    if (isGaAs) {
-      core_index_.ReadFromFile("GaAs.txt");
-      plot_core_index_.ReadFromFile("GaAs.txt");
-    } else {
-      core_index_.ReadFromFile("Si.txt");
-      plot_core_index_.ReadFromFile("Si.txt");      
-    }
+    //std::string core_filename("GaAs.txt");
+    std::string core_filename("Si.txt");
+    //std::string TiN_filename("TiN.txt");
+    std::string TiN_filename("Ag.txt");
+    std::string shell_filename(core_filename);
+    sign_ = core_filename.substr(0, core_filename.find("."))+"-"+
+      TiN_filename.substr(0, core_filename.find("."))+"-"+
+      shell_filename.substr(0, core_filename.find("."));
+    std::cout << "Sign: " << sign_ << std::endl;
+    core_index_.ReadFromFile(core_filename);
+    plot_core_index_.ReadFromFile(core_filename);
     core_index_.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
-    plot_core_index_.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
-    TiN_.ReadFromFile("TiN.txt").ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
-    plot_TiN_.ReadFromFile("TiN.txt")
+    plot_core_index_.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_)
+      .ToIndex();
+    TiN_.ReadFromFile(TiN_filename).ResizeToComplex(from_wl_, to_wl_, samples_)
+      .ToIndex();
+    plot_TiN_.ReadFromFile(TiN_filename)
       .ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
     if (core_index_.GetIndex().size()
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
@@ -122,6 +132,15 @@ int main(int argc, char *argv[]) {
       auto current = sub_population_.GetFinalFitness();
       // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
+      if (rank == 0) {
+	printf("Spectra: %s\n", full_sign_.c_str());
+	// TiN_share_ and core_share_ are set in EvaluateSpectraForBestDesign()
+	const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+	const double core_width = (total_r_ - TiN_width) * core_share_;
+	const double shell_width = total_r_ - core_width - TiN_width;
+	printf("core_width:%.19g\nfirst_shell_width:%.19g\nouter_shell_width:%.19g\n",
+	       core_width, TiN_width, shell_width);
+      }
     }  // end of total coating thickness sweep
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -288,10 +307,11 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   char plot_name [300];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
-  const double shell_width = total_r_ - core_width - TiN_width;
+  const double shell_width = total_r_ - core_width - TiN_width;  
   snprintf(plot_name, 300,
-           "TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--TiN%07.2fnm--shell%07.2fnm-fails%d-spectra",
+           "%s-TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(),
            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
+  full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
   wrapper.SetYLabelName("Mie efficiency");
