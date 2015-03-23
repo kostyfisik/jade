@@ -78,10 +78,10 @@ const double max_r_ = 159.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //double max_TiN_width_ = 10; // nm
 // Set dispersion
-//double from_wl_ = 600.0, to_wl_ = 600.0;
-//int samples_ = 1;
-double from_wl_ = 300.0, to_wl_ = 900.0;
-int samples_ = 301;
+double from_wl_ = 600.0, to_wl_ = 600.0;
+int samples_ = 1;
+// double from_wl_ = 300.0, to_wl_ = 900.0;
+// int samples_ = 301;
 double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
 int plot_samples_ = 151;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
