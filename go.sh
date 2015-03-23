@@ -84,8 +84,8 @@ fi
 #jade_bin="run-size-sweep"
 #jade_bin="run-optimize-cloak"
 
-jade_bin="run-optimize-feed-cloak"
-#jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-feed-cloak"
+jade_bin="run-optimize-absorber-TiN"
 
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
@@ -350,6 +350,7 @@ if [[ $jade_bin = "run-optimize-absorber-TiN" ]]; then
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin
     cp $path_data/TiN.txt $path_bin
+    cp $path_data/Ag.txt $path_bin
     ls $path_bin
 fi
 if [[ $isBuildOnly = $yes ]]; then
