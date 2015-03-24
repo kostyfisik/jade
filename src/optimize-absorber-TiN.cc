@@ -53,9 +53,13 @@ void SetOptimizer();
 
 double EvaluateFitness(std::vector<double> input);
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
+std::vector< std::vector<double> > EvaluateSpectraForChannels(std::vector<double>& best_x,
+							      double total_r);
+void Print();
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
+void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -76,19 +80,20 @@ double total_r_ = 0.0;
 // Set model: core->TiN->shell
 const double max_r_ = 159.0; // nm
 const double max_TiN_width_ = max_r_; // nm
-//double max_TiN_width_ = 10; // nm
+//const double max_TiN_width_ = 10; // nm
 // Set dispersion
-// double from_wl_ = 600.0, to_wl_ = 600.0;
-// int samples_ = 1;
-double from_wl_ = 300.0, to_wl_ = 900.0;
-int samples_ = 301;
-double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
+double at_wl_ = 600.0;
+double from_wl_ = at_wl_, to_wl_ = at_wl_;
+int samples_ = 1;
+// double from_wl_ = 300.0, to_wl_ = 900.0;
+// int samples_ = 301;
+double plot_from_wl_ = 450.0, plot_to_wl_ = 700.0;
 int plot_samples_ = 151;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
 int total_generations_ = 150;
-int population_multiplicator_ = 60;
+int population_multiplicator_ = 16;
 double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
@@ -123,27 +128,31 @@ int main(int argc, char *argv[]) {
 	!= TiN_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
     // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nTiN:\n");   TiN_.PrintData(); }
     SetOptimizer();
-    if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
-    int output_rank = 0;
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
+    auto best_x = sub_population_.GetBest(&Qabs_);
+    double best_Qabs = 0.0, best_total_r = 0.0;
+    // ***************************************************
+    // **************  Main loop   ***********************
+    // ***************************************************  
     for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
-      initial_Qabs_ = EvaluateFitness({1.0-eps_, eps_});  // Only core
-      if (rank == 0) printf("\nInitial Qabs = %g\n", initial_Qabs_);
       sub_population_.RunOptimization();
-      auto current = sub_population_.GetFinalFitness();
       // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
-      if (rank == 0) {
-	printf("Spectra: %s\n", full_sign_.c_str());
-	// TiN_share_ and core_share_ are set in EvaluateSpectraForBestDesign()
-	const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
-	const double core_width = (total_r_ - TiN_width) * core_share_;
-	const double shell_width = total_r_ - core_width - TiN_width;
-	printf("core_width:%.19g\nfirst_shell_width:%.19g\nouter_shell_width:%.19g\n",
-	       core_width, TiN_width, shell_width);
+      if (rank == 0) Print();
+      auto best_local_x = sub_population_.GetBest(&Qabs_);
+      if (Qabs_ > best_Qabs) {
+	best_Qabs = Qabs_;
+	best_total_r = total_r_;
+	best_x = best_local_x;	
       }
     }  // end of total coating thickness sweep
+    PrintGnuPlotChannels(EvaluateSpectraForChannels(best_x, best_total_r));
+    if (rank == 0) {
+      printf("==========best=========\n");
+      for (auto x : best_x) printf("besttt %g,  ", x);
+      printf("Q=%g, bbest Q = %g\n", EvaluateFitness(best_x), best_Qabs);
+    }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -152,7 +161,19 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
   return 0;
 }
-
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void Print() {
+  printf("Spectra: %s\n", full_sign_.c_str());
+  // TiN_share_ and core_share_ are set in EvaluateSpectraForBestDesign()
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;
+  printf("core_width:%.19g\nfirst_shell_width:%.19g\nouter_shell_width:%.19g\n",
+	 core_width, TiN_width, shell_width);
+  
+}
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -272,6 +293,68 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+std::vector< std::vector<double> > EvaluateSpectraForChannels 
+(std::vector<double>& best_x, double best_total_r) {
+  fails_ = 0;
+  // Setting Mie model to the best state.
+  total_r_ = best_total_r;
+  Qabs_ = EvaluateFitness(best_x);
+  if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
+  core_share_ = best_x[0];
+  TiN_share_ = best_x[1];
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;
+  if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
+    printf("core_share = %g\n",core_share_);
+    printf("TiN_share = %g\n",TiN_share_);
+    printf("total_r_ = %g\n",total_r_);
+    
+    printf("TiN <=0:   %g\n", TiN_width);
+    printf("core <=0:   %g\n",core_width);
+    printf("shell <=0:   %g\n",shell_width);
+  }
+  
+  auto core_data = plot_core_index_.GetIndex();
+  auto TiN_data = plot_TiN_.GetIndex();
+  double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
+  std::vector< std::vector<double> > spectra;
+  int least_size = 10000;
+  // Scan all wavelengths
+  for (int i=0; i < core_data.size(); ++i) {
+    const double& wl = core_data[i].first;
+    const std::complex<double>& core = core_data[i].second;
+    const std::complex<double>& TiN = TiN_data[i].second;
+    const std::complex<double>& shell = core;
+    multi_layer_mie_.ClearTarget();
+    multi_layer_mie_.AddTargetLayer(core_width, core);
+    multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
+    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    multi_layer_mie_.SetWavelength(wl);
+    try {
+      multi_layer_mie_.RunMieCalculations();
+      std::vector<double> tmp({wl});
+      //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+      std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
+      tmp.insert(tmp.end(), channels.begin(), channels.end());
+      spectra.push_back(tmp);
+      if (least_size > tmp.size()) least_size = tmp.size();
+    } catch( const std::invalid_argument& ia ) {
+      printf(".");
+      ++fails_;
+    }
+  }  // end of for all points of the spectrum
+  for (auto& row : spectra) row.resize(least_size);
+  for (auto row : spectra) {
+    printf(" WL=");
+    for (double value:row) printf(" %g,\t",value);
+    printf("\n\n");
+  }
+  return spectra;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population) {
   double best_RCS = 0.0;
@@ -330,3 +413,31 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
+  gnuplot::GnuplotWrapper wrapper;
+  char plot_name [300];
+  const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
+  const double core_width = (total_r_ - TiN_width) * core_share_;
+  const double shell_width = total_r_ - core_width - TiN_width;  
+  snprintf(plot_name, 300,
+           "o-spectra-%s-channels-TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
+           total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
+  full_sign_ = std::string(plot_name);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("WL");
+  wrapper.SetYLabelName("NACS");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("WL");
+  for (int i = 1; i < spectra.front().size(); ++i) {
+    char column_name[10];
+    snprintf(column_name, 10, "[%d]",i);
+    wrapper.AddColumnName(column_name);
+  }
+  wrapper.MakeOutput();
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+

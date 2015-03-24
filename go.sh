@@ -532,7 +532,7 @@ cp -r $path_jade/src $path_bin
 #echo $path_bin
 cd $path_jade
 rm bin.tar.bz2
-tar -cjvf bin.tar.bz2 bin
+tar -cjf bin.tar.bz2 bin
 cd $path_bin
 #./filter.py  # No longer needed?
 if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cloak" ]]; then
