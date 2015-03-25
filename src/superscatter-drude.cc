@@ -96,6 +96,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     const double lossless = 0.0;
+    int least_size = 10000;
     std::vector< std::vector<double> > spectra;
     if (from_omega_ > to_omega_) throw std::invalid_argument("Wrong omega range!");
     double omega_step = (to_omega_ - from_omega_)/samples_;
@@ -107,22 +108,28 @@ int main(int argc, char *argv[]) {
       multi_layer_mie_.AddTargetLayer(outshell_width_, {lossless, metal_index});
       multi_layer_mie_.SetWavelength(w2l(omega));
       try {
-	// if (rank==0)
-	//   std::cout<<"core_w:"<<core_width_<<"  in_w:"<<inshell_width_
-	// 	   <<"  out_w"<<outshell_width_<<std::endl
-	// 	   <<"metal_index:" <<metal_index<<"  inshell:"<< inshell_index_ 
-	// 	   <<std::endl;
 	multi_layer_mie_.RunMieCalculations();
-	double Qabs = multi_layer_mie_.GetQsca();
-	double norm = (Qabs * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
-	spectra.push_back({omega/omega_p_, norm});
+	double Qsca = multi_layer_mie_.GetQsca();
+	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
+	//spectra.push_back({omega/omega_p_, norm});
+	std::vector<double> tmp({omega/omega_p_});
+	std::vector<double> channels(multi_layer_mie_.GetQsca_channel_normalized());
+	//std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+	tmp.insert(tmp.end(), channels.begin(), channels.end());
+	spectra.push_back(tmp);
+	if (least_size > tmp.size()) least_size = tmp.size();
       } catch( const std::invalid_argument& ia ) {
 	std::cerr << "Invalid argument: " << ia.what() << std::endl;
 	printf(".");
       }
     }  // end of omega sweep
-    PrintGnuPlotSpectra(spectra);
-    // PrintGnuPlotChannels(EvaluateSpectraForChannels(best_x, best_total_r));
+    //PrintGnuPlotSpectra(spectra);
+    for (auto& row : spectra) {
+      //if (rank==0) std::cout<< least_size<< " -- "<<row.size()<<std::endl;
+      row.resize(least_size);
+    }
+   
+    PrintGnuPlotChannels(spectra);
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -161,33 +168,29 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   wrapper.AddColumnName("Qsca");
   wrapper.MakeOutput();
 }
-// // ********************************************************************** //
-// // ********************************************************************** //
-// // ********************************************************************** //
-// void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
-//   gnuplot::GnuplotWrapper wrapper;
-//   char plot_name [300];
-//   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
-//   const double core_width = (total_r_ - TiN_width) * core_share_;
-//   const double shell_width = total_r_ - core_width - TiN_width;  
-//   snprintf(plot_name, 300,
-//            "o-spectra-%s-channels-TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
-//            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
-//   full_sign_ = std::string(plot_name);
-//   wrapper.SetPlotName(plot_name);
-//   wrapper.SetXLabelName("WL");
-//   wrapper.SetYLabelName("NACS");
-//   wrapper.SetDrawStyle("w l lw 2");
-//   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
-//   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
-//   wrapper.AddColumnName("WL");
-//   for (int i = 1; i < spectra.front().size(); ++i) {
-//     char column_name[10];
-//     snprintf(column_name, 10, "[%d]",i);
-//     wrapper.AddColumnName(column_name);
-//   }
-//   wrapper.MakeOutput();
-// }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
+  gnuplot::GnuplotWrapper wrapper;
+  char plot_name [300];
+  snprintf(plot_name, 300,
+           "TotalR%06.f-spectra", r3_);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("\\omega/\\omega_p");
+  wrapper.SetYLabelName("Norm RCS");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("Omega/Omega_p");
+  //wrapper.AddColumnName("total");
+  for (int i = 1; i < spectra.front().size(); ++i) {
+    char column_name[10];
+    snprintf(column_name, 10, "[%d]",i);
+    wrapper.AddColumnName(column_name);
+  }
+  wrapper.MakeOutput();
+}
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //

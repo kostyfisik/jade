@@ -79,8 +79,8 @@ double total_r_ = 0.0;
 // ********************************************************************** //
 // Set model: core->TiN->shell
 const double max_r_ = 159.0; // nm
-const double max_TiN_width_ = max_r_; // nm
-//const double max_TiN_width_ = 10; // nm
+//const double max_TiN_width_ = max_r_; // nm
+const double max_TiN_width_ = 10; // nm
 // Set dispersion
 double at_wl_ = 600.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
@@ -105,11 +105,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     //std::string core_filename("GaAs.txt");
-    //std::string core_filename("Si.txt");
-    std::string core_filename("Ag.txt");
-    //std::string TiN_filename("TiN.txt");
+    std::string core_filename("Si.txt");
+    //std::string core_filename("Ag.txt");
+    std::string TiN_filename("TiN.txt");
     //std::string TiN_filename("Ag.txt");
-    std::string TiN_filename("Si.txt");
+    //std::string TiN_filename("Si.txt");
     std::string shell_filename(core_filename);
     sign_ = core_filename.substr(0, core_filename.find("."))+"-"+
       TiN_filename.substr(0, core_filename.find("."))+"-"+
