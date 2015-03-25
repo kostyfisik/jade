@@ -43,7 +43,7 @@
 #include <stdexcept>
 #include <string>
 #include "./gnuplot-wrapper/gnuplot-wrapper.h"
-#include "./nmie/nmie.h"
+#include "./nmie/nmie-wrapper.h"
 #include "./read-spectra/read-spectra.h"
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}

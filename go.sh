@@ -85,7 +85,8 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-absorber-TiN"
+jade_bin="run-superscatter-drude"
 
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
@@ -530,9 +531,11 @@ cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
 cp -r $path_jade/src $path_bin
 #echo $path_bin
-cd $path_jade
-rm bin.tar.bz2
-tar -cjf bin.tar.bz2 bin
+if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
+    cd $path_jade
+    rm bin.tar.bz2
+    tar -cjf bin.tar.bz2 bin
+fi
 cd $path_bin
 #./filter.py  # No longer needed?
 if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cloak" ]]; then
