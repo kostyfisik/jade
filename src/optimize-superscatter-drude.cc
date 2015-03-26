@@ -77,10 +77,11 @@ const double lambda_p_ = w2l(omega_p_);
 //bool isPreset = true;
 bool isPreset = false;
 //S.Fan params
-std::vector<double> input_ = {0.4749, 0.6404, 0.8249, 0.2932};
+//std::vector<double> input_ = {0.4749, 0.6404, 0.8249, 0.2932};
 //Custom 
 //std::vector<double> input_ = {0.25, 0.30, 0.00, 0.2932}; //12.92
 //std::vector<double> input_ = {+0.12,    +0.08,    +0.02,    +0.54}; //21.35
+std::vector<double> input_ = {0.6235, 0.7489, 0.8249, 0.2932}; //17.61
 double r1_ = input_[0]*lambda_p_;
 double r2_ = input_[1]*lambda_p_;
 double r3_ = input_[2]*lambda_p_;
@@ -95,8 +96,8 @@ double epsilon_d_ = 12.96;
 double inshell_index_ = std::sqrt(epsilon_d_);
 double gamma_d_ = 0.0;
 double gamma_bulk_ = 0.002*omega_p_;
-//bool isLossy_ = false;
-bool isLossy_ = true;
+bool isLossy_ = false;
+//bool isLossy_ = true;
 
 std::complex<double> epsilon_m(double omega) {
   // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
@@ -108,11 +109,10 @@ double to_wl_ = w2l(to_omega_);
 int samples_ = 1300;
 double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
-double plot_xshare_ = 0.05;
+double plot_xshare_ = 0.1;
 // Set optimizer
-int total_generations_ = 500;
-int population_multiplicator_ = 60;
-int size_=2;
+int total_generations_ = 1500;
+int population_multiplicator_ = 160;
 double Qsca_best_ = 0.0;
 // ********************************************************************** //
 // ********************************************************************** //
@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
     
     if (!isPreset) {
       SetOptimizer();
-      // std::vector<double> feed = {input_[0],input_[1]};
-      // sub_population_.SetFeed({feed});
+      std::vector<double> feed = {input_[0],input_[1]};
+      sub_population_.SetFeed({feed});
       sub_population_.RunOptimization();
       auto best_x  = sub_population_.GetBest(&Qsca_best_);
       for (int i = 0; i< best_x.size(); ++i)
@@ -179,14 +179,14 @@ double EvaluateFitness(std::vector<double> input) {
 std::vector< std::vector<double> > EvaluateSpectraForChannels() {
     int least_size = 10000;
     std::vector< std::vector<double> > spectra;
-    //double omega_step = (to_omega_ - from_omega_)/samples_;
-    // for (input_[3] = from_omega_/omega_p_; input_[3] < to_omega_/omega_p_;
-    // 	 input_[3] += omega_step/omega_p_) {
+    double omega_step = (to_omega_ - from_omega_)/samples_;
     double best_3 = input_[3];
     omega_resonance_ = best_3;
+    // for (input_[3] = from_omega_/omega_p_; input_[3] < to_omega_/omega_p_;
+    // 	 input_[3] += omega_step/omega_p_) {
     for (input_[3] = best_3*(1.0 - plot_xshare_);
-	 input_[3] < best_3*(1.0 + plot_xshare_);
-	 input_[3] += best_3*2.0*plot_xshare_/samples_) {
+    	 input_[3] < best_3*(1.0 + plot_xshare_);
+    	 input_[3] += best_3*2.0*plot_xshare_/samples_) {
       SetGeometry();
       SetMie();
       try {
