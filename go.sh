@@ -85,9 +85,11 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-superscatter-drude"
+jade_bin="run-optimize-superscatter-drude"
 
+#jade_bin="run-absorb-Ag-in-glass"
 #jade_bin="run-coating-w-sweep"
 #jade_bin="run-coating-w-sweep-2layers"
 #jade_bin="run-optimize-meander-cloak"
@@ -347,7 +349,7 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
-if [[ $jade_bin = "run-optimize-absorber-TiN" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
     echo Copy dispersion files...
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin

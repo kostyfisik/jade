@@ -37,7 +37,7 @@
 #include <cmath>
 #include <cstdio>
 #include <complex>
-//#include "./jade.h"
+#include "./jade.h"
 #include <cstdlib>
 #include <cstdio>
 #include <ctime>
@@ -49,13 +49,19 @@
 const double pi=3.14159265358979323846;
 const double speed_of_light = 299792458;
 template<class T> inline T pow2(const T value) {return value*value;}
-// Mie model. Used in fitness function for optimization of
-// sub_population.
-//void SetOptimizer();
+void SetOptimizer();
 
 double EvaluateFitness(std::vector<double> input);
+double EvaluateFitnessChannel(std::vector<double> input);
+std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
+std::vector< std::vector<double> > EvaluateSpectraForChannels(std::vector<double>& best_x,
+							      double total_r);
+void Print();
+void PrintCoating(std::vector<double> current, double initial_RCS,
+                    jade::SubPopulation sub_population);
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
+jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -79,6 +85,8 @@ double epsilon_d_ = 12.96;
 double inshell_index_ = std::sqrt(epsilon_d_);
 double gamma_d_ = 0.0;
 double gamma_bulk_ = 0.002*omega_p_;
+bool isLossy_ = false;
+
 std::complex<double> epsilon_m(double omega) {
   // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
   return 1.0 - pow2(omega_p_)/(pow2(omega)+std::complex<double>(0,1)*gamma_d_*omega);
@@ -89,9 +97,13 @@ double to_wl_ = w2l(to_omega_);
 int samples_ = 300;
 double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
+// Set optimizer
+int total_generations_ = 50;
+int population_multiplicator_ = 16;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+const double eps_=1e-11;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
@@ -101,6 +113,7 @@ int main(int argc, char *argv[]) {
     int least_size = 10000;
     std::vector< std::vector<double> > spectra;
     if (from_omega_ > to_omega_) throw std::invalid_argument("Wrong omega range!");
+    SetOptimizer();
     double omega_step = (to_omega_ - from_omega_)/samples_;
     for (double omega = from_omega_; omega < to_omega_; omega += omega_step) {
       //double metal_index_re = std::sqrt(epsilon_m(omega));
@@ -108,21 +121,22 @@ int main(int argc, char *argv[]) {
       double A = 1.0;
       double V_f = 7.37e-4*lambda_p_*omega_p_;
       double l_r = r1_;
-      gamma_d_ = gamma_bulk_ + A*V_f/l_r;
+      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
       multi_layer_mie_.AddTargetLayer(core_width_, std::sqrt(epsilon_m(omega)));
       multi_layer_mie_.AddTargetLayer(inshell_width_, {inshell_index_, lossless});
       l_r = r3_-r2_;
-      gamma_d_ = gamma_bulk_ + A*V_f/l_r;
+      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
       multi_layer_mie_.AddTargetLayer(outshell_width_, std::sqrt(epsilon_m(omega)));
       multi_layer_mie_.SetWavelength(w2l(omega));
       try {
 	multi_layer_mie_.RunMieCalculations();
-	double Qsca = multi_layer_mie_.GetQabs();
+	double Qsca = multi_layer_mie_.GetQsca();
 	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
 	std::vector<double> tmp({omega/omega_p_, norm});
+	std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
 	//std::vector<double> channels(multi_layer_mie_.GetQsca_channel_normalized());
 	//std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-	std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+	//std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
 	tmp.insert(tmp.end(), channels.begin(), channels.end());
 	spectra.push_back(tmp);
 	if (least_size > tmp.size()) least_size = tmp.size();
@@ -158,6 +172,27 @@ int main(int argc, char *argv[]) {
     //   printf(".");
     //   ++fails_;
     // }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void SetOptimizer() {
+  //Width is optimized for two layers only!!
+  //The third one fills to total_r_
+  long dimension = 3;
+  //sub_population_.FitnessFunction = &EvaluateFitness;
+  //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
+  long total_population = dimension * population_multiplicator_;
+  sub_population_.Init(total_population, dimension);
+  /// Low and upper bound for all dimenstions;
+  sub_population_.SetAllBounds(eps_, 1.0-eps_);
+  sub_population_.SetTargetToMaximum();
+  sub_population_.SetTotalGenerationsMax(total_generations_);
+  //sub_population.SwitchOffPMCRADE();
+
+  sub_population_.SetBestShareP(0.1);
+  sub_population_.SetAdapitonFrequencyC(1.0/20.0);
+
+}
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //

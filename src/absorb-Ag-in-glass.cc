@@ -45,7 +45,7 @@
 #include <string>
 #include "./gnuplot-wrapper/gnuplot-wrapper.h"
 #include "./nmie/nmie-wrapper.h"
-//#include "./read-spectra/read-spectra.h"
+#include "./read-spectra/read-spectra.h"
 const double pi=3.14159265358979323846;
 const double speed_of_light = 299792458;
 template<class T> inline T pow2(const T value) {return value*value;}
@@ -60,32 +60,19 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
 // ********************************************************************** //
 // ********************************************************************** //
 nmie::MultiLayerMie multi_layer_mie_;  
-double w2l( double l) {return 2.0 * pi * speed_of_light/l;};
-double l2w( double w) {return 2.0 * pi * speed_of_light/w;};
+double eV2nm( double l) {return 1239.84/l;}
+double nm2eV( double w) {return 1239.84/w;}
+read_spectra::ReadSpectra core_index_;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-const double omega_p_ = 1.0e9;
-const double lambda_p_ = w2l(omega_p_);
-double r1_ = 0.4749*lambda_p_;
-double r2_ = 0.6404*lambda_p_;
-double r3_ = 0.8249*lambda_p_;
-double core_width_ = r1_;
-double inshell_width_ = r2_ - r1_;
-double outshell_width_ = r3_ - r2_;
-double from_omega_ = 0.288*omega_p_;
-double to_omega_ = 0.3*omega_p_;
-double epsilon_d_ = 12.96;
-double inshell_index_ = std::sqrt(epsilon_d_);
-double gamma_d_ = 0.0;
-double gamma_bulk_ = 0.002*omega_p_;
-std::complex<double> epsilon_m(double omega) {
-  // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
-  return 1.0 - pow2(omega_p_)/(pow2(omega)+std::complex<double>(0,1)*gamma_d_*omega);
-}
+double core_width_ = 10;
+double from_omega_ = 2.0;
+double to_omega_ = 5.0;
+double glass_index_ = 1.5;
 // Set dispersion
-double from_wl_ = w2l(from_omega_);
-double to_wl_ = w2l(to_omega_);
+double from_wl_ = eV2nm(to_omega_);
+double to_wl_ = eV2nm(from_omega_);
 int samples_ = 300;
 double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
@@ -97,47 +84,47 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
+    std::string core_filename("Ag.txt");
+    core_index_.ReadFromFile(core_filename);
+    core_index_.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
+    auto core_data = core_index_.GetIndex();
     const double lossless = 0.0;
     int least_size = 10000;
     std::vector< std::vector<double> > spectra;
     if (from_omega_ > to_omega_) throw std::invalid_argument("Wrong omega range!");
-    double omega_step = (to_omega_ - from_omega_)/samples_;
-    for (double omega = from_omega_; omega < to_omega_; omega += omega_step) {
+    for (int i=core_data.size()-1; i>-1;--i) {
+      const double& wl = core_data[i].first;
+      const std::complex<double>& core_index_value = core_data[i].second;
+      const std::complex<double> index_norm={core_index_value.real()/glass_index_,
+	    core_index_value.imag()};
       //double metal_index_re = std::sqrt(epsilon_m(omega));
       multi_layer_mie_.ClearTarget();
-      double A = 1.0;
-      double V_f = 7.37e-4*lambda_p_*omega_p_;
-      double l_r = r1_;
-      gamma_d_ = gamma_bulk_ + A*V_f/l_r;
-      multi_layer_mie_.AddTargetLayer(core_width_, std::sqrt(epsilon_m(omega)));
-      multi_layer_mie_.AddTargetLayer(inshell_width_, {inshell_index_, lossless});
-      l_r = r3_-r2_;
-      gamma_d_ = gamma_bulk_ + A*V_f/l_r;
-      multi_layer_mie_.AddTargetLayer(outshell_width_, std::sqrt(epsilon_m(omega)));
-      multi_layer_mie_.SetWavelength(w2l(omega));
+      multi_layer_mie_.AddTargetLayer(core_width_, index_norm);
+      multi_layer_mie_.SetWavelength(wl/glass_index_);
       try {
 	multi_layer_mie_.RunMieCalculations();
 	double Qsca = multi_layer_mie_.GetQabs();
-	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
-	std::vector<double> tmp({omega/omega_p_, norm});
-	//std::vector<double> channels(multi_layer_mie_.GetQsca_channel_normalized());
-	//std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-	std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
-	tmp.insert(tmp.end(), channels.begin(), channels.end());
-	spectra.push_back(tmp);
-	if (least_size > tmp.size()) least_size = tmp.size();
+	// double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
+	// std::vector<double> tmp({omega/omega_p_, norm});
+	// //std::vector<double> channels(multi_layer_mie_.GetQsca_channel_normalized());
+	// //std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
+	// std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+	// tmp.insert(tmp.end(), channels.begin(), channels.end());
+	// spectra.push_back(tmp);
+	// if (least_size > tmp.size()) least_size = tmp.size();
+	spectra.push_back({nm2eV(wl), Qsca*2.0*pi*pow2(core_width_)});
       } catch( const std::invalid_argument& ia ) {
 	std::cerr << "Invalid argument: " << ia.what() << std::endl;
 	printf(".");
       }
     }  // end of omega sweep
-    //PrintGnuPlotSpectra(spectra);
-    for (auto& row : spectra) {
-      //if (rank==0) std::cout<< least_size<< " -- "<<row.size()<<std::endl;
-      row.resize(least_size);
-    }
+    PrintGnuPlotSpectra(spectra);
+    // for (auto& row : spectra) {
+    //   //if (rank==0) std::cout<< least_size<< " -- "<<row.size()<<std::endl;
+    //   row.resize(least_size);
+    // }
    
-    PrintGnuPlotChannels(spectra);
+    // PrintGnuPlotChannels(spectra);
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -165,10 +152,10 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TotalR%06.f-spectra", r3_);
+           "TotalR%06.f-spectra", core_width_);
   wrapper.SetPlotName(plot_name);
-  wrapper.SetXLabelName("Omega");
-  wrapper.SetYLabelName("Norm RCS");
+  wrapper.SetXLabelName("Omega, eV");
+  wrapper.SetYLabelName("ACS");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
@@ -183,7 +170,7 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TotalR%06.f-spectra", r3_);
+           "TotalR%06.f-spectra", core_width_);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("\\omega/\\omega_p");
   wrapper.SetYLabelName("Norm ACS");
