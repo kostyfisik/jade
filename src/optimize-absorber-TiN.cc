@@ -237,6 +237,7 @@ double EvaluateFitness(std::vector<double> input) {
       Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
       printf(".");
+      sub_population_.GetWorst(&Qabs);
     }
     if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum

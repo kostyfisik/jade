@@ -50,16 +50,17 @@ const double pi=3.14159265358979323846;
 const double speed_of_light = 299792458;
 template<class T> inline T pow2(const T value) {return value*value;}
 void SetOptimizer();
+void SetMie();
+void SetGeometry();
 
 double EvaluateFitness(std::vector<double> input);
 double EvaluateFitnessChannel(std::vector<double> input);
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
-std::vector< std::vector<double> > EvaluateSpectraForChannels(std::vector<double>& best_x,
-							      double total_r);
+std::vector< std::vector<double> > EvaluateSpectraForChannels();
 void Print();
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
-void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
+//void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
@@ -73,19 +74,29 @@ double l2w( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
 const double omega_p_ = 1.0e9;
 const double lambda_p_ = w2l(omega_p_);
-double r1_ = 0.4749*lambda_p_;
-double r2_ = 0.6404*lambda_p_;
-double r3_ = 0.8249*lambda_p_;
+//bool isPreset = true;
+bool isPreset = false;
+//S.Fan params
+std::vector<double> input_ = {0.4749, 0.6404, 0.8249, 0.2932};
+//Custom 
+//std::vector<double> input_ = {0.25, 0.30, 0.00, 0.2932}; //12.92
+//std::vector<double> input_ = {+0.12,    +0.08,    +0.02,    +0.54}; //21.35
+double r1_ = input_[0]*lambda_p_;
+double r2_ = input_[1]*lambda_p_;
+double r3_ = input_[2]*lambda_p_;
+double omega_resonance_ = input_[3]*omega_p_;
 double core_width_ = r1_;
 double inshell_width_ = r2_ - r1_;
 double outshell_width_ = r3_ - r2_;
 double from_omega_ = 0.288*omega_p_;
 double to_omega_ = 0.3*omega_p_;
+double omega_ = 0.0;
 double epsilon_d_ = 12.96;
 double inshell_index_ = std::sqrt(epsilon_d_);
 double gamma_d_ = 0.0;
 double gamma_bulk_ = 0.002*omega_p_;
-bool isLossy_ = false;
+//bool isLossy_ = false;
+bool isLossy_ = true;
 
 std::complex<double> epsilon_m(double omega) {
   // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
@@ -94,12 +105,15 @@ std::complex<double> epsilon_m(double omega) {
 // Set dispersion
 double from_wl_ = w2l(from_omega_);
 double to_wl_ = w2l(to_omega_);
-int samples_ = 300;
+int samples_ = 1300;
 double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
+double plot_xshare_ = 0.05;
 // Set optimizer
-int total_generations_ = 50;
-int population_multiplicator_ = 16;
+int total_generations_ = 500;
+int population_multiplicator_ = 60;
+int size_=2;
+double Qsca_best_ = 0.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -109,82 +123,151 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    const double lossless = 0.0;
-    int least_size = 10000;
     std::vector< std::vector<double> > spectra;
     if (from_omega_ > to_omega_) throw std::invalid_argument("Wrong omega range!");
-    SetOptimizer();
-    double omega_step = (to_omega_ - from_omega_)/samples_;
-    for (double omega = from_omega_; omega < to_omega_; omega += omega_step) {
-      //double metal_index_re = std::sqrt(epsilon_m(omega));
-      multi_layer_mie_.ClearTarget();
-      double A = 1.0;
-      double V_f = 7.37e-4*lambda_p_*omega_p_;
-      double l_r = r1_;
-      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
-      multi_layer_mie_.AddTargetLayer(core_width_, std::sqrt(epsilon_m(omega)));
-      multi_layer_mie_.AddTargetLayer(inshell_width_, {inshell_index_, lossless});
-      l_r = r3_-r2_;
-      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
-      multi_layer_mie_.AddTargetLayer(outshell_width_, std::sqrt(epsilon_m(omega)));
-      multi_layer_mie_.SetWavelength(w2l(omega));
+    
+    if (!isPreset) {
+      SetOptimizer();
+      // std::vector<double> feed = {input_[0],input_[1]};
+      // sub_population_.SetFeed({feed});
+      sub_population_.RunOptimization();
+      auto best_x  = sub_population_.GetBest(&Qsca_best_);
+      for (int i = 0; i< best_x.size(); ++i)
+	input_[i] = best_x[i];
+    }
+    
+    SetGeometry();    SetMie();
+    if (rank ==0) {printf("Input_:"); for (auto value : input_) printf(" %g,", value);  }
+    multi_layer_mie_.RunMieCalculations();
+    Qsca_best_ = multi_layer_mie_.GetQsca();
+    std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+    if (rank ==0) {
+	printf("\nQsca_best: %g\n",Qsca_best_);
+	for (auto value : channels) printf(" %g,", value);    
+	PrintGnuPlotChannels(EvaluateSpectraForChannels());
+    }
+  } catch( const std::invalid_argument& ia ) {
+    // Will catch if  multi_layer_mie_ fails or other errors.
+    std::cerr << "Invalid argument: " << ia.what() << std::endl;
+    //MPI_Abort(MPI_COMM_WORLD, 1);  
+  }  
+  MPI_Finalize();
+  return 0;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+double EvaluateFitness(std::vector<double> input) {
+  if (input.size() > 4) throw std::invalid_argument("Wrong input dimension!/n");
+  for (int i = 0; i< input.size(); ++i)
+    input_[i] = input[i];
+  SetGeometry();
+  SetMie();
+  double Qsca = 0.0;
+  try {
+    multi_layer_mie_.RunMieCalculations();
+    Qsca = multi_layer_mie_.GetQsca();
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    sub_population_.GetWorst(&Qsca);
+  }
+  return Qsca;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+std::vector< std::vector<double> > EvaluateSpectraForChannels() {
+    int least_size = 10000;
+    std::vector< std::vector<double> > spectra;
+    //double omega_step = (to_omega_ - from_omega_)/samples_;
+    // for (input_[3] = from_omega_/omega_p_; input_[3] < to_omega_/omega_p_;
+    // 	 input_[3] += omega_step/omega_p_) {
+    double best_3 = input_[3];
+    omega_resonance_ = best_3;
+    for (input_[3] = best_3*(1.0 - plot_xshare_);
+	 input_[3] < best_3*(1.0 + plot_xshare_);
+	 input_[3] += best_3*2.0*plot_xshare_/samples_) {
+      SetGeometry();
+      SetMie();
       try {
 	multi_layer_mie_.RunMieCalculations();
 	double Qsca = multi_layer_mie_.GetQsca();
-	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega)) / (2.0*pi) );
-	std::vector<double> tmp({omega/omega_p_, norm});
+	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega_)) / (2.0*pi) );
+	std::vector<double> tmp({omega_/omega_p_, norm});
 	std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
-	//std::vector<double> channels(multi_layer_mie_.GetQsca_channel_normalized());
-	//std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-	//std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+	for (auto& value : channels) 
+	  value *= pi*pow2(r3_) / ( pow2(w2l(omega_)) / (2.0*pi) );
 	tmp.insert(tmp.end(), channels.begin(), channels.end());
 	spectra.push_back(tmp);
 	if (least_size > tmp.size()) least_size = tmp.size();
+	if (std::abs((input_[3]-0.2932)/input_[3])<eps_ || 
+	    std::abs((input_[3]-0.5426))<0.00001) {
+	  printf("\n\nFrom spectra:\n");
+	  printf("Input_:");
+	  for (auto value : input_) printf(" %g,", value);      
+	  multi_layer_mie_.RunMieCalculations();
+	  double Qsca = multi_layer_mie_.GetQsca();
+	  std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+	  printf("\nQsca_best: %g\n",Qsca);
+	  for (auto value : channels) printf(" %g,", value);
+     	}
       } catch( const std::invalid_argument& ia ) {
 	std::cerr << "Invalid argument: " << ia.what() << std::endl;
 	printf(".");
       }
     }  // end of omega sweep
-    //PrintGnuPlotSpectra(spectra);
     for (auto& row : spectra) {
       //if (rank==0) std::cout<< least_size<< " -- "<<row.size()<<std::endl;
       row.resize(least_size);
     }
-   
-    PrintGnuPlotChannels(spectra);
-  } catch( const std::invalid_argument& ia ) {
-    // Will catch if  multi_layer_mie_ fails or other errors.
-    std::cerr << "Invalid argument: " << ia.what() << std::endl;
-    MPI_Abort(MPI_COMM_WORLD, 1);  
-  }  
-  MPI_Finalize();
-  return 0;
+    return spectra;
 }
-    // try {
-    //   multi_layer_mie_.RunMieCalculations();
-    //   std::vector<double> tmp({wl});
-    //   //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
-    //   std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-    //   tmp.insert(tmp.end(), channels.begin(), channels.end());
-    //   spectra.push_back(tmp);
-    //   if (least_size > tmp.size()) least_size = tmp.size();
-    // } catch( const std::invalid_argument& ia ) {
-    //   printf(".");
-    //   ++fails_;
-    // }
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void SetGeometry() {
+  if (input_[1] < input_[0]) input_[1] = input_[0]+eps_;
+  if (input_[2] < input_[1]) input_[2] = input_[1]+eps_;
+  r1_ = input_[0]*lambda_p_;
+  r2_ = input_[1]*lambda_p_;
+  r3_ = input_[2]*lambda_p_;
+  omega_ = input_[3]*omega_p_;
+  core_width_ = r1_;
+  inshell_width_ = r2_ - r1_;
+  outshell_width_ = r3_ - r2_;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void SetMie() {
+      multi_layer_mie_.ClearTarget();
+      double A = 1.0;
+      double V_f = 7.37e-4*lambda_p_*omega_p_;
+      double l_r = r1_;
+      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
+      multi_layer_mie_.AddTargetLayer(core_width_, std::sqrt(epsilon_m(omega_)));
+      const double lossless = 0.0;    
+      multi_layer_mie_.AddTargetLayer(inshell_width_, {inshell_index_, lossless});
+      l_r = r3_-r2_;
+      if (isLossy_) gamma_d_ = gamma_bulk_ + A*V_f/l_r;
+      multi_layer_mie_.AddTargetLayer(outshell_width_, std::sqrt(epsilon_m(omega_)));
+      multi_layer_mie_.SetWavelength(w2l(omega_));
+}
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 void SetOptimizer() {
   //Width is optimized for two layers only!!
   //The third one fills to total_r_
-  long dimension = 3;
-  //sub_population_.FitnessFunction = &EvaluateFitness;
+  long dimension = 2;
+  sub_population_.FitnessFunction = &EvaluateFitness;
   //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  sub_population_.SetAllBounds(eps_, 1.0-eps_);
+sub_population_.SetAllBounds(eps_, 2.0-eps_);
+  if (dimension == 2) sub_population_.SetAllBounds(eps_, 0.8249-eps_);
+
   sub_population_.SetTargetToMaximum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   //sub_population.SwitchOffPMCRADE();
@@ -196,21 +279,21 @@ void SetOptimizer() {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
-  gnuplot::GnuplotWrapper wrapper;
-  char plot_name [300];
-  snprintf(plot_name, 300,
-           "TotalR%06.f-spectra", r3_);
-  wrapper.SetPlotName(plot_name);
-  wrapper.SetXLabelName("Omega");
-  wrapper.SetYLabelName("Norm RCS");
-  wrapper.SetDrawStyle("w l lw 2");
-  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
-  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
-  wrapper.AddColumnName("Omega/Omega_p");
-  wrapper.AddColumnName("Qsca");
-  wrapper.MakeOutput();
-}
+// void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
+//   gnuplot::GnuplotWrapper wrapper;
+//   char plot_name [300];
+//   snprintf(plot_name, 300,
+//            "TotalR%06.f-spectra", r3_);
+//   wrapper.SetPlotName(plot_name);
+//   wrapper.SetXLabelName("Omega");
+//   wrapper.SetYLabelName("Norm RCS");
+//   wrapper.SetDrawStyle("w l lw 2");
+//   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+//   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+//   wrapper.AddColumnName("Omega/Omega_p");
+//   wrapper.AddColumnName("Qsca");
+//   wrapper.MakeOutput();
+// }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -218,10 +301,11 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "TotalR%06.f-spectra", r3_);
+           "Qsca%06.4f-Rcore%06.4f-Rin%06.4f-Rout%06.4f-omega%06.4f-spectra", Qsca_best_,
+	   input_[0],input_[1],input_[2],omega_resonance_);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("\\omega/\\omega_p");
-  wrapper.SetYLabelName("Norm ACS");
+  wrapper.SetYLabelName("Norm RCS");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
