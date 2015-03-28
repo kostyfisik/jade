@@ -54,8 +54,8 @@ void SetMie();
 void SetGeometry();
 
 double EvaluateFitness(std::vector<double> input);
+double EvaluateFitnessMod(std::vector<double> input);
 double EvaluateFitnessChannel(std::vector<double> input);
-std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
 std::vector< std::vector<double> > EvaluateSpectraForChannels();
 void Print();
 void PrintCoating(std::vector<double> current, double initial_RCS,
@@ -76,12 +76,19 @@ const double omega_p_ = 1.0e9;
 const double lambda_p_ = w2l(omega_p_);
 //bool isPreset = true;
 bool isPreset = false;
+bool isQabs = true;
+//bool isQabs = false;
+bool isOuterR = true;
+//bool isOuterR = false;
+double outer_r_ = 0.5;
+int dim_=5;
 //S.Fan params
-//std::vector<double> input_ = {0.4749, 0.6404, 0.8249, 0.2932};
+std::vector<double> input_ = {0.4749, 0.6404, 0.8249, 0.2932, 1.0};
 //Custom 
 //std::vector<double> input_ = {0.25, 0.30, 0.00, 0.2932}; //12.92
 //std::vector<double> input_ = {+0.12,    +0.08,    +0.02,    +0.54}; //21.35
-std::vector<double> input_ = {0.6235, 0.7489, 0.8249, 0.2932}; //17.61
+//std::vector<double> input_ = {0.6235, 0.7489, 0.8249, 0.2932}; //17.61
+//std::vector<double> input_ = {0.45464, 0.520026, 0.0, 0.2932}; //29.69
 double r1_ = input_[0]*lambda_p_;
 double r2_ = input_[1]*lambda_p_;
 double r3_ = input_[2]*lambda_p_;
@@ -96,12 +103,14 @@ double epsilon_d_ = 12.96;
 double inshell_index_ = std::sqrt(epsilon_d_);
 double gamma_d_ = 0.0;
 double gamma_bulk_ = 0.002*omega_p_;
-bool isLossy_ = false;
-//bool isLossy_ = true;
+//bool isLossy_ = false;
+bool isLossy_ = true;
 
 std::complex<double> epsilon_m(double omega) {
   // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
-  return 1.0 - pow2(omega_p_)/(pow2(omega)+std::complex<double>(0,1)*gamma_d_*omega);
+  return 1.0 - pow2(omega_p_)/(pow2(omega)
+			       +std::complex<double>(0,1)*gamma_d_*omega
+			       *input_[4]);
 }
 // Set dispersion
 double from_wl_ = w2l(from_omega_);
@@ -128,8 +137,8 @@ int main(int argc, char *argv[]) {
     
     if (!isPreset) {
       SetOptimizer();
-      std::vector<double> feed = {input_[0],input_[1]};
-      sub_population_.SetFeed({feed});
+      // std::vector<double> feed = {input_[0],input_[1]};
+      // sub_population_.SetFeed({feed});
       sub_population_.RunOptimization();
       auto best_x  = sub_population_.GetBest(&Qsca_best_);
       for (int i = 0; i< best_x.size(); ++i)
@@ -139,8 +148,14 @@ int main(int argc, char *argv[]) {
     SetGeometry();    SetMie();
     if (rank ==0) {printf("Input_:"); for (auto value : input_) printf(" %g,", value);  }
     multi_layer_mie_.RunMieCalculations();
-    Qsca_best_ = multi_layer_mie_.GetQsca();
-    std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+    std::vector<double> channels;
+    if (isQabs){
+      Qsca_best_ = multi_layer_mie_.GetQabs();
+      channels = multi_layer_mie_.GetQabs_channel();
+    } else {
+      Qsca_best_ = multi_layer_mie_.GetQsca();
+      channels = multi_layer_mie_.GetQsca_channel();
+    }
     if (rank ==0) {
 	printf("\nQsca_best: %g\n",Qsca_best_);
 	for (auto value : channels) printf(" %g,", value);    
@@ -158,7 +173,7 @@ int main(int argc, char *argv[]) {
 // ********************************************************************** //
 // ********************************************************************** //
 double EvaluateFitness(std::vector<double> input) {
-  if (input.size() > 4) throw std::invalid_argument("Wrong input dimension!/n");
+  if (input.size() > 5) throw std::invalid_argument("Wrong input dimension!/n");
   for (int i = 0; i< input.size(); ++i)
     input_[i] = input[i];
   SetGeometry();
@@ -176,12 +191,56 @@ double EvaluateFitness(std::vector<double> input) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+double EvaluateFitnessQabs(std::vector<double> input) {
+  if (input.size() > 5) throw std::invalid_argument("Wrong input dimension!/n");
+  for (int i = 0; i< input.size(); ++i)
+    input_[i] = input[i];
+  SetGeometry();
+  SetMie();
+  double Qabs = 0.0;
+  try {
+    multi_layer_mie_.RunMieCalculations();
+    Qabs = multi_layer_mie_.GetQabs();
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    sub_population_.GetWorst(&Qabs);
+  }
+  return Qabs;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+double EvaluateFitnessMod(std::vector<double> input) {
+  if (input.size() > 5) throw std::invalid_argument("Wrong input dimension!/n");
+  for (int i = 0; i< input.size(); ++i)
+    input_[i] = input[i];
+  SetGeometry();
+  SetMie();
+  double Qsca = 0.0;
+  try {
+    multi_layer_mie_.RunMieCalculations();
+    Qsca = multi_layer_mie_.GetQsca();
+    std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+    // no loss
+    //Qsca = channels[0]*channels[1]*channels[2];
+    // with losses
+    Qsca = channels[0]*channels[1];
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    Qsca = 0.0;
+    sub_population_.GetWorst(&Qsca);
+  }
+  return Qsca;
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 std::vector< std::vector<double> > EvaluateSpectraForChannels() {
     int least_size = 10000;
     std::vector< std::vector<double> > spectra;
-    double omega_step = (to_omega_ - from_omega_)/samples_;
     double best_3 = input_[3];
     omega_resonance_ = best_3;
+    // double omega_step = (to_omega_ - from_omega_)/samples_;
     // for (input_[3] = from_omega_/omega_p_; input_[3] < to_omega_/omega_p_;
     // 	 input_[3] += omega_step/omega_p_) {
     for (input_[3] = best_3*(1.0 - plot_xshare_);
@@ -191,10 +250,17 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
       SetMie();
       try {
 	multi_layer_mie_.RunMieCalculations();
-	double Qsca = multi_layer_mie_.GetQsca();
+	double Qsca;
+	std::vector<double> channels;
+	if (isQabs) {
+	  Qsca = multi_layer_mie_.GetQabs();
+	  channels = multi_layer_mie_.GetQabs_channel();
+	} else {
+	  Qsca = multi_layer_mie_.GetQsca();
+	  channels = multi_layer_mie_.GetQsca_channel();
+	}
 	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega_)) / (2.0*pi) );
 	std::vector<double> tmp({omega_/omega_p_, norm});
-	std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
 	for (auto& value : channels) 
 	  value *= pi*pow2(r3_) / ( pow2(w2l(omega_)) / (2.0*pi) );
 	tmp.insert(tmp.end(), channels.begin(), channels.end());
@@ -206,8 +272,15 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
 	  printf("Input_:");
 	  for (auto value : input_) printf(" %g,", value);      
 	  multi_layer_mie_.RunMieCalculations();
-	  double Qsca = multi_layer_mie_.GetQsca();
-	  std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+	  double Qsca;
+	  std::vector<double> channels;
+	  if (isQabs) {
+	    Qsca = multi_layer_mie_.GetQabs();
+	    channels = multi_layer_mie_.GetQabs_channel();
+	  } else {
+	    Qsca = multi_layer_mie_.GetQsca();
+	    channels = multi_layer_mie_.GetQsca_channel();
+	  }
 	  printf("\nQsca_best: %g\n",Qsca);
 	  for (auto value : channels) printf(" %g,", value);
      	}
@@ -226,6 +299,12 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
 // ********************************************************************** //
 // ********************************************************************** //
 void SetGeometry() {
+  if (input_[4] < 0.2) input_[4] = 0.2;
+  if (isOuterR) {
+    input_[2] = outer_r_;
+    if (input_[0] > input_[2]) input_[0] = input_[2]-2.0*eps_;
+    if (input_[1] > input_[2]) input_[1] = input_[2]-eps_;
+  }
   if (input_[1] < input_[0]) input_[1] = input_[0]+eps_;
   if (input_[2] < input_[1]) input_[2] = input_[1]+eps_;
   r1_ = input_[0]*lambda_p_;
@@ -259,9 +338,12 @@ void SetMie() {
 void SetOptimizer() {
   //Width is optimized for two layers only!!
   //The third one fills to total_r_
-  long dimension = 2;
-  sub_population_.FitnessFunction = &EvaluateFitness;
-  //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
+  long dimension = dim_;
+  if (isQabs)   sub_population_.FitnessFunction = &EvaluateFitnessQabs;
+  else {
+    sub_population_.FitnessFunction = &EvaluateFitness;
+    //sub_population_.FitnessFunction = &EvaluateFitnessMod;
+  }
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
@@ -300,12 +382,16 @@ sub_population_.SetAllBounds(eps_, 2.0-eps_);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
+  std::string type;
+  if (isQabs) type="Qabs";
+  else type = "Qsca";
   snprintf(plot_name, 300,
-           "Qsca%06.4f-Rcore%06.4f-Rin%06.4f-Rout%06.4f-omega%06.4f-spectra", Qsca_best_,
-	   input_[0],input_[1],input_[2],omega_resonance_);
+           "%s%07.4f-Rcore%06.4f-Rin%06.4f-Rout%06.4f-omega%06.4f-natural%06.4f-spectra-dim%d",type.c_str(),  Qsca_best_,
+	   input_[0],input_[1],input_[2],omega_resonance_,input_[4],dim_);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("\\omega/\\omega_p");
-  wrapper.SetYLabelName("Norm RCS");
+  if (isQabs)   wrapper.SetYLabelName("Norm ACS");
+  else wrapper.SetYLabelName("Norm RCS");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
