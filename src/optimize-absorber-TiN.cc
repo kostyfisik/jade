@@ -83,18 +83,18 @@ const double max_r_ = 159.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 600.0;
+double at_wl_ = 500.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
 double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
-int plot_samples_ = 151;
+int plot_samples_ = 1501;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
-int total_generations_ = 50;
-int population_multiplicator_ = 16;
+int total_generations_ = 150;
+int population_multiplicator_ = 160;
 double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    //sub_population_.FitnessFunction = &EvaluateFitness;
-    sub_population_.FitnessFunction = &EvaluateFitnessChannel;
+    sub_population_.FitnessFunction = &EvaluateFitness;
+    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
     //std::string core_filename("GaAs.txt");
     std::string core_filename("Si.txt");
     //std::string core_filename("Ag.txt");
@@ -137,7 +137,8 @@ int main(int argc, char *argv[]) {
     // ***************************************************
     // **************  Main loop   ***********************
     // ***************************************************  
-    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    //for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
       // Plot spectra from each process
@@ -282,8 +283,9 @@ double EvaluateFitnessChannel(std::vector<double> input) {
       //Qabs = multi_layer_mie_.GetQsca();
       std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
       //if (channels.size() > 2) Qabs = channels[0];
-      if (channels.size() > 2) Qabs = channels[0]*channels[1];
-      //if (channels.size() > 4) Qabs = channels[0]+channels[1]+channels[2]+channels[3];
+      //if (channels.size() > 2) Qabs = channels[0]+channels[1];
+      //if (channels.size() > 4) Qabs = channels[0]+channels[1]+channels[2];
+      if (channels.size() > 4) Qabs = channels[0]*channels[1]*channels[2];
     } catch( const std::invalid_argument& ia ) {
       printf(".");
     }
@@ -448,7 +450,7 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;  
   snprintf(plot_name, 300,
-           "%s-TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(),
+           "%s-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(),
            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
@@ -474,7 +476,7 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;  
   snprintf(plot_name, 300,
-           "o-spectra-%s-channels-TotalR%06.fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
+           "o-spectra-%s-channels-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);

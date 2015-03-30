@@ -85,9 +85,9 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-#jade_bin="run-optimize-absorber-TiN"
+jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-superscatter-drude"
-jade_bin="run-optimize-superscatter-drude"
+#jade_bin="run-optimize-superscatter-drude"
 
 #jade_bin="run-absorb-Ag-in-glass"
 #jade_bin="run-coating-w-sweep"
