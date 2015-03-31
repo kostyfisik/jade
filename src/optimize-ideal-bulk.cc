@@ -87,9 +87,9 @@ double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
 int plot_samples_ = 351;
 double plot_step_wl_ = (plot_to_wl_-plot_from_wl_)/static_cast<double>(plot_samples_);
 // Set optimizer
-int total_generations_ = 150;
+int total_generations_ = 250;
 int population_multiplicator_ = 160;
-double bound = 20.0;
+double bound = 10.0;
 double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
@@ -178,7 +178,9 @@ double EvaluateFitness(std::vector<double> input) {
   multi_layer_mie_.SetWavelength(at_wl_);
   try {
     multi_layer_mie_.RunMieCalculations();
+    std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
     Qabs_ = multi_layer_mie_.GetQabs();
+    Qabs_ = channels[2];
   } catch( const std::invalid_argument& ia ) {
     printf(".");
     sub_population_.GetWorst(&Qabs_);
@@ -258,6 +260,9 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
+  auto best_x = sub_population_.GetBest(&Qabs_);
+  EvaluateFitness(best_x);
+  Qabs_ = multi_layer_mie_.GetQabs();
   snprintf(plot_name, 300,
            "%s-TotalR%06.2fnm-Qabs%016.13f--epsRe%07.2f--epsIm%07.2f-fails%d-spectra",
 	   sign_.c_str(), total_r_, Qabs_,  eps_re_, eps_im_, fails_);
@@ -281,6 +286,9 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
+  auto best_x = sub_population_.GetBest(&Qabs_);
+  EvaluateFitness(best_x);
+  Qabs_ = multi_layer_mie_.GetQabs();
   std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
   std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
   snprintf(plot_name, 300,
