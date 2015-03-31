@@ -137,14 +137,20 @@ int main(int argc, char *argv[]) {
     // ***************************************************
     // **************  Main loop   ***********************
     // ***************************************************  
-    //for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
-    for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
+    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+      //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
       // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
       if (rank == 0) Print();
       auto best_local_x = sub_population_.GetBest(&Qabs_);
+      if (rank == 0) {
+	std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+	std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+	for (int i = 0; i < 3; ++i)
+	  printf("an[%d]=%g, bn[%d]=%g\n",i,std::abs(an[i]),i, std::abs(bn[i]));
+      }
       if (Qabs_ > best_Qabs) {
 	best_Qabs = Qabs_;
 	best_total_r = total_r_;
@@ -229,9 +235,13 @@ double EvaluateFitness(std::vector<double> input) {
     const std::complex<double>& TiN = TiN_data[i].second;
     const std::complex<double>& shell = core;
     multi_layer_mie_.ClearTarget();
-    multi_layer_mie_.AddTargetLayer(core_width, core);
-    multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
-    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    //    double min_share = 0.00001;
+    //    if (core_share_ > min_share) 
+      multi_layer_mie_.AddTargetLayer(core_width, core);
+    //    if (TiN_share_ > min_share) 
+      multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
+    //    if (shell_width/total_r_ > min_share)
+      multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
@@ -276,7 +286,7 @@ double EvaluateFitnessChannel(std::vector<double> input) {
     multi_layer_mie_.ClearTarget();
     multi_layer_mie_.AddTargetLayer(core_width, core);
     multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
-    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
@@ -329,7 +339,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
     multi_layer_mie_.ClearTarget();
     multi_layer_mie_.AddTargetLayer(core_width, core);
     multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
-    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
@@ -373,7 +383,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   
   auto core_data = plot_core_index_.GetIndex();
   auto TiN_data = plot_TiN_.GetIndex();
-  double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
+  //double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
   int least_size = 10000;
   // Scan all wavelengths
@@ -385,7 +395,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
     multi_layer_mie_.ClearTarget();
     multi_layer_mie_.AddTargetLayer(core_width, core);
     multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
-    multi_layer_mie_.AddTargetLayer(shell_width, core);
+    multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
@@ -413,7 +423,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
 // ********************************************************************** //
 void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population) {
-  double best_RCS = 0.0;
+  //double best_RCS = 0.0;
   // auto best_x = sub_population.GetBest(&best_RCS);
   // printf("Target R=%g, WL=%g\n", a, lambda_work);
   // printf("Initial RCS: %g\n", initial_RCS);
