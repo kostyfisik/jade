@@ -61,6 +61,7 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
+void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -79,7 +80,7 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-const double max_r_ = 159.0; // nm
+const double max_r_ = 100.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
@@ -88,14 +89,15 @@ double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
-int plot_samples_ = 1501;
+double plot_from_wl_ = 400.0, plot_to_wl_ = 600.0;
+int plot_samples_ = 101;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
-double step_r_ = 1.0; //max_r_ / 159.0;
+int dim_=3;
+double step_r_ = 0.1; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -105,8 +107,8 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    //sub_population_.FitnessFunction = &EvaluateFitness;
-    sub_population_.FitnessFunction = &EvaluateFitnessChannel;
+    sub_population_.FitnessFunction = &EvaluateFitness;
+    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
     //std::string core_filename("GaAs.txt");
     std::string core_filename("Si.txt");
     //std::string core_filename("Ag.txt");
@@ -134,6 +136,8 @@ int main(int argc, char *argv[]) {
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
     auto best_x = sub_population_.GetBest(&Qabs_);
     double best_Qabs = 0.0, best_total_r = 0.0;
+    std::vector< std::vector<double> > channel_sweep;
+    int least_size_sweep = 15;
     // ***************************************************
     // **************  Main loop   ***********************
     // ***************************************************  
@@ -157,8 +161,21 @@ int main(int argc, char *argv[]) {
 	best_x = best_local_x;	
       }
       PrintGnuPlotChannels(EvaluateSpectraForChannels(best_local_x, total_r_));
+      EvaluateFitness(best_local_x);
+      std::vector<double> tmp({total_r_});
+      //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+      std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+      for (int i = 0; i < an.size(); ++i) {
+	tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
+	tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+      }
+      channel_sweep.push_back(tmp);
+      if (least_size_sweep > tmp.size()) least_size_sweep = tmp.size();
     }  // end of total coating thickness sweep
     PrintGnuPlotChannels(EvaluateSpectraForChannels(best_x, best_total_r));
+    for (auto& row : channel_sweep) row.resize(least_size_sweep);
+    PrintGnuPlotChannelSweep(channel_sweep);
     if (rank == 0) {
       printf("==========best=========\n");
       for (auto x : best_x) printf("besttt %g,  ", x);
@@ -290,9 +307,9 @@ double EvaluateFitnessChannel(std::vector<double> input) {
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
-      //Qabs = multi_layer_mie_.GetQsca();
-      std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-      if (channels.size() > 2) Qabs = channels[0];
+      Qabs = multi_layer_mie_.GetQabs();
+      // std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
+      // if (channels.size() > 2) Qabs = channels[0];
       //if (channels.size() > 2) Qabs = channels[0]+channels[1];
       //if (channels.size() > 4) Qabs = channels[0]+channels[1]+channels[2];
       //if (channels.size() > 4) Qabs = channels[0]*channels[1]*channels[2];
@@ -385,7 +402,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   auto TiN_data = plot_TiN_.GetIndex();
   //double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
-  int least_size = 10000;
+  int least_size = 15;
   // Scan all wavelengths
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
@@ -401,8 +418,12 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
       multi_layer_mie_.RunMieCalculations();
       std::vector<double> tmp({wl});
       //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
-      std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-      tmp.insert(tmp.end(), channels.begin(), channels.end());
+      std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+      for (int i = 0; i < an.size(); ++i) {
+	tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
+	tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+      }
       spectra.push_back(tmp);
       if (least_size > tmp.size()) least_size = tmp.size();
     } catch( const std::invalid_argument& ia ) {
@@ -498,7 +519,37 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   wrapper.AddColumnName("WL");
   for (int i = 1; i < spectra.front().size(); ++i) {
     char column_name[10];
-    snprintf(column_name, 10, "[%d]",i);
+    std::string type;
+    if ( (i-1)%2 == 0) type ="an";
+    else type="bn";
+    snprintf(column_name, 10, "%s[%d]",type.c_str(), (i-1)/2+1);
+    wrapper.AddColumnName(column_name);
+  }
+  wrapper.MakeOutput();
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra) {
+  gnuplot::GnuplotWrapper wrapper;
+  char plot_name [300];
+  snprintf(plot_name, 300,
+           "%s-sweep-ch",  sign_.c_str());
+  full_sign_ = std::string(plot_name);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("Total_R");
+  wrapper.SetYLabelName("NACS");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  wrapper.SetYRange({-0.02, 0.27});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("WL");
+  for (int i = 1; i < spectra.front().size(); ++i) {
+    char column_name[10];
+    std::string type;
+    if ( (i-1)%2 == 0) type ="an";
+    else type="bn";
+    snprintf(column_name, 10, "%s[%d]",type.c_str(), (i-1)/2+1);
     wrapper.AddColumnName(column_name);
   }
   wrapper.MakeOutput();

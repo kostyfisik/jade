@@ -93,7 +93,7 @@ int total_generations_ = 250;
 int population_multiplicator_ = 160;
 double bound = 10.0;
 double step_r_ = 1.0; //max_r_ / 159.0;
-int channel_ = 1;
+int channel_ = 3;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     sub_population_.FitnessFunction = &EvaluateFitness;
-    sign_ = "bulk-an"+std::to_string(channel_);
+    sign_ = "bulk-bn"+std::to_string(channel_);
     std::cout << "Sign: " << sign_ << std::endl;
     SetOptimizer();
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
       channel_sweep.push_back(tmp);
       if (least_size_sweep > tmp.size()) least_size_sweep = tmp.size();
       epsilon_sweep.push_back({total_r_, eps_re_, eps_im_});
-}  // end of total coating thickness sweep
+    }  // end of total coating thickness sweep
     for (auto& row : channel_sweep) row.resize(least_size_sweep);
     PrintGnuPlotChannelSweep(channel_sweep);
     PrintGnuPlotEpsilon(epsilon_sweep);
@@ -199,7 +199,7 @@ double EvaluateFitness(std::vector<double> input) {
     multi_layer_mie_.RunMieCalculations();
     //std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
     //Qabs_ = multi_layer_mie_.GetQabs();
-    std::complex<double> an = multi_layer_mie_.GetAn()[channel_ -1];
+    std::complex<double> an = multi_layer_mie_.GetBn()[channel_ -1];
     Qabs_ = an.real() - pow2(std::abs(an));
   } catch( const std::invalid_argument& ia ) {
     printf(".");
