@@ -52,6 +52,9 @@ namespace gnuplot{
     if (x_range_[0] != x_range_[1])
       plt_format += "set xrange [" + std::to_string(x_range_[0])
         + ":" + std::to_string(x_range_[1]) + "]\n";
+    if (y_range_[0] != y_range_[1])
+      plt_format += "set yrange [" + std::to_string(y_range_[0])
+        + ":" + std::to_string(y_range_[1]) + "]\n";
       // #set yrange [-0.1:0.1]
       // #set yrange [-1:1]
       // #set linestyle 1 lt 2 lw 3

@@ -105,8 +105,8 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    sub_population_.FitnessFunction = &EvaluateFitness;
-    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
+    //sub_population_.FitnessFunction = &EvaluateFitness;
+    sub_population_.FitnessFunction = &EvaluateFitnessChannel;
     //std::string core_filename("GaAs.txt");
     std::string core_filename("Si.txt");
     //std::string core_filename("Ag.txt");
@@ -292,10 +292,10 @@ double EvaluateFitnessChannel(std::vector<double> input) {
       multi_layer_mie_.RunMieCalculations();
       //Qabs = multi_layer_mie_.GetQsca();
       std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-      //if (channels.size() > 2) Qabs = channels[0];
+      if (channels.size() > 2) Qabs = channels[0];
       //if (channels.size() > 2) Qabs = channels[0]+channels[1];
       //if (channels.size() > 4) Qabs = channels[0]+channels[1]+channels[2];
-      if (channels.size() > 4) Qabs = channels[0]*channels[1]*channels[2];
+      //if (channels.size() > 4) Qabs = channels[0]*channels[1]*channels[2];
     } catch( const std::invalid_argument& ia ) {
       printf(".");
     }

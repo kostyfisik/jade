@@ -34,6 +34,7 @@ namespace gnuplot {
     void SetXLabelName(std::string name) {x_label_name_ = name;};
     void SetYLabelName(std::string name) {y_label_name_ = name;};
     void SetXRange(std::vector<double> range) {x_range_ = range;};
+    void SetYRange(std::vector<double> range) {y_range_ = range;};
     void AddMultiPoint(std::vector<double> point);
     void AddColumnName(std::string name) {column_names_.push_back(name);};
     void MakeOutput();
@@ -47,6 +48,7 @@ namespace gnuplot {
     /* int plot_size_x_ = 1366; */
     /* int plot_size_y_ = 768; */
     std::vector<double> x_range_ = {0, 0};
+    std::vector<double> y_range_ = {0, 0};
     std::string plot_name_ = "gnuplot";
     std::string x_label_name_ = "x";
     std::string y_label_name_ = "y";

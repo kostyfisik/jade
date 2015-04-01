@@ -60,6 +60,8 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
                     jade::SubPopulation sub_population);
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
+void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra);
+void PrintGnuPlotEpsilon(std::vector< std::vector<double> > spectra);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -91,6 +93,7 @@ int total_generations_ = 250;
 int population_multiplicator_ = 160;
 double bound = 10.0;
 double step_r_ = 1.0; //max_r_ / 159.0;
+int channel_ = 1;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -101,12 +104,15 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     sub_population_.FitnessFunction = &EvaluateFitness;
-    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
-    sign_ = "bulk";
+    sign_ = "bulk-an"+std::to_string(channel_);
     std::cout << "Sign: " << sign_ << std::endl;
     SetOptimizer();
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
+    if (channel_ < 1) throw std::invalid_argument("Channel number starts from 1!/n");
     auto best_x = sub_population_.GetBest(&Qabs_);
+    std::vector< std::vector<double> > channel_sweep;
+    std::vector< std::vector<double> > epsilon_sweep;
+    int least_size_sweep = 15;
     //double best_Qabs = 0.0, best_total_r = 0.0;
     // ***************************************************
     // **************  Main loop   ***********************
@@ -125,8 +131,21 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < 3; ++i)
 	  printf("an[%d]=%g, bn[%d]=%g\n",i,std::abs(an[i]),i, std::abs(bn[i]));
       }
-    }  // end of total coating thickness sweep
-    PrintGnuPlotChannels(EvaluateSpectraForChannels());
+      std::vector<double> tmp({total_r_});
+      //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
+      std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+      for (int i = 0; i < an.size(); ++i) {
+	tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
+	tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+      }
+      channel_sweep.push_back(tmp);
+      if (least_size_sweep > tmp.size()) least_size_sweep = tmp.size();
+      epsilon_sweep.push_back({total_r_, eps_re_, eps_im_});
+}  // end of total coating thickness sweep
+    for (auto& row : channel_sweep) row.resize(least_size_sweep);
+    PrintGnuPlotChannelSweep(channel_sweep);
+    PrintGnuPlotEpsilon(epsilon_sweep);
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -178,9 +197,10 @@ double EvaluateFitness(std::vector<double> input) {
   multi_layer_mie_.SetWavelength(at_wl_);
   try {
     multi_layer_mie_.RunMieCalculations();
-    std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-    Qabs_ = multi_layer_mie_.GetQabs();
-    Qabs_ = channels[2];
+    //std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
+    //Qabs_ = multi_layer_mie_.GetQabs();
+    std::complex<double> an = multi_layer_mie_.GetAn()[channel_ -1];
+    Qabs_ = an.real() - pow2(std::abs(an));
   } catch( const std::invalid_argument& ia ) {
     printf(".");
     sub_population_.GetWorst(&Qabs_);
@@ -311,4 +331,61 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
+void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra) {
+  gnuplot::GnuplotWrapper wrapper;
+  char plot_name [300];
+  auto best_x = sub_population_.GetBest(&Qabs_);
+  EvaluateFitness(best_x);
+  Qabs_ = multi_layer_mie_.GetQabs();
+  std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+  std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+  snprintf(plot_name, 300,
+           "%s-sweep-ch",  sign_.c_str());
+  full_sign_ = std::string(plot_name);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("Total_R");
+  wrapper.SetYLabelName("NACS");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  wrapper.SetYRange({-0.02, 0.27});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("WL");
+  for (int i = 1; i < spectra.front().size(); ++i) {
+    char column_name[10];
+    std::string type;
+    if ( (i-1)%2 == 0) type ="an";
+    else type="bn";
+    snprintf(column_name, 10, "%s[%d]",type.c_str(), (i-1)/2+1);
+    wrapper.AddColumnName(column_name);
+  }
+  wrapper.MakeOutput();
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
 
+void PrintGnuPlotEpsilon(std::vector< std::vector<double> > spectra) {
+  gnuplot::GnuplotWrapper wrapper;
+  char plot_name [300];
+  auto best_x = sub_population_.GetBest(&Qabs_);
+  EvaluateFitness(best_x);
+  Qabs_ = multi_layer_mie_.GetQabs();
+  std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+  std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+  snprintf(plot_name, 300,
+           "%s-epsilon",  sign_.c_str());
+  full_sign_ = std::string(plot_name);
+  wrapper.SetPlotName(plot_name);
+  wrapper.SetXLabelName("Total_R");
+  wrapper.SetYLabelName("Epsilon");
+  wrapper.SetDrawStyle("w l lw 2");
+  wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
+  for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
+  wrapper.AddColumnName("WL");
+  wrapper.AddColumnName("Re");
+  wrapper.AddColumnName("Im");
+  wrapper.MakeOutput();
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //

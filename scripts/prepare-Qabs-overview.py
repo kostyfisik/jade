@@ -42,7 +42,7 @@ for dirname, dirnames, filenames in os.walk('.'):
     # print path to all filenames.
     isFirst = True
     for filename in filenames:
-        if 'fails0-spectra.dat' in filename:
+        if 'spectra.dat' in filename:
             # print filename
             sign = filename[0:-12]
             params = sign.split('-')
@@ -74,6 +74,7 @@ p.shape = (len(p)/len(row),len(row))
 label.append('Qabs_max')
 label.append('WL_Qabs_max')
 # p = np.sort(p,axis=0) 
+np.savetxt("overview-Qabs.txt",  p[p[:, 0].argsort()], fmt = "%.5f")
 #print p
 ##################################################################################################
 ##################################################################################################
