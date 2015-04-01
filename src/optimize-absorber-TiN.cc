@@ -97,7 +97,7 @@ bool isGaAs = true;
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
 int dim_=3;
-double step_r_ = 0.1; //max_r_ / 159.0;
+double step_r_ = 1; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -142,6 +142,7 @@ int main(int argc, char *argv[]) {
     // **************  Main loop   ***********************
     // ***************************************************  
     for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+      if (total_r_ > 50) step_r_ = 0.1;
       //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
