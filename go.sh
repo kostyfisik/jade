@@ -85,7 +85,8 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-absorber-TiN"
+jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"
 
 #jade_bin="run-superscatter-drude"
@@ -351,7 +352,7 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
     echo Copy dispersion files...
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin
@@ -542,7 +543,7 @@ if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
 fi
 cd $path_bin
 #./filter.py  # No longer needed?
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin="run-optimize-feed-cloak" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py
 else
     ./prepare-overview.py

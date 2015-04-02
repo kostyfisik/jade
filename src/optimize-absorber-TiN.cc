@@ -90,7 +90,7 @@ int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
 double plot_from_wl_ = 400.0, plot_to_wl_ = 600.0;
-int plot_samples_ = 101;
+int plot_samples_ = 1501;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
 // Set optimizer
@@ -141,8 +141,9 @@ int main(int argc, char *argv[]) {
     // ***************************************************
     // **************  Main loop   ***********************
     // ***************************************************  
-    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
-      if (total_r_ > 50) step_r_ = 0.1;
+    for (total_r_ = 62.0; total_r_ < 65.0; total_r_+=step_r_) {
+      // for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+      //if (total_r_ > 50) step_r_ = 0.1;
       //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
@@ -364,7 +365,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
       Qabs = multi_layer_mie_.GetQabs();
       Qext = multi_layer_mie_.GetQext();
       Qsca = multi_layer_mie_.GetQsca();
-      Qabs = multi_layer_mie_.GetQabs();
+      Qbk = multi_layer_mie_.GetQbk();
       spectra.push_back({wl,Qext,Qsca,Qabs,Qbk});
     } catch( const std::invalid_argument& ia ) {
       printf(".");
