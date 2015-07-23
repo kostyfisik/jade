@@ -66,14 +66,18 @@ double w2l( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
 const double lambda_0_ = 500.0e-9;  // 500 nm
 const double omega_0_ = l2w(lambda_0_);
-//bool isPreset = true;
-bool isPreset = false;
+bool isPreset = true;
+//bool isPreset = false;
 //bool isOuterR = true;
 bool isOuterR = false;
 double outer_r_ = 0.5;
 int dim_=3;
 //Alu params
-std::vector<double> input_ = {0.13, 0.16, 0.194,1.0};
+//std::vector<double> input_ = {0.13, 0.16, 0.194,1.0};
+//std::vector<double> input_ = {0.142, 0.166, 0.194, 1.0};
+std::vector<double> input_ = {0.00635, 0.00747, 0.00747000001, 1.0};
+//0.142135
+//std::vector<double> input_ = {6.3535e-3, 7.4765e-3, 7.4766e-3, 1};
 double r1_ = input_[0]*lambda_0_;
 double r2_ = input_[1]*lambda_0_;
 double r3_ = input_[2]*lambda_0_;
@@ -86,13 +90,14 @@ double to_omega_ = 2.0*omega_0_;
 std::complex<double> core_index_ = std::sqrt(std::complex<double>(1.29,0.01));
 std::complex<double> inshell_index_(0,0);
 std::complex<double> outshell_index_ = std::sqrt(std::complex<double>(8.4,2.33));
+//std::complex<double> outshell_index_ = std::sqrt(std::complex<double>(1.0,0.0));
 
 const double gamma_d_ = 2.0*pi*17.64*1.0e12;
 const double omega_p_ = 2.0*pi*2069.0*1.0e12;
 
 std::complex<double> epsilon_m(double omega) {
-  // std::cout << "omega:" << omega << "  omega_p:"<<omega_p_ <<std::endl;
-  return 1.53 - pow2(omega_p_)/(omega*(omega +std::complex<double>(0,1)*gamma_d_));
+  //return 1.53 - pow2(omega_p_)/(omega*(omega +std::complex<double>(0,1)*gamma_d_));
+  return -10.37+ 0.35*std::complex<double>(0,1);
 }
 // Set dispersion
 double from_wl_ = w2l(from_omega_);
@@ -102,8 +107,8 @@ double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
 double plot_xshare_ = 0.1;
 // Set optimizer
-int total_generations_ = 1500;
-int population_multiplicator_ = 150;
+int total_generations_ = 500;
+int population_multiplicator_ = 250;
 double Qsca_best_ = 0.0;
 double Qabs_best_ = 0.0;
 // ********************************************************************** //
@@ -129,12 +134,12 @@ int main(int argc, char *argv[]) {
     }
     
     SetGeometry();    SetMie();
-    if (rank ==0) {printf("Input_:"); for (auto value : input_) printf(" %g,", value);  }
+    if (rank ==0) {printf("Input_:"); for (auto value : input_) printf(" %24.22f,", value);  }
     multi_layer_mie_.RunMieCalculation();
     Qsca_best_ = multi_layer_mie_.GetQsca();
     Qabs_best_ = multi_layer_mie_.GetQabs();
     if (rank ==0) {
-      printf("\nQabs: %g\nQsca: %g\nZeta=%g\n",Qabs_best_,Qsca_best_, Qabs_best_/Qsca_best_);
+      printf("\nQabs: %24.22f\nQsca: %24.22f\nZeta=%24.22f\n",Qabs_best_,Qsca_best_, Qabs_best_/Qsca_best_);
     }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -162,10 +167,11 @@ double EvaluateFitness(std::vector<double> input) {
     sub_population_.GetWorst(&Zeta);
   }
   double r_outer = input_[2]*lambda_0_;
-  double Cabs = multi_layer_mie_.GetQabs()*pi*pow2(r3_);
+  double Qabs = multi_layer_mie_.GetQabs();
+  double Cabs = Qabs*pi*pow2(r3_);
   double A = 3.0*pow2(lambda_0_)/(8.0*pi);
+  //return Qabs > 5.0 ? Zeta : 0.0;
   return Cabs > A ? Zeta : 0.0;
-  //  return Cabs > A ? Zeta : 0.0;
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -193,7 +199,8 @@ void SetMie() {
       multi_layer_mie_.ClearTarget();
       multi_layer_mie_.AddTargetLayer(core_width_, core_index_);
       multi_layer_mie_.AddTargetLayer(inshell_width_, std::sqrt(epsilon_m(omega_)));
-      //printf("eps = %g, %gj",epsilon_m(omega_).real(), epsilon_m(omega_).imag());
+      // if (omega_ > omega_0_*0.999 && omega_ < omega_0_*1.001)
+      // 	printf("eps = %g, %gj",epsilon_m(omega_).real(), epsilon_m(omega_).imag());
       multi_layer_mie_.AddTargetLayer(outshell_width_, outshell_index_);
       multi_layer_mie_.SetWavelength(w2l(omega_));
 }
