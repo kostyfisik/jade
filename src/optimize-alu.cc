@@ -66,7 +66,7 @@ jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-nmie::MultiLayerMie multi_layer_mie_;  
+nmie::MultiLayerMieApplied multi_layer_mie_;  
 double w2l( double l) {return 2.0 * pi * speed_of_light/l;};
 double l2w( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
@@ -147,19 +147,19 @@ int main(int argc, char *argv[]) {
     
     SetGeometry();    SetMie();
     if (rank ==0) {printf("Input_:"); for (auto value : input_) printf(" %g,", value);  }
-    multi_layer_mie_.RunMieCalculations();
+    multi_layer_mie_.RunMieCalculation();
     std::vector<double> channels;
     if (isQabs){
       Qsca_best_ = multi_layer_mie_.GetQabs();
-      channels = multi_layer_mie_.GetQabs_channel();
+      // channels = multi_layer_mie_.GetQabs_channel();
     } else {
       Qsca_best_ = multi_layer_mie_.GetQsca();
-      channels = multi_layer_mie_.GetQsca_channel();
+      // channels = multi_layer_mie_.GetQsca_channel();
     }
     if (rank ==0) {
 	printf("\nQsca_best: %g\n",Qsca_best_);
-	for (auto value : channels) printf(" %g,", value);    
-	PrintGnuPlotChannels(EvaluateSpectraForChannels());
+	// for (auto value : channels) printf(" %g,", value);    
+	// PrintGnuPlotChannels(EvaluateSpectraForChannels());
     }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -180,7 +180,7 @@ double EvaluateFitness(std::vector<double> input) {
   SetMie();
   double Qsca = 0.0;
   try {
-    multi_layer_mie_.RunMieCalculations();
+    multi_layer_mie_.RunMieCalculation();
     Qsca = multi_layer_mie_.GetQsca();
   } catch( const std::invalid_argument& ia ) {
     printf(".");
@@ -199,7 +199,7 @@ double EvaluateFitnessQabs(std::vector<double> input) {
   SetMie();
   double Qabs = 0.0;
   try {
-    multi_layer_mie_.RunMieCalculations();
+    multi_layer_mie_.RunMieCalculation();
     Qabs = multi_layer_mie_.GetQabs();
   } catch( const std::invalid_argument& ia ) {
     printf(".");
@@ -218,13 +218,13 @@ double EvaluateFitnessMod(std::vector<double> input) {
   SetMie();
   double Qsca = 0.0;
   try {
-    multi_layer_mie_.RunMieCalculations();
+    multi_layer_mie_.RunMieCalculation();
     Qsca = multi_layer_mie_.GetQsca();
-    std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
-    // no loss
-    //Qsca = channels[0]*channels[1]*channels[2];
-    // with losses
-    Qsca = channels[0]*channels[1];
+    // std::vector<double> channels(multi_layer_mie_.GetQsca_channel());
+    // // no loss
+    // //Qsca = channels[0]*channels[1]*channels[2];
+    // // with losses
+    // Qsca = channels[0]*channels[1];
   } catch( const std::invalid_argument& ia ) {
     printf(".");
     Qsca = 0.0;
@@ -249,15 +249,15 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
       SetGeometry();
       SetMie();
       try {
-	multi_layer_mie_.RunMieCalculations();
+	multi_layer_mie_.RunMieCalculation();
 	double Qsca;
 	std::vector<double> channels;
 	if (isQabs) {
 	  Qsca = multi_layer_mie_.GetQabs();
-	  channels = multi_layer_mie_.GetQabs_channel();
+	  // channels = multi_layer_mie_.GetQabs_channel();
 	} else {
 	  Qsca = multi_layer_mie_.GetQsca();
-	  channels = multi_layer_mie_.GetQsca_channel();
+	  // channels = multi_layer_mie_.GetQsca_channel();
 	}
 	double norm = (Qsca * pi*pow2(r3_)) / ( pow2(w2l(omega_)) / (2.0*pi) );
 	std::vector<double> tmp({omega_/omega_p_, norm});
@@ -271,18 +271,18 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels() {
 	  printf("\n\nFrom spectra:\n");
 	  printf("Input_:");
 	  for (auto value : input_) printf(" %g,", value);      
-	  multi_layer_mie_.RunMieCalculations();
+	  multi_layer_mie_.RunMieCalculation();
 	  double Qsca;
 	  std::vector<double> channels;
 	  if (isQabs) {
 	    Qsca = multi_layer_mie_.GetQabs();
-	    channels = multi_layer_mie_.GetQabs_channel();
+	    // channels = multi_layer_mie_.GetQaabs_channel();
 	  } else {
 	    Qsca = multi_layer_mie_.GetQsca();
-	    channels = multi_layer_mie_.GetQsca_channel();
+	    // channels = multi_layer_mie_.GetQsca_channel();
 	  }
-	  printf("\nQsca_best: %g\n",Qsca);
-	  for (auto value : channels) printf(" %g,", value);
+	  // printf("\nQsca_best: %g\n",Qsca);
+	  // for (auto value : channels) printf(" %g,", value);
      	}
       } catch( const std::invalid_argument& ia ) {
 	std::cerr << "Invalid argument: " << ia.what() << std::endl;
