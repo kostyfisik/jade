@@ -66,12 +66,12 @@ double w2l( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
 const double lambda_0_ = 500.0e-9;  // 500 nm
 const double omega_0_ = l2w(lambda_0_);
-bool isPreset = true;
-//bool isPreset = false;
+//bool isPreset = true;
+bool isPreset = false;
 //bool isOuterR = true;
 bool isOuterR = false;
 double outer_r_ = 0.5;
-int dim_=2;
+int dim_=3;
 //Alu params
 std::vector<double> input_ = {0.13, 0.16, 0.194,1.0};
 double r1_ = input_[0]*lambda_0_;
@@ -148,7 +148,6 @@ int main(int argc, char *argv[]) {
 // ********************************************************************** //
 // ********************************************************************** //
 double EvaluateFitness(std::vector<double> input) {
-  if (input.size() > 5) throw std::invalid_argument("Wrong input dimension!/n");
   // Copy releveant part of optimizer input to global var input_ for Mie calculations
   for (int i = 0; i< input.size(); ++i)
     input_[i] = input[i];
@@ -162,7 +161,11 @@ double EvaluateFitness(std::vector<double> input) {
     printf(".");
     sub_population_.GetWorst(&Zeta);
   }
-  return Zeta;
+  double r_outer = input_[2]*lambda_0_;
+  double Cabs = multi_layer_mie_.GetQabs()*pi*pow2(r3_);
+  double A = 3.0*pow2(lambda_0_)/(8.0*pi);
+  return Cabs > A ? Zeta : 0.0;
+  //  return Cabs > A ? Zeta : 0.0;
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -190,7 +193,7 @@ void SetMie() {
       multi_layer_mie_.ClearTarget();
       multi_layer_mie_.AddTargetLayer(core_width_, core_index_);
       multi_layer_mie_.AddTargetLayer(inshell_width_, std::sqrt(epsilon_m(omega_)));
-      printf("eps = %g, %gj",epsilon_m(omega_).real(), epsilon_m(omega_).imag());
+      //printf("eps = %g, %gj",epsilon_m(omega_).real(), epsilon_m(omega_).imag());
       multi_layer_mie_.AddTargetLayer(outshell_width_, outshell_index_);
       multi_layer_mie_.SetWavelength(w2l(omega_));
 }
@@ -205,7 +208,8 @@ void SetOptimizer() {
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  sub_population_.SetAllBounds(eps_, 2.0-eps_);
+  //sub_population_.SetAllBounds(eps_, 2.0-eps_);
+  sub_population_.SetAllBounds(eps_, input_[2]-eps_);
   sub_population_.SetTargetToMaximum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   //sub_population.SwitchOffPMCRADE();
