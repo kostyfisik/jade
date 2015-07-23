@@ -3,11 +3,13 @@ import os
 import string
 from glob import glob
 import numpy as np
+
 ##################################################################################################
 ##################################################################################################
 ##################################################################################################
 #filename sould contain spectra columns: wl, Qext, Qsca, Qabs, Qbk
-def find_max(filename, column=3): #default column=3 equals for Qabs
+Q='Qsca'
+def find_max(filename, column=2): #default column=3 equals for Qabs
     wl_max = 0
     Q_max = 0
     print filename
@@ -71,10 +73,10 @@ for dirname, dirnames, filenames in os.walk('.'):
             #print p
             isFirst = False
 p.shape = (len(p)/len(row),len(row))
-label.append('Qabs_max')
-label.append('WL_Qabs_max')
+label.append(Q+'_max')
+label.append('WL_'+Q+'_max')
 # p = np.sort(p,axis=0) 
-np.savetxt("overview-Qabs.txt",  p[p[:, 0].argsort()], fmt = "%.5f")
+np.savetxt("overview-"+Q+".txt",  p[p[:, 0].argsort()], fmt = "%.5f")
 #print p
 ##################################################################################################
 ##################################################################################################
@@ -93,7 +95,7 @@ mark = markers[3:3+len(label)]
 ##################################################################################################
 #                    Qabs plot
 ##################################################################################################
-if 'Qabs' in label:
+if Q in label:
     fig, ax1 = plt.subplots()
     ax1.grid(b=True, which='major', color='0.8', linestyle='-')
     ax1.set_axisbelow(True)
@@ -104,8 +106,8 @@ if 'Qabs' in label:
     ax1.set_ylabel(label[1], fontsize=16)
     # fig = plt.plot(p[:,0], p[:,1],'g^', linewidth=2.0)
     # fig.suptitle(label[1])
-    #ax1.legend(loc='upper left')
-    ax1.legend(loc='upper right')
+    ax1.legend(loc='upper left')
+    #ax1.legend(loc='upper right')
     ax2 = ax1.twinx()
     ax2.plot(p[:,0], p[:,-1], linestyle='None', marker='x', ms=4, linewidth=3.0, label=label[-1], color='k', fillstyle='none')
     ax2.set_ylabel('%s, nm'%label[-1], fontsize=16)

@@ -80,24 +80,26 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-const double max_r_ = 100.0; // nm
+const double max_r_ = 160.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 500.0;
+double at_wl_ = 400.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = 400.0, plot_to_wl_ = 600.0;
+double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
 int plot_samples_ = 1501;
 //bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 bool isGaAs = true;
+bool isQsca = true;
+//bool isQsca = false;
 // Set optimizer
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
 int dim_=3;
-double step_r_ = 1; //max_r_ / 159.0;
+double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -141,8 +143,8 @@ int main(int argc, char *argv[]) {
     // ***************************************************
     // **************  Main loop   ***********************
     // ***************************************************  
-    for (total_r_ = 62.0; total_r_ < 65.0; total_r_+=step_r_) {
-      // for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
+    //for (total_r_ = 62.0; total_r_ < 65.0; total_r_+=step_r_) {
+    for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
       //if (total_r_ > 50) step_r_ = 0.1;
       //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
@@ -169,8 +171,13 @@ int main(int argc, char *argv[]) {
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
       std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
       for (int i = 0; i < an.size(); ++i) {
-	tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
-	tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+	if (isQsca) {
+	  tmp.push_back(pow2(std::abs(an[i])));
+	  tmp.push_back(pow2(std::abs(bn[i])));	  
+	}else{
+	  tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
+	  tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+	}
       }
       channel_sweep.push_back(tmp);
       if (least_size_sweep > tmp.size()) least_size_sweep = tmp.size();
@@ -178,11 +185,6 @@ int main(int argc, char *argv[]) {
     PrintGnuPlotChannels(EvaluateSpectraForChannels(best_x, best_total_r));
     for (auto& row : channel_sweep) row.resize(least_size_sweep);
     PrintGnuPlotChannelSweep(channel_sweep);
-    if (rank == 0) {
-      printf("==========best=========\n");
-      for (auto x : best_x) printf("besttt %g,  ", x);
-      printf("Q=%g, bbest Q = %g\n", EvaluateFitness(best_x), best_Qabs);
-    }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
     std::cerr << "Invalid argument: " << ia.what() << std::endl;
@@ -234,7 +236,7 @@ double EvaluateFitness(std::vector<double> input) {
   TiN_share_ = input[1];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
-  const double shell_width = total_r_ - core_width - TiN_width;
+  const double shell_width = total_r_ - core_width - TiN_width + eps_;
   if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
     printf("core_share = %g\n",core_share_);
     printf("TiN_share = %g\n",TiN_share_);
@@ -264,7 +266,8 @@ double EvaluateFitness(std::vector<double> input) {
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
-      Qabs = multi_layer_mie_.GetQabs();
+      if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
+      else Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
       printf(".");
       sub_population_.GetWorst(&Qabs);
@@ -283,7 +286,7 @@ double EvaluateFitnessChannel(std::vector<double> input) {
   TiN_share_ = input[1];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
-  const double shell_width = total_r_ - core_width - TiN_width;
+  const double shell_width = total_r_ - core_width - TiN_width + eps_;
   if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
     printf("core_share = %g\n",core_share_);
     printf("TiN_share = %g\n",TiN_share_);
@@ -309,12 +312,8 @@ double EvaluateFitnessChannel(std::vector<double> input) {
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculations();
-      Qabs = multi_layer_mie_.GetQabs();
-      // std::vector<double> channels(multi_layer_mie_.GetQabs_channel_normalized());
-      // if (channels.size() > 2) Qabs = channels[0];
-      //if (channels.size() > 2) Qabs = channels[0]+channels[1];
-      //if (channels.size() > 4) Qabs = channels[0]+channels[1]+channels[2];
-      //if (channels.size() > 4) Qabs = channels[0]*channels[1]*channels[2];
+      if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
+      else Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
       printf(".");
     }
@@ -335,7 +334,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
   TiN_share_ = best_x[1];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
-  const double shell_width = total_r_ - core_width - TiN_width;
+  const double shell_width = total_r_ - core_width - TiN_width + eps_;
   if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
     printf("core_share = %g\n",core_share_);
     printf("TiN_share = %g\n",TiN_share_);
@@ -389,7 +388,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   TiN_share_ = best_x[1];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
-  const double shell_width = total_r_ - core_width - TiN_width;
+  const double shell_width = total_r_ - core_width - TiN_width + eps_;
   if (TiN_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
     printf("core_share = %g\n",core_share_);
     printf("TiN_share = %g\n",TiN_share_);
@@ -423,8 +422,13 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
       std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
       for (int i = 0; i < an.size(); ++i) {
-	tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
-	tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+	if (isQsca) {
+	  tmp.push_back(pow2(std::abs(an[i])));
+	  tmp.push_back(pow2(std::abs(bn[i])));
+	}else{
+	  tmp.push_back(an[i].real() - pow2(std::abs(an[i])));
+	  tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
+	}
       }
       spectra.push_back(tmp);
       if (least_size > tmp.size()) least_size = tmp.size();
@@ -482,9 +486,10 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;  
-  snprintf(plot_name, 300,
-           "%s-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(),
-           total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
+  if (isQsca) snprintf(plot_name, 300,
+           "%s-TotalR%06.2fnm-Qsca%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
+  else snprintf(plot_name, 300,
+           "%s-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
@@ -508,13 +513,17 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
   const double core_width = (total_r_ - TiN_width) * core_share_;
   const double shell_width = total_r_ - core_width - TiN_width;  
-  snprintf(plot_name, 300,
+  if (isQsca) snprintf(plot_name, 300,
+           "o-spectra-%s-channels-TotalR%06.2fnm-Qsca%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
+           total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
+  else snprintf(plot_name, 300,
            "o-spectra-%s-channels-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
            total_r_, Qabs_,  core_width, TiN_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
-  wrapper.SetYLabelName("NACS");
+  if (isQsca)   wrapper.SetYLabelName("NRCS");
+  else  wrapper.SetYLabelName("NACS");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
@@ -540,10 +549,11 @@ void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra) {
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Total_R");
-  wrapper.SetYLabelName("NACS");
+  if (isQsca) wrapper.SetYLabelName("NRCS");
+  else wrapper.SetYLabelName("NACS");
   wrapper.SetDrawStyle("w l lw 2");
   wrapper.SetXRange({spectra.front()[0], spectra.back()[0]});
-  wrapper.SetYRange({-0.02, 0.27});
+  //wrapper.SetYRange({-0.02, 0.27});
   for (auto multi_point : spectra) wrapper.AddMultiPoint(multi_point);
   wrapper.AddColumnName("WL");
   for (int i = 1; i < spectra.front().size(); ++i) {
