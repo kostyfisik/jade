@@ -88,10 +88,13 @@ double inshell_width_ = r2_ - r1_;
 double outshell_width_ = r3_ - r2_;
 double from_omega_ = 0.1*omega_0_;
 double to_omega_ = 2.0*omega_0_;
-std::complex<double> core_index_ = std::sqrt(std::complex<double>(1.29,0.01));
 std::complex<double> inshell_index_(0,0);
+std::complex<double> core_index_ = std::sqrt(std::complex<double>(1.29,0.01));
 std::complex<double> outshell_index_ = std::sqrt(std::complex<double>(8.4,2.33));
-//std::complex<double> outshell_index_ = std::sqrt(std::complex<double>(1.0,0.0));
+// std::complex<double> core_index_ = std::sqrt(std::complex<double>(1.25,0.03));
+// std::complex<double> outshell_index_ = std::sqrt(std::complex<double>(8.6,0.96)) ;
+
+
 
 const double gamma_d_ = 2.0*pi*17.64*1.0e12;
 const double omega_p_ = 2.0*pi*2069.0*1.0e12;
@@ -141,6 +144,9 @@ int main(int argc, char *argv[]) {
     Qabs_best_ = multi_layer_mie_.GetQabs();
     if (rank ==0) {
       printf("\nQabs: %24.22f\nQsca: %24.22f\nZeta=%24.22f\n",Qabs_best_,Qsca_best_, Qabs_best_/Qsca_best_);
+      double Cabs = Qabs_best_*pi*pow2(r3_);
+      double A = 3.0*pow2(lambda_0_)/(8.0*pi);
+      printf("Cabs = %g\nA = %g\n",Cabs,A);
     }
   } catch( const std::invalid_argument& ia ) {
     // Will catch if  multi_layer_mie_ fails or other errors.
@@ -171,7 +177,11 @@ double EvaluateFitness(std::vector<double> input) {
   double Qabs = multi_layer_mie_.GetQabs();
   double Cabs = Qabs*pi*pow2(r3_);
   double A = 3.0*pow2(lambda_0_)/(8.0*pi);
-  return Qabs > 5.0 ? Zeta*pow2(pow2(5.0/Qabs)) : Zeta*pow2(pow2(Qabs/5.0));
+  double Q0 = 5.0, Z0=1000.0;
+
+  //return Qabs > Q0 ? Zeta*pow2(pow2(Q0/Qabs)) : Zeta*pow2(pow2(Qabs/Q0));
+  //return Cabs > A ? Zeta*pow2(pow2(A/Cabs)) : Zeta*pow2(pow2(Cabs/A));
+  return Zeta > Z0 ? Z0/Zeta*pow2(Qabs) : Zeta/Z0*pow2(Qabs);
   //return Cabs > A ? Zeta : 0.0;
 }
 // ********************************************************************** //
