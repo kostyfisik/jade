@@ -66,16 +66,17 @@ double w2l( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
 const double lambda_0_ = 500.0e-9;  // 500 nm
 const double omega_0_ = l2w(lambda_0_);
-bool isPreset = true;
-//bool isPreset = false;
+//bool isPreset = true;
+bool isPreset = false;
 //bool isOuterR = true;
 bool isOuterR = false;
 double outer_r_ = 0.5;
 int dim_=3;
 //Alu params
 //std::vector<double> input_ = {0.13, 0.16, 0.194,1.0};
+std::vector<double> input_ = {0.142, 0.166, 0.5194, 1.0};
 //std::vector<double> input_ = {0.142, 0.166, 0.194, 1.0};
-std::vector<double> input_ = {0.00635, 0.00747, 0.00747000001, 1.0};
+//std::vector<double> input_ = {0.00635, 0.00747, 0.00747000001, 1.0};
 //0.142135
 //std::vector<double> input_ = {6.3535e-3, 7.4765e-3, 7.4766e-3, 1};
 double r1_ = input_[0]*lambda_0_;
@@ -107,7 +108,7 @@ double plot_from_wl_ = from_wl_, plot_to_wl_ = to_wl_;
 int plot_samples_ = samples_;
 double plot_xshare_ = 0.1;
 // Set optimizer
-int total_generations_ = 500;
+int total_generations_ = 1500;
 int population_multiplicator_ = 250;
 double Qsca_best_ = 0.0;
 double Qabs_best_ = 0.0;
@@ -170,8 +171,8 @@ double EvaluateFitness(std::vector<double> input) {
   double Qabs = multi_layer_mie_.GetQabs();
   double Cabs = Qabs*pi*pow2(r3_);
   double A = 3.0*pow2(lambda_0_)/(8.0*pi);
-  //return Qabs > 5.0 ? Zeta : 0.0;
-  return Cabs > A ? Zeta : 0.0;
+  return Qabs > 5.0 ? Zeta*pow2(pow2(5.0/Qabs)) : Zeta*pow2(pow2(Qabs/5.0));
+  //return Cabs > A ? Zeta : 0.0;
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -215,8 +216,8 @@ void SetOptimizer() {
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  //sub_population_.SetAllBounds(eps_, 2.0-eps_);
-  sub_population_.SetAllBounds(eps_, input_[2]-eps_);
+  sub_population_.SetAllBounds(eps_, 1.0-eps_);
+  //sub_population_.SetAllBounds(eps_, input_[2]-eps_);
   sub_population_.SetTargetToMaximum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   //sub_population.SwitchOffPMCRADE();
