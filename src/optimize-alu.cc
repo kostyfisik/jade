@@ -216,7 +216,7 @@ void SetOptimizer() {
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  sub_population_.SetAllBounds(eps_, 1.0-eps_);
+  sub_population_.SetAllBounds(eps_, 2.0-eps_);
   //sub_population_.SetAllBounds(eps_, input_[2]-eps_);
   sub_population_.SetTargetToMaximum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
