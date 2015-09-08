@@ -43,7 +43,7 @@
 #include <stdexcept>
 #include <string>
 #include "./gnuplot-wrapper/gnuplot-wrapper.h"
-#include "./nmie/nmie-wrapper.h"
+#include "./nmie/nmie-applied.h"
 #include "./read-spectra/read-spectra.h"
 const double pi=3.14159265358979323846;
 template<class T> inline T pow2(const T value) {return value*value;}
@@ -65,7 +65,7 @@ void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra);
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-nmie::MultiLayerMie multi_layer_mie_;  
+nmie::MultiLayerMieApplied multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
 read_spectra::ReadSpectra core_index_, TiN_;
 read_spectra::ReadSpectra plot_core_index_, plot_TiN_;
@@ -84,17 +84,17 @@ const double max_r_ = 160.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 400.0;
+double at_wl_ = 500.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = 300.0, plot_to_wl_ = 900.0;
+double plot_from_wl_ = 400.0, plot_to_wl_ = 600.0;
 int plot_samples_ = 1501;
-//bool isGaAs = false; // Select Si of GaAs as a material for core and shell
-bool isGaAs = true;
-bool isQsca = true;
-//bool isQsca = false;
+bool isGaAs = false; // Select Si of GaAs as a material for core and shell
+//bool isGaAs = true;
+//bool isQsca = true;
+bool isQsca = false;
 // Set optimizer
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
@@ -265,7 +265,7 @@ double EvaluateFitness(std::vector<double> input) {
       multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
-      multi_layer_mie_.RunMieCalculations();
+      multi_layer_mie_.RunMieCalculation();
       if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
       else Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
@@ -311,7 +311,7 @@ double EvaluateFitnessChannel(std::vector<double> input) {
     multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
-      multi_layer_mie_.RunMieCalculations();
+      multi_layer_mie_.RunMieCalculation();
       if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
       else Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
@@ -360,7 +360,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
     multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
-      multi_layer_mie_.RunMieCalculations();
+      multi_layer_mie_.RunMieCalculation();
       Qabs = multi_layer_mie_.GetQabs();
       Qext = multi_layer_mie_.GetQext();
       Qsca = multi_layer_mie_.GetQsca();
@@ -416,7 +416,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
     multi_layer_mie_.AddTargetLayer(shell_width, shell);
     multi_layer_mie_.SetWavelength(wl);
     try {
-      multi_layer_mie_.RunMieCalculations();
+      multi_layer_mie_.RunMieCalculation();
       std::vector<double> tmp({wl});
       //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();

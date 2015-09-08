@@ -85,8 +85,8 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-#jade_bin="run-optimize-absorber-TiN"
-jade_bin="run-optimize-alu"
+jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"
 
@@ -542,7 +542,9 @@ if  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
     rm bin.tar.bz2
     tar -cjf bin.tar.bz2 bin
 fi
+
 cd $path_bin
+rm *-nan-*
 #./filter.py  # No longer needed?
 if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py

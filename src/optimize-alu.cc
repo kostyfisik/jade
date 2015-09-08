@@ -66,17 +66,17 @@ double w2l( double w) {return 2.0 * pi * speed_of_light/w;};
 // ********************************************************************** //
 const double lambda_0_ = 500.0e-9;  // 500 nm
 const double omega_0_ = l2w(lambda_0_);
-//bool isPreset = true;
-bool isPreset = false;
+bool isPreset = true;
+//bool isPreset = false;
 //bool isOuterR = true;
 bool isOuterR = false;
 double outer_r_ = 0.5;
 int dim_=3;
 //Alu params
 //std::vector<double> input_ = {0.13, 0.16, 0.194,1.0};
-std::vector<double> input_ = {0.142, 0.166, 0.5194, 1.0};
+//std::vector<double> input_ = {0.142, 0.166, 0.5194, 1.0};
 //std::vector<double> input_ = {0.142, 0.166, 0.194, 1.0};
-//std::vector<double> input_ = {0.00635, 0.00747, 0.00747000001, 1.0};
+std::vector<double> input_ = {0.00635, 0.00747, 0.00747000001, 1.0};
 //0.142135
 //std::vector<double> input_ = {6.3535e-3, 7.4765e-3, 7.4766e-3, 1};
 double r1_ = input_[0]*lambda_0_;
