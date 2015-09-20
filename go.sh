@@ -86,6 +86,7 @@ fi
 
 #jade_bin="run-optimize-feed-cloak"
 jade_bin="run-optimize-absorber-TiN"
+#jade_bin="run-optimize-absorber-TiN-wideband"
 #jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"
@@ -353,7 +354,7 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
     echo Copy dispersion files...
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin
@@ -526,14 +527,17 @@ fi
 # fi
 #rm *.jade  >/dev/null  2>&1
 cd bin
+rm *-nan-*
+
 #chmod +x run-gnuplot*.sh
-for file in `ls run-gnuplot* 2>/dev/null`; do 
-    chmod +x $file
-    ./$file
-done   
+# for file in `ls run-gnuplot* 2>/dev/null`; do 
+#     chmod +x $file
+#     ./$file
+# done   
 
 cp $path_jade/scripts/prepare-overview.py $path_bin
 cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
+cp $path_jade/scripts/plot-SiAgSi-overview.py $path_bin
 cp $path_jade/scripts/filter.py $path_bin
 cp -r $path_jade/src $path_bin
 #echo $path_bin
@@ -546,8 +550,10 @@ fi
 cd $path_bin
 rm *-nan-*
 #./filter.py  # No longer needed?
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin="run-optimize-feed-cloak" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py
+    cp Si-Ag-Si-sweep-ch.dat SiAgSi-ab-ch.txt
+    ./plot-SiAgSi-overview.py
 else
     ./prepare-overview.py
 fi

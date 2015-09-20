@@ -1,7 +1,8 @@
 /**
- * @file   optimize-absorber-TiN.cc
+ * @file   optimize-absorber-TiN-wideband.cc
  * @author Konstantin Ladutenko <kostyfisik at gmail (.) com>
- * @date   Wed Mar 11 10:59:03 2015
+ * @date   Tue Sep  8 15:12:09 2015
+ * 
 **/
 /// @copyright 2015  Konstantin Ladutenko
 ///
@@ -52,7 +53,7 @@ template<class T> inline T pow2(const T value) {return value*value;}
 void SetOptimizer();
 
 double EvaluateFitness(std::vector<double> input);
-double EvaluateFitnessChannela1(std::vector<double> input);
+double EvaluateFitnessChannel(std::vector<double> input);
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign();
 std::vector< std::vector<double> > EvaluateSpectraForChannels(std::vector<double>& best_x,
 							      double total_r);
@@ -80,12 +81,14 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-const double max_r_ = 90.0; // nm
+const double max_r_ = 120.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 500.0;
-double from_wl_ = at_wl_, to_wl_ = at_wl_;
+//double at_wl_ = 475.0;
+double at_wl_ = 525.0;
+double band = 0.0;
+double from_wl_ = at_wl_-band/2.0, to_wl_ = at_wl_+band/2.0;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
@@ -96,6 +99,7 @@ bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 //bool isQsca = true;
 bool isQsca = false;
 // Set optimizer
+int wb_points = 2;
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
 int dim_=3;
@@ -109,8 +113,8 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    //sub_population_.FitnessFunction = &EvaluateFitness;
-    sub_population_.FitnessFunction = &EvaluateFitnessChannela1;
+    sub_population_.FitnessFunction = &EvaluateFitness;
+    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
     //std::string core_filename("GaAs.txt");
     std::string core_filename("Si.txt");
     //std::string core_filename("Ag.txt");
@@ -145,15 +149,7 @@ int main(int argc, char *argv[]) {
     // ***************************************************  
     //for (total_r_ = 62.0; total_r_ < 65.0; total_r_+=step_r_) {
     for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
-      if (
-	  (total_r_ > 80-0.01 && total_r_ < 83-0.01)
-	  ||
-	  (total_r_ > 64-0.01 && total_r_ < 66-0.01)
-	  ||
-	  (total_r_ > 55-0.01 && total_r_ < 57-0.01)
-	  )
-	  step_r_ = 0.1;
-      else step_r_ = 1.0;
+      //if (total_r_ > 50) step_r_ = 0.1;
       //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
@@ -173,7 +169,7 @@ int main(int argc, char *argv[]) {
 	best_x = best_local_x;	
       }
       PrintGnuPlotChannels(EvaluateSpectraForChannels(best_local_x, total_r_));
-      sub_population_.FitnessFunction(best_local_x);
+      EvaluateFitness(best_local_x);
       std::vector<double> tmp({total_r_});
       //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
@@ -232,8 +228,7 @@ void SetOptimizer() {
   //sub_population.SwitchOffPMCRADE();
 
   sub_population_.SetBestShareP(0.1);
-  sub_population_.SetAdapitonFrequencyC(1.0/20.0);
-
+  sub_population_.SetAdapitonFrequencyC(1.0/20.0);  
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -257,7 +252,7 @@ double EvaluateFitness(std::vector<double> input) {
   
   auto core_data = core_index_.GetIndex();
   auto TiN_data = TiN_.GetIndex();
-  double max_Qabs = 0.0, Qabs = 0.0;
+  double max_Qabs = 1.0, Qabs = 0.0;
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
     const std::complex<double>& core = core_data[i].second;
@@ -276,21 +271,21 @@ double EvaluateFitness(std::vector<double> input) {
       multi_layer_mie_.RunMieCalculation();
       if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
       else Qabs = multi_layer_mie_.GetQabs();
+      max_Qabs *= Qabs;
     } catch( const std::invalid_argument& ia ) {
       printf(".");
       sub_population_.GetWorst(&Qabs);
     }
-    if (Qabs > max_Qabs) max_Qabs = Qabs;
+    //if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
-  Qabs_ = Qabs;
+  Qabs_ = max_Qabs/core_data.size();
   return Qabs_;
 }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-double EvaluateFitnessChannela1(std::vector<double> input) {
+double EvaluateFitnessChannel(std::vector<double> input) {
   if (input.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
-  if (isQsca) throw std::invalid_argument("Absorption only fitness function!/n");
   core_share_ = input[0];
   TiN_share_ = input[1];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;
@@ -309,7 +304,6 @@ double EvaluateFitnessChannela1(std::vector<double> input) {
   auto core_data = core_index_.GetIndex();
   auto TiN_data = TiN_.GetIndex();
   double max_Qabs = 0.0, Qabs = 0.0;
-  double Qabs_a1 = 0.0;
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
     const std::complex<double>& core = core_data[i].second;
@@ -322,33 +316,15 @@ double EvaluateFitnessChannela1(std::vector<double> input) {
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculation();
-      std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
-      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
-      double an_1 = an[0].real() - pow2(std::abs(an[0]));
-      double an_2 = an[1].real() - pow2(std::abs(an[1]));
-      double bn_1 = bn[0].real() - pow2(std::abs(bn[0]));
-      double bn_2 = bn[1].real() - pow2(std::abs(bn[1]));
-      const int n = 1;
-      Qabs_a1 = (2.0*n+1.0)*(an_1);
-      // for (int i = 0; i < an.size(); ++i) {
-      // 	if (isQsca) {
-      // 	  tmp.push_back(pow2(std::abs(an[i])));
-      // 	  tmp.push_back(pow2(std::abs(bn[i])));
-      // 	}else{
-      // 	  tmp.push_back(an[i].real() - pow2(std::abs(an[i])) );
-      // 	  tmp.push_back(bn[i].real() - pow2(std::abs(bn[i])));
-      // 	}
-      // }
-      if (isQsca)  Qabs_ = multi_layer_mie_.GetQsca();
-      else Qabs_ = multi_layer_mie_.GetQabs();
+      if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
+      else Qabs = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
       printf(".");
-      sub_population_.GetWorst(&Qabs_a1);
     }
     if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
-  //Qabs_ = Qabs;
-  return Qabs_a1;
+  Qabs_ = Qabs;
+  return Qabs_;
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -410,7 +386,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   fails_ = 0;
   // Setting Mie model to the best state.
   total_r_ = best_total_r;
-  Qabs_ = sub_population_.FitnessFunction(best_x);
+  Qabs_ = EvaluateFitness(best_x);
   if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
   core_share_ = best_x[0];
   TiN_share_ = best_x[1];
@@ -509,9 +485,6 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
-  auto best_x = sub_population_.GetBest(&Qabs_);
-  sub_population_.FitnessFunction(best_x);
-  Qabs_=multi_layer_mie_.GetQabs();
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;

@@ -8,7 +8,7 @@ import numpy as np
 ##################################################################################################
 ##################################################################################################
 #filename sould contain spectra columns: wl, Qext, Qsca, Qabs, Qbk
-Q='Qsca'
+Q='Qabs'
 def find_max(filename, column=2): #default column=3 equals for Qabs
     wl_max = 0
     Q_max = 0
