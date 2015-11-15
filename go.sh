@@ -361,7 +361,7 @@ if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absor
     cp $path_data/GaAs.txt $path_bin
     cp $path_data/TiN.txt $path_bin
     cp $path_data/Ag.txt $path_bin
-    cp $path_data/Au-Ovidio-nm.txt $path_bin
+    cp $path_data/Au.txt $path_bin
     cp $path_data/SiO2.txt $path_bin
     ls $path_bin
 fi
@@ -553,9 +553,10 @@ fi
 cd $path_bin
 rm *-nan-*
 #./filter.py  # No longer needed?
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin="run-optimize-feed-cloak" ]]; then
+
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py
-    cp Si-Ag-Si-sweep-ch.dat SiAgSi-ab-ch.txt
+    #mv sweep-ch.dat sweep-ch.txt
     ./plot-SiAgSi-overview.py
 else
     ./prepare-overview.py

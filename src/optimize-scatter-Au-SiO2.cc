@@ -77,7 +77,7 @@ std::string sign_, full_sign_;
 double lambda_best_ = 0.0; // nm
 int fails_ = 0;
 double core_share_ = 0.0, mid_share_ = 0.0;
-double Qabs_=0.0, initial_Qabs_=0.0;
+double Q_=0.0, initial_Q_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->mid->shell
@@ -95,10 +95,12 @@ int plot_samples_ = 501;
 bool isQsca = true;
 //bool isQsca = false;
 // Set optimizer
+bool isFindMax = true;
+//bool isFindMax = false;
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
 int dim_=3;
-double step_r_ = 5.0; //max_r_ / 159.0;
+double step_r_ = 15.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -110,15 +112,15 @@ int main(int argc, char *argv[]) {
   try {
     sub_population_.FitnessFunction = &EvaluateFitness;
     //std::string core_filename("GaAs.txt");
-    std::string core_filename("Au-Ovidio-nm.txt");
+    std::string core_filename("Au.txt");
     //std::string core_filename("Ag.txt");
     //std::string mid_filename("mid.txt");
     std::string mid_filename("SiO2.txt");
     //std::string mid_filename("Si.txt");
     std::string shell_filename(core_filename);
     sign_ = core_filename.substr(0, core_filename.find("."))+"-"+
-      mid_filename.substr(0, core_filename.find("."))+"-"+
-      shell_filename.substr(0, core_filename.find("."));
+      mid_filename.substr(0, mid_filename.find("."))+"-"+
+      shell_filename.substr(0, shell_filename.find("."));
     std::cout << "Sign: " << sign_ << std::endl;
     core_index_.ReadFromFile(core_filename);
     plot_core_index_.ReadFromFile(core_filename);
@@ -134,8 +136,8 @@ int main(int argc, char *argv[]) {
     // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nmid:\n");   mid_.PrintData(); }
     SetOptimizer();
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
-    auto best_x = sub_population_.GetBest(&Qabs_);
-    double best_Qabs = 0.0, best_total_r = 0.0;
+    auto best_x = sub_population_.GetBest(&Q_);
+    double best_Q = 0.0, best_total_r = 0.0;
     std::vector< std::vector<double> > channel_sweep;
     int least_size_sweep = 15;
     // ***************************************************
@@ -158,15 +160,15 @@ int main(int argc, char *argv[]) {
       // Plot spectra from each process
       PrintGnuPlotSpectra(EvaluateSpectraForBestDesign());
       if (rank == 0) Print();
-      auto best_local_x = sub_population_.GetBest(&Qabs_);
+      auto best_local_x = sub_population_.GetBest(&Q_);
       if (rank == 0) {
 	std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
 	std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
 	for (int i = 0; i < 3; ++i)
 	  printf("an[%d]=%g, bn[%d]=%g\n",i,std::abs(an[i]),i, std::abs(bn[i]));
       }
-      if (Qabs_ > best_Qabs) {
-	best_Qabs = Qabs_;
+      if (Q_ > best_Q) {
+	best_Q = Q_;
 	best_total_r = total_r_;
 	best_x = best_local_x;	
       }
@@ -225,8 +227,8 @@ void SetOptimizer() {
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
   sub_population_.SetAllBounds(eps_, 1.0-eps_);
-  //sub_population_.SetTargetToMaximum();
-  sub_population_.SetTargetToMaximum();
+  if (isFindMax) sub_population_.SetTargetToMaximum();
+  else  sub_population_.SetTargetToMinimum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
   //sub_population.SwitchOffPMCRADE();
 
@@ -256,7 +258,7 @@ double EvaluateFitness(std::vector<double> input) {
   
   auto core_data = core_index_.GetIndex();
   auto mid_data = mid_.GetIndex();
-  double max_Qabs = 0.0, Qabs = 0.0;
+  double Q = 0.0;
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
     const std::complex<double>& core = core_data[i].second;
@@ -273,23 +275,22 @@ double EvaluateFitness(std::vector<double> input) {
     multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculation();
-      if (isQsca)  Qabs = multi_layer_mie_.GetQsca();
-      else Qabs = multi_layer_mie_.GetQabs();
+      if (isQsca)  Q = multi_layer_mie_.GetQsca();
+      else Q = multi_layer_mie_.GetQabs();
     } catch( const std::invalid_argument& ia ) {
       printf(".");
-      sub_population_.GetWorst(&Qabs);
+      sub_population_.GetWorst(&Q);
     }
-    if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
-  Qabs_ = Qabs;
-  return Qabs_;
+  Q_ = Q;
+  return Q_;
 }
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
   fails_ = 0;
-  auto best_x = sub_population_.GetBest(&Qabs_);
+  auto best_x = sub_population_.GetBest(&Q_);
   // Setting Mie model to the best state.
   if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
   core_share_ = best_x[0];
@@ -309,7 +310,7 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
   
   auto core_data = plot_core_index_.GetIndex();
   auto mid_data = plot_mid_.GetIndex();
-  double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
+  double Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
@@ -332,7 +333,6 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
       printf(".");
       ++fails_;
     }
-    if (Qabs > max_Qabs) max_Qabs = Qabs;
   }  // end of for all points of the spectrum
   return spectra;
 }
@@ -344,7 +344,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   fails_ = 0;
   // Setting Mie model to the best state.
   total_r_ = best_total_r;
-  Qabs_ = sub_population_.FitnessFunction(best_x);
+  Q_ = sub_population_.FitnessFunction(best_x);
   if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
   core_share_ = best_x[0];
   mid_share_ = best_x[1];
@@ -443,19 +443,19 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
-  auto best_x = sub_population_.GetBest(&Qabs_);
+  auto best_x = sub_population_.GetBest(&Q_);
   sub_population_.FitnessFunction(best_x);
-  if (isQsca) Qabs_=multi_layer_mie_.GetQsca();
-  else Qabs_=multi_layer_mie_.GetQabs();
+  if (isQsca) Q_=multi_layer_mie_.GetQsca();
+  else Q_=multi_layer_mie_.GetQabs();
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   const double mid_width = (total_r_>max_mid_width_ ? max_mid_width_ : total_r_) * mid_share_;
   const double core_width = (total_r_ - mid_width) * core_share_;
   const double shell_width = total_r_ - core_width - mid_width;  
   if (isQsca) snprintf(plot_name, 300,
-           "%s-TotalR%06.2fnm-Qsca%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Qabs_,  core_width, mid_width, shell_width, fails_);
+           "%s-TotalR%06.2fnm-Qsca%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Q_,  core_width, mid_width, shell_width, fails_);
   else snprintf(plot_name, 300,
-           "%s-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Qabs_,  core_width, mid_width, shell_width, fails_);
+           "%s-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d-spectra", sign_.c_str(), total_r_, Q_,  core_width, mid_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
@@ -481,10 +481,10 @@ void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra) {
   const double shell_width = total_r_ - core_width - mid_width;  
   if (isQsca) snprintf(plot_name, 300,
            "o-spectra-%s-channels-TotalR%06.2fnm-Qsca%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
-           total_r_, Qabs_,  core_width, mid_width, shell_width, fails_);
+           total_r_, Q_,  core_width, mid_width, shell_width, fails_);
   else snprintf(plot_name, 300,
            "o-spectra-%s-channels-TotalR%06.2fnm-Qabs%016.13f--core%07.2fnm--inshell%07.2fnm--outshell%07.2fnm-fails%d", sign_.c_str(),
-           total_r_, Qabs_,  core_width, mid_width, shell_width, fails_);
+           total_r_, Q_,  core_width, mid_width, shell_width, fails_);
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("WL");
@@ -511,7 +511,7 @@ void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra) {
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   snprintf(plot_name, 300,
-           "%s-sweep-ch",  sign_.c_str());
+           "sweep-ch");
   full_sign_ = std::string(plot_name);
   wrapper.SetPlotName(plot_name);
   wrapper.SetXLabelName("Total_R");

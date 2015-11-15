@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 def load_data(fname):
-    data = np.loadtxt(fname+".txt")
+    data = np.loadtxt(fname+".dat")
     space = [np.nan]*len(data[0,:])
     #space = [-100]*len(data[0,:])
     min_value = np.min(data, axis=0)
@@ -24,13 +24,13 @@ def load_data(fname):
         data_spaced = np.concatenate((data_spaced,data[i-1:i,:]))
     return data, data_spaced
 
-fname = "overview-Qabs"
+fname = "overview-Qsca"
 data, data_spaced = load_data(fname)
 for i in xrange(1, len(data[:,1])-2):
     if data[i-2,1]<=data[i,1] and data[i+2,1]<=data[i,1]:
         print(data[i,:])
 
-fname2 = "SiAgSi-ab-ch"
+fname2 = "sweep-ch"
 data2, data_spaced2 = load_data(fname2)
 
 max1 = (2*1+1)/(2*np.power(2*np.pi*data[:,0]/500,2))

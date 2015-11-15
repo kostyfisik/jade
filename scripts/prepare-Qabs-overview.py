@@ -8,7 +8,7 @@ import numpy as np
 ##################################################################################################
 ##################################################################################################
 #filename sould contain spectra columns: wl, Qext, Qsca, Qabs, Qbk
-Q='Qabs'
+Q='Qsca'
 def find_max(filename, column=2): #default column=3 equals for Qabs
     wl_max = 0
     Q_max = 0
@@ -51,6 +51,8 @@ for dirname, dirnames, filenames in os.walk('.'):
             print (sign)
             row = np.empty([0])
             for element in params:
+                if 'SiO2' in element or 'TiO2' in element:
+                    continue
                 digits = element.translate(None,string.letters+'%')
                 if len(digits) > 0:
                     #print element
@@ -61,8 +63,7 @@ for dirname, dirnames, filenames in os.walk('.'):
                             element = element[:-2]
                         name = element.translate(None,'.').translate(None,string.digits)
                         label.append(name)
-                        
-                        #print ("%s : %f"%(name, value))
+                        print ("%s : %f"%(name, value))
             wl_max, Q_max = find_max(filename)
             #s = row[-4]+row[-2]+row[-3]
             #s = row[-3]
@@ -76,7 +77,7 @@ p.shape = (len(p)/len(row),len(row))
 label.append(Q+'_max')
 label.append('WL_'+Q+'_max')
 # p = np.sort(p,axis=0) 
-np.savetxt("overview-"+Q+".txt",  p[p[:, 0].argsort()], fmt = "%.5f")
+np.savetxt("overview-"+Q+".dat",  p[p[:, 0].argsort()], fmt = "%.5f")
 #print p
 ##################################################################################################
 ##################################################################################################
