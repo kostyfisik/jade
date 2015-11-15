@@ -84,7 +84,7 @@ const double max_r_ = 100.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 500.0;
+double at_wl_ = 525.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;

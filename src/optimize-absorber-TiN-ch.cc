@@ -80,16 +80,16 @@ double Qabs_=0.0, initial_Qabs_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
 // Set model: core->TiN->shell
-const double max_r_ = 89.0; // nm
+const double max_r_ = 160.0; // nm
 const double max_TiN_width_ = max_r_; // nm
 //const double max_TiN_width_ = 10; // nm
 // Set dispersion
-double at_wl_ = 525.0;
+double at_wl_ = 500.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = at_wl_+100.0, plot_to_wl_ = at_wl_+100.0;
+double plot_from_wl_ = 400.0, plot_to_wl_ = 600.0;
 int plot_samples_ = 1501;
 bool isGaAs = false; // Select Si of GaAs as a material for core and shell
 //bool isGaAs = true;
@@ -109,8 +109,8 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
-    //sub_population_.FitnessFunction = &EvaluateFitness;
-    sub_population_.FitnessFunction = &EvaluateFitnessChannela1;
+    sub_population_.FitnessFunction = &EvaluateFitness;
+    //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
     //std::string core_filename("GaAs.txt");
     std::string core_filename("Si.txt");
     //std::string core_filename("Ag.txt");
@@ -145,15 +145,7 @@ int main(int argc, char *argv[]) {
     // ***************************************************  
     //for (total_r_ = 62.0; total_r_ < 65.0; total_r_+=step_r_) {
     for (total_r_ = step_r_; total_r_ < max_r_*1.00001; total_r_+=step_r_) {
-      // if (
-      // 	  (total_r_ > 80-0.01 && total_r_ < 83-0.01)
-      // 	  ||
-      // 	  (total_r_ > 64-0.01 && total_r_ < 66-0.01)
-      // 	  ||
-      // 	  (total_r_ > 55-0.01 && total_r_ < 57-0.01)
-      // 	  )
-      // 	  step_r_ = 0.1;
-      // else step_r_ = 1.0;
+      //if (total_r_ > 50) step_r_ = 0.1;
       //for (total_r_ = 145.0; total_r_ < 147.0; total_r_+=0.05) {
       if (rank == 0) printf("\nTotal R = %g\n", total_r_);    
       sub_population_.RunOptimization();
@@ -173,7 +165,7 @@ int main(int argc, char *argv[]) {
 	best_x = best_local_x;	
       }
       PrintGnuPlotChannels(EvaluateSpectraForChannels(best_local_x, total_r_));
-      sub_population_.FitnessFunction(best_local_x);
+      EvaluateFitness(best_local_x);
       std::vector<double> tmp({total_r_});
       //std::vector<double> channels(multi_layer_mie_.GetQabs_channel());
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
@@ -319,20 +311,15 @@ double EvaluateFitnessChannela1(std::vector<double> input) {
     multi_layer_mie_.AddTargetLayer(core_width, core);
     multi_layer_mie_.AddTargetLayer(TiN_width, TiN);
     multi_layer_mie_.AddTargetLayer(shell_width, shell);
-    multi_layer_mie_.SetWavelength(wl);    
+    multi_layer_mie_.SetWavelength(wl);
     try {
       multi_layer_mie_.RunMieCalculation();
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
-      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
-      double an_1 = an[0].real() - pow2(std::abs(an[0]));
-      double an_2 = an[1].real() - pow2(std::abs(an[1]));
-      //double bn_1 = bn[0].real() - pow2(std::abs(bn[0]));
-      double bn_2 = bn[1].real() - pow2(std::abs(bn[1]));
-      const int n = 1;
-      //Qabs_a1 = (2.0*n+1.0)*(an_1);
-      double bn_1 = pow2(std::abs(bn[0]));
-      Qabs_a1 = (2.0*n+1.0)*(bn_1);
-
+      //std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+      //double an_1 = an[0].real() - pow2(std::abs(an[0]));
+      double an_1 = bn[0].real() - pow2(std::abs(bn[0]));
+      const int n = i + 1;
+      Qabs_a1 = (2.0*n+1.0)*an_1;
       // for (int i = 0; i < an.size(); ++i) {
       // 	if (isQsca) {
       // 	  tmp.push_back(pow2(std::abs(an[i])));
@@ -413,7 +400,7 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   fails_ = 0;
   // Setting Mie model to the best state.
   total_r_ = best_total_r;
-  Qabs_ = sub_population_.FitnessFunction(best_x);
+  Qabs_ = EvaluateFitness(best_x);
   if (best_x.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
   core_share_ = best_x[0];
   TiN_share_ = best_x[1];
@@ -512,9 +499,6 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 // ********************************************************************** //
 // ********************************************************************** //
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra) {
-  auto best_x = sub_population_.GetBest(&Qabs_);
-  sub_population_.FitnessFunction(best_x);
-  Qabs_=multi_layer_mie_.GetQabs();
   gnuplot::GnuplotWrapper wrapper;
   char plot_name [300];
   const double TiN_width = (total_r_>max_TiN_width_ ? max_TiN_width_ : total_r_) * TiN_share_;

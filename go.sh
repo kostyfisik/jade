@@ -85,7 +85,8 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-absorber-TiN"
+jade_bin="run-optimize-scatter-Au-SiO2"
+#jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-optimize-absorber-TiN-wideband"
 #jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
@@ -354,12 +355,14 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
     echo Copy dispersion files...
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin
     cp $path_data/TiN.txt $path_bin
     cp $path_data/Ag.txt $path_bin
+    cp $path_data/Au-Ovidio-nm.txt $path_bin
+    cp $path_data/SiO2.txt $path_bin
     ls $path_bin
 fi
 if [[ $isBuildOnly = $yes ]]; then
