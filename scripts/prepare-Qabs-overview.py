@@ -8,8 +8,14 @@ import numpy as np
 ##################################################################################################
 ##################################################################################################
 #filename sould contain spectra columns: wl, Qext, Qsca, Qabs, Qbk
-Q='Qsca'
-def find_max(filename, column=2): #default column=3 equals for Qabs
+def find_max(filename): #default column=3 equals for Qabs
+    if 'Qext' in filename: column = 1
+    elif 'Qsca': column = 2
+    elif 'Qabs': column = 3
+    elif 'Qbk': column = 4
+    else:
+        print("Unsupported spectra format!")
+        return
     wl_max = 0
     Q_max = 0
     print filename
@@ -45,6 +51,14 @@ for dirname, dirnames, filenames in os.walk('.'):
     isFirst = True
     for filename in filenames:
         if 'spectra.dat' in filename:
+            if 'Qext' in filename: Q='Qext'
+            elif 'Qsca':  Q='Qsca'
+            elif 'Qabs':  Q='Qabs'
+            elif 'Qbk':  Q='Qbk'
+            else:
+                print("Unsupported spectra format!")
+                return
+
             # print filename
             sign = filename[0:-12]
             params = sign.split('-')

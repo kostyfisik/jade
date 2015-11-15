@@ -37,9 +37,9 @@ namespace read_spectra {
     std::vector< std::pair< double, std::complex<double> > >&
       GetIndex(){return data_complex_index_;};
   private:
-    std::vector< std::vector<double> > data_;
-    std::vector< std::pair< double, std::complex<double> > > data_complex_;
-    std::vector< std::pair< double, std::complex<double> > > data_complex_index_;
+    std::vector< std::vector<double> > data_;  // wl, re(eps), im(eps)
+    std::vector< std::pair< double, std::complex<double> > > data_complex_;  // wl, eps
+    std::vector< std::pair< double, std::complex<double> > > data_complex_index_;  // wl, index
     void PermittivityToIndex();
   };  // end of class ReadSpectra
 }  // end of namespase read_spectra

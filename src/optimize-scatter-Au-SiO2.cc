@@ -63,18 +63,22 @@ void PrintCoating(std::vector<double> current, double initial_RCS,
 void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra);
+void ReadDesignSpectra();
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
 nmie::MultiLayerMieApplied multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
-read_spectra::ReadSpectra core_index_, mid_;
-read_spectra::ReadSpectra plot_core_index_, plot_mid_;
+// You should provide a Material.txt file for each "Material" in index desing;
+// File format:
+// comment line starts with #,
+// data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
+std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
+std::vector< read_spectra::ReadSpectra > index_spectra_, index_plot_spectra_;
 std::string sign_, full_sign_;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-double lambda_best_ = 0.0; // nm
 int fails_ = 0;
 double core_share_ = 0.0, mid_share_ = 0.0;
 double Q_=0.0, initial_Q_=0.0;
@@ -111,29 +115,9 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   try {
     sub_population_.FitnessFunction = &EvaluateFitness;
-    //std::string core_filename("GaAs.txt");
-    std::string core_filename("Au.txt");
-    //std::string core_filename("Ag.txt");
-    //std::string mid_filename("mid.txt");
-    std::string mid_filename("SiO2.txt");
-    //std::string mid_filename("Si.txt");
-    std::string shell_filename(core_filename);
-    sign_ = core_filename.substr(0, core_filename.find("."))+"-"+
-      mid_filename.substr(0, mid_filename.find("."))+"-"+
-      shell_filename.substr(0, shell_filename.find("."));
+    ReadDesignSpectra();
     std::cout << "Sign: " << sign_ << std::endl;
-    core_index_.ReadFromFile(core_filename);
-    plot_core_index_.ReadFromFile(core_filename);
-    core_index_.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
-    plot_core_index_.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_)
-      .ToIndex();
-    mid_.ReadFromFile(mid_filename).ResizeToComplex(from_wl_, to_wl_, samples_)
-      .ToIndex();
-    plot_mid_.ReadFromFile(mid_filename)
-      .ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
-    if (core_index_.GetIndex().size()
-	!= mid_.GetIndex().size()) throw std::invalid_argument("Unexpected sampling of dispersion!/n");
-    // if (rank == 0) {  printf("\ncore:\n");  core_index_.PrintData(); printf("\nmid:\n");   mid_.PrintData(); }
+
     SetOptimizer();
     if (step_r_ <=0.0) throw std::invalid_argument("Radius step should be positive!/n");
     auto best_x = sub_population_.GetBest(&Q_);
@@ -256,8 +240,8 @@ double EvaluateFitness(std::vector<double> input) {
     printf("shell <=0:   %g\n",shell_width);
   }
   
-  auto core_data = core_index_.GetIndex();
-  auto mid_data = mid_.GetIndex();
+  auto core_data = index_spectra_[0].GetIndex();
+  auto mid_data =  index_spectra_[1].GetIndex();
   double Q = 0.0;
   for (int i=0; i < core_data.size(); ++i) {
     const double& wl = core_data[i].first;
@@ -307,9 +291,10 @@ std::vector< std::vector<double> > EvaluateSpectraForBestDesign() {
     printf("core <=0:   %g\n",core_width);
     printf("shell <=0:   %g\n",shell_width);
   }
-  
-  auto core_data = plot_core_index_.GetIndex();
-  auto mid_data = plot_mid_.GetIndex();
+
+  auto core_data = index_plot_spectra_[0].GetIndex();
+  auto mid_data =  index_plot_spectra_[1].GetIndex();
+
   double Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
   for (int i=0; i < core_data.size(); ++i) {
@@ -360,9 +345,9 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
     printf("core <=0:   %g\n",core_width);
     printf("shell <=0:   %g\n",shell_width);
   }
-  
-  auto core_data = plot_core_index_.GetIndex();
-  auto mid_data = plot_mid_.GetIndex();
+
+  auto core_data = index_plot_spectra_[0].GetIndex();
+  auto mid_data =  index_plot_spectra_[1].GetIndex();
   //double max_Qabs = 0.0, Qabs = 0.0, Qext=0.0, Qsca=0.0, Qbk =0.0;
   std::vector< std::vector<double> > spectra;
   int least_size = 15;
@@ -406,38 +391,6 @@ std::vector< std::vector<double> > EvaluateSpectraForChannels
   //   printf("\n\n");
   // }
   return spectra;
-}
-// ********************************************************************** //
-// ********************************************************************** //
-// ********************************************************************** //
-void PrintCoating(std::vector<double> current, double initial_RCS,
-                    jade::SubPopulation sub_population) {
-  //double best_RCS = 0.0;
-  // auto best_x = sub_population.GetBest(&best_RCS);
-  // printf("Target R=%g, WL=%g\n", a, lambda_work);
-  // printf("Initial RCS: %g\n", initial_RCS);
-  //  printf("Final RCS: %g (%4.1f%%)\n", best_RCS, (best_RCS/initial_RCS-1.0)*100.0);
-  // printf ("Layer:\t");
-  // for (int i = 0; i < number_of_layers; ++i)
-  //   printf("% 5i\t",i+1);
-  // printf ("\n");
-  // printf ("Width:\t");
-  // for (int i = 0; i < number_of_layers; ++i)
-  //   printf("%5.4g\t",best_x[i]);
-  // printf("\n");
-  // int shift = isStratFromLowIndex ? 1 : 0;
-  // printf ("Index:\t");
-  // for (int i = 0; i < number_of_layers; ++i) {
-  //   if ( (i+shift) % 2 ) printf("%5.4g\t",low_index);
-  //   else printf("%5.4g\t", hi_index);
-  // }  // end of for each layer
-  // printf("\n");  
-  // double total_coating_width = 0.0;
-  // for (auto w : best_x) total_coating_width += w;
-  // printf("Total coating width: %g\n", total_coating_width);
-  // printf("Layer width limits min/max: %g/%g\n", min_layer_thickness, max_layer_thickness);
-  // printf("Layer index limits min/max: %g/%g\n", low_index, hi_index);
-  
 }
 // ********************************************************************** //
 // ********************************************************************** //
@@ -531,6 +484,22 @@ void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra) {
     wrapper.AddColumnName(column_name);
   }
   wrapper.MakeOutput();
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+void ReadDesignSpectra() {
+  sign_ = "";
+  for (auto name : index_design_) {
+    sign_ += name+"-";
+    read_spectra::ReadSpectra tmp;
+    tmp.ReadFromFile(name+".txt");
+    tmp.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
+    index_spectra_.push_back(tmp);
+    tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
+    index_plot_spectra_.push_back(tmp);
+  }
+  sign_.pop_back();  
 }
 // ********************************************************************** //
 // ********************************************************************** //
