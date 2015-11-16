@@ -25,13 +25,13 @@ def load_data(fname):
     return data, data_spaced
 
 fname = "overview-Qsca"
-data, data_spaced = load_data(fname)
-for i in xrange(1, len(data[:,1])-2):
-    if data[i-2,1]<=data[i,1] and data[i+2,1]<=data[i,1]:
-        print(data[i,:])
+data_spaced, data = load_data(fname)
+# for i in xrange(1, len(data[:,1])-2):
+#     if data[i-2,1]<=data[i,1] and data[i+2,1]<=data[i,1]:
+#         print(data[i,:])
 
 fname2 = "sweep-ch"
-data2, data_spaced2 = load_data(fname2)
+data_spaced2, data2 = load_data(fname2)
 
 max1 = (2*1+1)/(2*np.power(2*np.pi*data[:,0]/500,2))
 max2 = (2*2+1)/(2*np.power(2*np.pi*data[:,0]/500,2))
@@ -70,12 +70,12 @@ cax = axs[NACS].plot(data_spaced2[:,0], data_spaced2[:,4], linewidth=plotwidth/1
                      solid_joinstyle='round', solid_capstyle='round', color='blue'
                      , label=r"$\tilde{b}_2$"
 )
-axs[NACS].axhline(y=0.25, ls='--', dashes=[2,2], color='gray')
+# axs[NACS].axhline(y=0.25, ls='--', dashes=[2,2], color='gray')
 lg=axs[NACS].legend(loc='center left',prop={'size':11})
 #lg=axs[Qsca].legend(loc='upper right',prop={'size':8})
 #lg.get_frame().set_linewidth(0.0)
-axs[NACS].annotate('0.25', xy=(27, 0.25), fontsize=9, color='gray',
-                horizontalalignment='left', verticalalignment='bottom')
+# axs[NACS].annotate('0.25', xy=(27, 0.25), fontsize=9, color='gray',
+#                 horizontalalignment='left', verticalalignment='bottom')
 
 lg.draw_frame(False)
 
@@ -84,26 +84,26 @@ lg.draw_frame(False)
 cax = axs[Qsca].plot(data_spaced[:,0], data_spaced[:,1], linewidth=plotwidth,
                      solid_joinstyle='round', solid_capstyle='round', color='black',
                      label=r"Si/Ag/Si")
-#Analyic
-cax = axs[Qsca].plot(data[:,0], max1, '--',linewidth=plotwidth/2.0,
-                     solid_joinstyle='round', solid_capstyle='round', color='red'
-#                     , label="max(n=1)"
-                     )
-dashes = [5, 2] # points on, off, ...
-cax[0].set_dashes(dashes)
-cax = axs[Qsca].plot(data[:,0], max2, '--',linewidth=plotwidth/2.0, color='blue'
-#                     , label="max(n=2)"
-                     )
-dashes = [2, 2] # points on, off, ...
-cax[0].set_dashes(dashes)
-lg=axs[Qsca].legend(loc='upper left',prop={'size':10})
-axs[Qsca].text(55, 1.2, r'max($n=1$)', fontsize=10, color='red')
-axs[Qsca].text(55, 5.9, r'max($n=2$)', fontsize=10, color='blue')
+# #Analyic
+# cax = axs[Qsca].plot(data[:,0], max1, '--',linewidth=plotwidth/2.0,
+#                      solid_joinstyle='round', solid_capstyle='round', color='red'
+# #                     , label="max(n=1)"
+#                      )
+# dashes = [5, 2] # points on, off, ...
+# cax[0].set_dashes(dashes)
+# cax = axs[Qsca].plot(data[:,0], max2, '--',linewidth=plotwidth/2.0, color='blue'
+# #                     , label="max(n=2)"
+#                      )
+# dashes = [2, 2] # points on, off, ...
+# cax[0].set_dashes(dashes)
+# lg=axs[Qsca].legend(loc='upper left',prop={'size':10})
+# axs[Qsca].text(55, 1.2, r'max($n=1$)', fontsize=10, color='red')
+# axs[Qsca].text(55, 5.9, r'max($n=2$)', fontsize=10, color='blue')
 #lg=axs[Qsca].legend(loc='upper right',prop={'size':8})
 lg.draw_frame(False)
-axs[Qsca].arrow(36, 4.5, 0, 0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
-axs[Qsca].arrow(62.6, 3.35, 0, 0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
-axs[Qsca].arrow(81.4, 4.3, 0, -0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
+# axs[Qsca].arrow(36, 4.5, 0, 0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
+# axs[Qsca].arrow(62.6, 3.35, 0, 0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
+# axs[Qsca].arrow(81.4, 4.3, 0, -0.6, head_width=1.2, head_length=0.3, fc='k', ec='k')
 
 
 cax = axs[Design].plot(data_spaced[:,0], data_spaced[:,4], linewidth=plotwidth,
@@ -122,14 +122,14 @@ lg=axs[Design].legend(loc='upper left',prop={'size':10})
 lg.draw_frame(False)
 
 axs[NACS].set_ylabel(r'$\tilde{a}_n ,\ \tilde{b}_n$', labelpad=-0.9)
-axs[NACS].set_ylim(0, 0.29)
+# axs[NACS].set_ylim(0, 0.29)
 
-axs[Qsca].set_ylabel(r'$Q_{abs}$', labelpad=8.8)
-axs[Qsca].set_ylim(0, 7)
+axs[Qsca].set_ylabel(r'$Q$', labelpad=8.8)
+# axs[Qsca].set_ylim(0, 7)
 axs[Design].set_ylabel('Width, nm', labelpad=2)
-axs[Design].set_ylim(0, 75)
+# axs[Design].set_ylim(0, 75)
 axs[Design].set_xlabel(r'$R$, nm', labelpad=2)
-plt.xlim(0,  89)
+#plt.xlim(0,  89)
 #plt.xlim(0,  160)
 axs[NACS].annotate('(b)', xy=(0.99, 0.985), xycoords='axes fraction', fontsize=10,
                 horizontalalignment='right', verticalalignment='top')
