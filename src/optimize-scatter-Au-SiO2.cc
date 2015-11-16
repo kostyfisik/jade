@@ -64,6 +64,8 @@ void PrintGnuPlotSpectra(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannels(std::vector< std::vector<double> > spectra);
 void PrintGnuPlotChannelSweep(std::vector< std::vector<double> > spectra);
 void ReadDesignSpectra();
+std::vector<double> ShareToWidth(double total_r, std::vector<double> share);
+
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -202,15 +204,14 @@ void Print() {
 // ********************************************************************** //
 // ********************************************************************** //
 void SetOptimizer() {
-  //Width is optimized for two layers only!!
-  //The third one fills to total_r_
-  long dimension = 2;
+  //The last layer fills to total_r_
+  long dimension = index_design_.size() - 1;
   //sub_population_.FitnessFunction = &EvaluateFitness;
   //sub_population_.FitnessFunction = &EvaluateFitnessChannel;
   long total_population = dimension * population_multiplicator_;
   sub_population_.Init(total_population, dimension);
   /// Low and upper bound for all dimenstions;
-  sub_population_.SetAllBounds(eps_, 1.0-eps_);
+  sub_population_.SetAllBounds(0.0, 1.0);
   if (isFindMax) sub_population_.SetTargetToMaximum();
   else  sub_population_.SetTargetToMinimum();
   sub_population_.SetTotalGenerationsMax(total_generations_);
@@ -225,38 +226,21 @@ void SetOptimizer() {
 // ********************************************************************** //
 double EvaluateFitness(std::vector<double> input) {
   if (input.size() != 2) throw std::invalid_argument("Wrong input dimension!/n");
-  core_share_ = input[0];
-  mid_share_ = input[1];
-  const double mid_width = (total_r_>max_mid_width_ ? max_mid_width_ : total_r_) * mid_share_;
-  const double core_width = (total_r_ - mid_width) * core_share_;
-  const double shell_width = total_r_ - core_width - mid_width + eps_;
-  if (mid_width <= 0.0 || core_width <= 0.0 || shell_width <= 0.0) {
-    printf("core_share = %g\n",core_share_);
-    printf("mid_share = %g\n",mid_share_);
-    printf("total_r_ = %g\n",total_r_);
-    
-    printf("mid <=0:   %g\n", mid_width);
-    printf("core <=0:   %g\n",core_width);
-    printf("shell <=0:   %g\n",shell_width);
-  }
-  
-  auto core_data = index_spectra_[0].GetIndex();
-  auto mid_data =  index_spectra_[1].GetIndex();
+  std::vector<double> width = ShareToWidth(total_r_, input);
+
   double Q = 0.0;
-  for (int i=0; i < core_data.size(); ++i) {
-    const double& wl = core_data[i].first;
-    const std::complex<double>& core = core_data[i].second;
-    const std::complex<double>& mid = mid_data[i].second;
-    const std::complex<double>& shell = core;
+  for (int i=0; i < index_spectra_[0].GetIndex().size(); ++i) {
     multi_layer_mie_.ClearTarget();
-    //    double min_share = 0.00001;
-    //    if (core_share_ > min_share) 
-      multi_layer_mie_.AddTargetLayer(core_width, core);
-    //    if (mid_share_ > min_share) 
-      multi_layer_mie_.AddTargetLayer(mid_width, mid);
-    //    if (shell_width/total_r_ > min_share)
-      multi_layer_mie_.AddTargetLayer(shell_width, shell);
+    const auto core_data = index_spectra_[0].GetIndex();
+    const double& wl = core_data[i].first;
     multi_layer_mie_.SetWavelength(wl);
+    for (int l = 0; l < width.size(); ++l) {
+      if (width[l] > 0.0) {
+    	const auto index_data = index_spectra_[l].GetIndex();
+    	const std::complex<double>& index = index_data[i].second;	
+    	multi_layer_mie_.AddTargetLayer(width[l], index);
+      }
+    }  // end of for each layer
     try {
       multi_layer_mie_.RunMieCalculation();
       if (isQsca)  Q = multi_layer_mie_.GetQsca();
@@ -500,6 +484,24 @@ void ReadDesignSpectra() {
     index_plot_spectra_.push_back(tmp);
   }
   sign_.pop_back();  
+}
+// ********************************************************************** //
+// ********************************************************************** //
+// ********************************************************************** //
+std::vector<double> ShareToWidth(double total_r, std::vector<double> share) {
+  std::vector<double> width;
+  double remainder = total_r;
+  for (auto layer : share) {
+    if (layer < eps_) layer = 0.0;
+    if (layer > 1.0 - eps_) layer = 1.0;
+    double current_width = remainder*layer;
+    width.push_back(current_width);
+    remainder -= current_width;
+    // To avoid roundoff errors with outer layers width is set to be zero.
+    if (remainder < 0.0) remainder = 0.0;
+  }
+  width.push_back(remainder);
+  return width;
 }
 // ********************************************************************** //
 // ********************************************************************** //
