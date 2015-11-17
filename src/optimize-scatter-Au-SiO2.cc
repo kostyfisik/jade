@@ -94,8 +94,9 @@ bool isFindMax = true;
 const double max_r_ = 100.0; // nm
 // Set dispersion
 double at_wl_ = 800.0;
-double from_wl_ = at_wl_, to_wl_ = at_wl_;
-int samples_ = 1;
+double delta = 50;
+double from_wl_ = at_wl_-delta, to_wl_ = at_wl_+delta;
+int samples_ = 3;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
 double plot_from_wl_ = at_wl_-400.0, plot_to_wl_ = at_wl_+400.0;
@@ -104,7 +105,7 @@ bool isQsca = true;
 //bool isQsca = false;
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
-double step_r_ = 1.0; //max_r_ / 159.0;
+double step_r_ = 5.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -217,7 +218,7 @@ void SetOptimizer() {
 // ********************************************************************** //
 double EvaluateFitness(std::vector<double> input) {
   std::vector<double> width = ShareToWidth(total_r_, input);
-  double Q = 0.0;
+  double Q = 1.0;
   for (int i=0; i < index_spectra_[0].GetIndex().size(); ++i) {
     multi_layer_mie_.ClearTarget();
     const auto core_data = index_spectra_[0].GetIndex();
@@ -232,11 +233,18 @@ double EvaluateFitness(std::vector<double> input) {
     }  // end of for each layer
     try {
       multi_layer_mie_.RunMieCalculation();
-      if (isQsca)  Q = multi_layer_mie_.GetQsca();
-      else Q = multi_layer_mie_.GetQabs();
+      std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
+      std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
+      // if (isQsca)  Q = multi_layer_mie_.GetQsca();
+      // else Q = multi_layer_mie_.GetQabs();
+      
+      if (i % 2) Q /= multi_layer_mie_.GetQsca();
+      else Q *= multi_layer_mie_.GetQsca();
+      //Q = (std::abs(an[0]) * pow2( std::abs(an[1]) ) );
     } catch( const std::invalid_argument& ia ) {
       printf(".");
       sub_population_.GetWorst(&Q);
+      break;
     }
   }  // end of for all points of the spectrum
   Q_ = Q;
