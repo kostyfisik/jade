@@ -113,7 +113,7 @@ namespace read_spectra {
   // ********************************************************************** //
   // ********************************************************************** //
   /// from relative permittivity to refractive index
-  ReadSpectra& ReadSpectra::ToIndex() {
+  ReadSpectra& ReadSpectra::EpsToIndex() {
     data_complex_index_.clear();
     for (auto row : data_complex_) {
       const double wl = row.first;

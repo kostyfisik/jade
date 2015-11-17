@@ -71,12 +71,6 @@ std::vector<double> ShareToWidth(double total_r, std::vector<double> share);
 // ********************************************************************** //
 nmie::MultiLayerMieApplied multi_layer_mie_;  
 jade::SubPopulation sub_population_;  // Optimizer of parameters for Mie model.
-// You should provide a Material.txt file for each "Material" in index desing;
-// File format:
-// comment line starts with #,
-// data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
-//std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
-std::vector< std::string> index_design_ = {"SiO2","Au", "SiO2", "Au"};
 std::vector< read_spectra::ReadSpectra > index_spectra_, index_plot_spectra_;
 std::string sign_, full_sign_;
 // ********************************************************************** //
@@ -87,26 +81,30 @@ double core_share_ = 0.0, mid_share_ = 0.0;
 double Q_=0.0, initial_Q_=0.0;
 double total_r_ = 0.0; 
 // ********************************************************************** //
+// You should provide a Material.txt file for each "Material" in index desing;
+// File format:
+// comment line starts with #,
+// data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
+//std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
+std::vector< std::string> index_design_ = {"SiO2","Au", "SiO2", "Au"};
+// Set optimizer
+bool isFindMax = true;
+//bool isFindMax = false;
 // Set model: core->mid->shell
-const double max_r_ = 300.0; // nm
-//const double max_mid_width_ = max_r_; // nm
+const double max_r_ = 100.0; // nm
 // Set dispersion
 double at_wl_ = 800.0;
 double from_wl_ = at_wl_, to_wl_ = at_wl_;
 int samples_ = 1;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = at_wl_-100.0, plot_to_wl_ = at_wl_+100.0;
+double plot_from_wl_ = at_wl_-400.0, plot_to_wl_ = at_wl_+400.0;
 int plot_samples_ = 501;
 bool isQsca = true;
 //bool isQsca = false;
-// Set optimizer
-bool isFindMax = true;
-//bool isFindMax = false;
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
-int dim_=3;
-double step_r_ = 10.0; //max_r_ / 159.0;
+double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -442,9 +440,9 @@ void ReadDesignSpectra() {
     sign_ += name+"-";
     read_spectra::ReadSpectra tmp;
     tmp.ReadFromFile(name+".txt");
-    tmp.ResizeToComplex(from_wl_, to_wl_, samples_).ToIndex();
+    tmp.ResizeToComplex(from_wl_, to_wl_, samples_).CopyToIndex();
     index_spectra_.push_back(tmp);
-    tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).ToIndex();
+    tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).CopyToIndex();
     index_plot_spectra_.push_back(tmp);
   }
   sign_.pop_back();  

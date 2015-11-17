@@ -31,14 +31,17 @@ namespace read_spectra {
    public:
     ReadSpectra& ReadFromFile(std::string filename);
     ReadSpectra& ResizeToComplex(double from_wl, double to_wl, int samples);
-    ReadSpectra& ToIndex();
+    ReadSpectra& EpsToIndex();
+    ReadSpectra& CopyToIndex(){data_complex_index_ = data_complex_;};
     std::complex<double> at(double wavelength);
     void PrintData();    
     std::vector< std::pair< double, std::complex<double> > >&
       GetIndex(){return data_complex_index_;};
+    std::vector< std::pair< double, std::complex<double> > >&
+      GetComplex(){return data_complex_;};
   private:
-    std::vector< std::vector<double> > data_;  // wl, re(eps), im(eps)
-    std::vector< std::pair< double, std::complex<double> > > data_complex_;  // wl, eps
+    std::vector< std::vector<double> > data_;  // wl, re(), im()
+    std::vector< std::pair< double, std::complex<double> > > data_complex_;  // wl, value
     std::vector< std::pair< double, std::complex<double> > > data_complex_index_;  // wl, index
     void PermittivityToIndex();
   };  // end of class ReadSpectra

@@ -532,11 +532,11 @@ fi
 cd bin
 rm *-nan-*
 
-#chmod +x run-gnuplot*.sh
-# for file in `ls run-gnuplot* 2>/dev/null`; do 
-#     chmod +x $file
-#     ./$file
-# done   
+chmod +x run-gnuplot*.sh
+for file in `ls run-gnuplot* 2>/dev/null`; do 
+    chmod +x $file
+    ./$file
+done   
 
 cp $path_jade/scripts/prepare-overview.py $path_bin
 cp $path_jade/scripts/prepare-Qabs-overview.py $path_bin
