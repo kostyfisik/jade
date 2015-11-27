@@ -88,6 +88,7 @@ fi
 jade_bin="run-optimize-scatter-Au-SiO2"
 #jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-optimize-absorber-TiN-wideband"
+#jade_bin="run-optimize-absorber-two-band"
 #jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"
@@ -301,7 +302,7 @@ flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
 #flags_debug_gcc="-ftemplate-depth-30 -std=c++11  -da -Q"
 flags_debug_gcc="-ftemplate-depth-30 -std=c++11 -g -O0" 
 flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpmath=both -malign-double -mstackrealign -ftree-vectorize -msse2 -ftree-vectorizer-verbose=5  -Wall  -std=c++11 -stdlib=libc++" 
-flags_with_google=" -Ofast -std=c++11 -lm -lrt /usr/lib/libtcmalloc.so.4 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -march=native -mtune=native -msse4.2"
+flags_with_google=" -Ofast -std=c++11 -lm -lrt /usr/lib/libtcmalloc_minimal.so.4 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -march=native -mtune=native -msse4.2"
 # TODO option -flto   -- Do we need it?
 #export OMPI_CXXFLAGS=$flags_debug_gcc
 export OMPI_CXXFLAGS=$flags_with_google
@@ -355,7 +356,7 @@ BuildJADE
 #   Run
 #############################################################################
 echo "Executing $jade_bin on host -> $HOST <-"
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-optimize-absorber-two-band" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-absorb-Ag-in-glass" ]]; then
     echo Copy dispersion files...
     cp $path_data/Si.txt $path_bin
     cp $path_data/GaAs.txt $path_bin
@@ -554,7 +555,7 @@ cd $path_bin
 rm *-nan-*
 #./filter.py  # No longer needed?
 
-if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin="run-optimize-feed-cloak" ]]; then
+if [[ $jade_bin = "run-optimize-absorber-TiN" || $jade_bin = "run-optimize-scatter-Au-SiO2" || $jade_bin = "run-optimize-absorber-TiN-bi" || $jade_bin = "run-optimize-absorber-TiN-wideband" || $jade_bin = "run-optimize-absorber-two-band" || $jade_bin="run-optimize-feed-cloak" ]]; then
     ./prepare-Qabs-overview.py
     #mv sweep-ch.dat sweep-ch.txt
     ./plot-SiAgSi-overview.py
