@@ -94,7 +94,7 @@ bool isFindMax = true;
 const double max_r_ = 100.0; // nm
 // Set dispersion
 double at_wl_ = 800.0;
-double delta = 50;
+double delta = 150;
 double from_wl_ = at_wl_-delta, to_wl_ = at_wl_+delta;
 int samples_ = 3;
 // double from_wl_ = 300.0, to_wl_ = 900.0;

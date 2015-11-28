@@ -142,6 +142,7 @@ axs[Design].locator_params(axis='x',nbins=5)
 fig.subplots_adjust(hspace=.05)
 
 plt.savefig(fname+".pdf",pad_inches=0.02, bbox_inches='tight')
+plt.savefig(fname+".svg",pad_inches=0.02, bbox_inches='tight')
 #plt.draw()
 
 #plt.show()

@@ -85,10 +85,10 @@ fi
 #jade_bin="run-optimize-cloak"
 
 #jade_bin="run-optimize-feed-cloak"
-jade_bin="run-optimize-scatter-Au-SiO2"
+#jade_bin="run-optimize-scatter-Au-SiO2"
 #jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-optimize-absorber-TiN-wideband"
-#jade_bin="run-optimize-absorber-two-band"
+jade_bin="run-optimize-absorber-two-band"
 #jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"

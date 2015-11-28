@@ -85,7 +85,9 @@ double total_r_ = 0.0;
 // File format:
 // comment line starts with #,
 // data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
-std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
+std::vector< std::string> index_design_ = {"Ag","Si","Ag","Si"};
+//std::vector< std::string> index_design_ = {"Si","Ag","Si", "Ag"};
+//std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
 //std::vector< std::string> index_design_ = {"SiO2","Au", "SiO2", "Au"};
 // Set optimizer
 bool isFindMax = true;
@@ -94,18 +96,18 @@ bool isFindMax = true;
 const double max_r_ = 150.0; // nm
 // Set dispersion
 double at_wl_ = 500.0;
-double delta = 50;
+double delta = 30;
 double from_wl_ = at_wl_-delta, to_wl_ = at_wl_+delta;
 int samples_ = 3;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
-double plot_from_wl_ = at_wl_-400.0, plot_to_wl_ = at_wl_+400.0;
+double plot_from_wl_ = at_wl_-200.0, plot_to_wl_ = at_wl_+200.0;
 int plot_samples_ = 501;
-bool isQsca = true;
-//bool isQsca = false;
+//bool isQsca = true;
+bool isQsca = false; //isQabs
 int total_generations_ = 150;
 int population_multiplicator_ = 160;
-double step_r_ = 5.0; //max_r_ / 159.0;
+double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
@@ -219,34 +221,39 @@ void SetOptimizer() {
 double EvaluateFitness(std::vector<double> input) {
   std::vector<double> width = ShareToWidth(total_r_, input);
   double Q = 1.0;
-  for (int i=0; i < index_spectra_[0].GetIndex().size(); ++i) {
-    multi_layer_mie_.ClearTarget();
-    const auto core_data = index_spectra_[0].GetIndex();
-    const double& wl = core_data[i].first;
-    multi_layer_mie_.SetWavelength(wl);
-    for (int l = 0; l < width.size(); ++l) {
-      if (width[l] > 0.0) {
-    	const auto index_data = index_spectra_[l].GetIndex();
-    	const std::complex<double>& index = index_data[i].second;	
-    	multi_layer_mie_.AddTargetLayer(width[l], index);
-      }
-    }  // end of for each layer
-    try {
+  double Qsum = 0.0;
+  try {
+    for (int i=0; i < index_spectra_[0].GetIndex().size(); ++i) {
+      multi_layer_mie_.ClearTarget();
+      const auto core_data = index_spectra_[0].GetIndex();
+      const double& wl = core_data[i].first;
+      multi_layer_mie_.SetWavelength(wl);
+      for (int l = 0; l < width.size(); ++l) {
+	if (width[l] > 0.0) {
+	  const auto index_data = index_spectra_[l].GetIndex();
+	  const std::complex<double>& index = index_data[i].second;	
+	  multi_layer_mie_.AddTargetLayer(width[l], index);
+	}
+      }  // end of for each layer
       multi_layer_mie_.RunMieCalculation();
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
       std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
-      // if (isQsca)  Q = multi_layer_mie_.GetQsca();
-      // else Q = multi_layer_mie_.GetQabs();
-      
-      if (i % 2) Q /= multi_layer_mie_.GetQsca();
-      else Q *= multi_layer_mie_.GetQsca();
-      //Q = (std::abs(an[0]) * pow2( std::abs(an[1]) ) );
-    } catch( const std::invalid_argument& ia ) {
-      printf(".");
-      sub_population_.GetWorst(&Q);
-      break;
-    }
-  }  // end of for all points of the spectrum
+      if (isQsca) {
+	if (i % 2) Q /= multi_layer_mie_.GetQsca();
+	else Q *= multi_layer_mie_.GetQsca();
+      } else {
+	if (i % 2) Q /= multi_layer_mie_.GetQabs();
+	else {
+	  Q *= multi_layer_mie_.GetQabs();
+	}
+	//Q = multi_layer_mie_.GetQabs();
+	//Q = (std::abs(an[0]) * pow2( std::abs(an[1]) ) );
+      }
+    }  // end of for all points of the spectrum
+  } catch( const std::invalid_argument& ia ) {
+    printf(".");
+    sub_population_.GetWorst(&Q);
+  }
   Q_ = Q;
   return Q_;
 }
@@ -448,9 +455,11 @@ void ReadDesignSpectra() {
     sign_ += name+"-";
     read_spectra::ReadSpectra tmp;
     tmp.ReadFromFile(name+".txt");
-    tmp.ResizeToComplex(from_wl_, to_wl_, samples_).CopyToIndex();
+    //tmp.ResizeToComplex(from_wl_, to_wl_, samples_).CopyToIndex();
+    tmp.ResizeToComplex(from_wl_, to_wl_, samples_).EpsToIndex();
     index_spectra_.push_back(tmp);
-    tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).CopyToIndex();
+    //tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).CopyToIndex();
+    tmp.ResizeToComplex(plot_from_wl_, plot_to_wl_, plot_samples_).EpsToIndex();
     index_plot_spectra_.push_back(tmp);
   }
   sign_.pop_back();  
