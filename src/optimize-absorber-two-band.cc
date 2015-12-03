@@ -85,7 +85,9 @@ double total_r_ = 0.0;
 // File format:
 // comment line starts with #,
 // data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
-std::vector< std::string> index_design_ = {"Ag","Si","Ag","Si"};
+//std::vector< std::string> index_design_ = {"Ag","Si","Ag"};
+//std::vector< std::string> index_design_ = {"Si","Ag","Si"};
+std::vector< std::string> index_design_ = {"Ag","Si","Ag","Si","Ag"};
 //std::vector< std::string> index_design_ = {"Si","Ag","Si", "Ag"};
 //std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
 //std::vector< std::string> index_design_ = {"SiO2","Au", "SiO2", "Au"};
@@ -95,10 +97,13 @@ bool isFindMax = true;
 // Set model: core->mid->shell
 const double max_r_ = 150.0; // nm
 // Set dispersion
-double at_wl_ = 500.0;
-double delta = 30;
+double at_wl_ = 800.0;
+//double delta = 30;
+//double delta = 50;
+//double delta = 75;
+double delta = 100;
 double from_wl_ = at_wl_-delta, to_wl_ = at_wl_+delta;
-int samples_ = 3;
+int samples_ = 5;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
 // int samples_ = 151;
 double plot_from_wl_ = at_wl_-200.0, plot_to_wl_ = at_wl_+200.0;
@@ -106,7 +111,7 @@ int plot_samples_ = 501;
 //bool isQsca = true;
 bool isQsca = false; //isQabs
 int total_generations_ = 150;
-int population_multiplicator_ = 160;
+int population_multiplicator_ = 60;
 double step_r_ = 1.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
