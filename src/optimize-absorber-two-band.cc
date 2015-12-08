@@ -87,8 +87,8 @@ double total_r_ = 0.0;
 // data line is tab separated:  WL,nm  re(epsilon)  im(epsilon)
 //std::vector< std::string> index_design_ = {"Ag","Si","Ag"};
 //std::vector< std::string> index_design_ = {"Si","Ag","Si"};
-std::vector< std::string> index_design_ = {"Ag","Si","Ag","Si","Ag"};
-//std::vector< std::string> index_design_ = {"Si","Ag","Si", "Ag"};
+//std::vector< std::string> index_design_ = {"Ag","Si","Ag","Si"};
+std::vector< std::string> index_design_ = {"Si","Ag","Si", "Ag"};
 //std::vector< std::string> index_design_ = {"Au", "SiO2", "Au"};
 //std::vector< std::string> index_design_ = {"SiO2","Au", "SiO2", "Au"};
 // Set optimizer
@@ -97,11 +97,11 @@ bool isFindMax = true;
 // Set model: core->mid->shell
 const double max_r_ = 150.0; // nm
 // Set dispersion
-double at_wl_ = 800.0;
+double at_wl_ = 550.0;
 //double delta = 30;
 //double delta = 50;
-//double delta = 75;
-double delta = 100;
+double delta = 75;
+//double delta = 100;
 double from_wl_ = at_wl_-delta, to_wl_ = at_wl_+delta;
 int samples_ = 5;
 // double from_wl_ = 300.0, to_wl_ = 900.0;
@@ -111,12 +111,12 @@ int plot_samples_ = 501;
 //bool isQsca = true;
 bool isQsca = false; //isQabs
 int total_generations_ = 150;
-int population_multiplicator_ = 60;
-double step_r_ = 1.0; //max_r_ / 159.0;
+int population_multiplicator_ =60;
+double step_r_ = 3.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //
-const double eps_=1e-11;
+const double eps_=1e-10;
 int main(int argc, char *argv[]) {
   MPI_Init(&argc, &argv);
   int rank;
@@ -227,6 +227,8 @@ double EvaluateFitness(std::vector<double> input) {
   std::vector<double> width = ShareToWidth(total_r_, input);
   double Q = 1.0;
   double Qsum = 0.0;
+  std::vector<double> Qmax;
+  std::vector<double> Qmin;
   try {
     for (int i=0; i < index_spectra_[0].GetIndex().size(); ++i) {
       multi_layer_mie_.ClearTarget();
@@ -244,12 +246,13 @@ double EvaluateFitness(std::vector<double> input) {
       std::vector<std::complex<double> > an = multi_layer_mie_.GetAn();
       std::vector<std::complex<double> > bn = multi_layer_mie_.GetBn();
       if (isQsca) {
-	if (i % 2) Q /= multi_layer_mie_.GetQsca();
+	if (i % 2) Q /= 1.0;//multi_layer_mie_.GetQsca();
 	else Q *= multi_layer_mie_.GetQsca();
       } else {
-	if (i % 2) Q /= multi_layer_mie_.GetQabs();
-	else {
-	  Q *= multi_layer_mie_.GetQabs();
+	if (i % 2) {
+	  Qmin.push_back(multi_layer_mie_.GetQabs());
+	} else {
+	  Qmax.push_back(multi_layer_mie_.GetQabs());
 	}
 	//Q = multi_layer_mie_.GetQabs();
 	//Q = (std::abs(an[0]) * pow2( std::abs(an[1]) ) );
@@ -259,7 +262,51 @@ double EvaluateFitness(std::vector<double> input) {
     printf(".");
     sub_population_.GetWorst(&Q);
   }
+  double Qmean_max = 0.0;
+  for (auto Q:Qmax) Qmean_max +=Q;
+  Qmean_max /= Qmax.size();
+  double stddev = 0.0;
+  for (auto Q : Qmax) stddev+=pow2(Qmean_max-Q);
+  stddev = std::sqrt(stddev);
+  // double Qmean_min=0;
+  // for (auto Q:Qmin) Qmean_min +=Q;
+  // Qmean_min /=Qmin.size();
+  // Q = std::abs(Qmean - min)/(stddev + Qmean_max/20.0);  
+  if ( Qmin.size() != Qmax.size() - 1) {
+    throw std::invalid_argument("Invalid peaks order!");
+  }
+
+  // Q = 1.0;
+  // for (int i = 0; i < Qmin.size(); ++i) {
+  //   double current_diff = Qmax[i]-Qmin[i];
+  //   double next_diff = Qmax[i+1]-Qmin[i];
+  //   Q *= current_diff*next_diff;
+  //   if (current_diff <0 && next_diff <0) Q*=-1;
+  // }
+
+  Q = 1.0;
+  for (int i = 0; i < Qmin.size(); ++i) {
+    double current_diff = Qmax[i]-Qmin[i];
+    double next_diff = Qmax[i+1]-Qmin[i];
+    if (current_diff < 0.001) Q -= 10.0;
+    else  Q += std::log(current_diff);
+    if (next_diff < 0.001) Q -= 10.0;
+    else  Q += std::log(next_diff);
+  }
+  // double Qmax_log = 1.0;
+  // for (auto Q:Qmax)   Qmax_log *=Q;
+  // //  for (auto Q:Qmin)   Qmax_log /=Q;
+  // Q = Qmax_log;
+  
+  //Q /= stddev;
+  // failover
+  if (std::isnan(Q)) sub_population_.GetWorst(&Q);
+  if (std::isnan(Q)) {
+    sub_population_.GetBest(&Q);
+    Q /= 100.0;
+  }
   Q_ = Q;
+
   return Q_;
 }
 // ********************************************************************** //
