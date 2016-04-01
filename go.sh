@@ -193,7 +193,7 @@ if [[ ! -d $path_src ]]; then
     echo ================ !ERROR! =================
     echo No source folder $path_src
     echo ================ !ERROR! =================
-    exit
+    exit 1
 fi
 force_new_build=$no
 if [[ -a $path_build ]]; then
@@ -267,11 +267,13 @@ if [[ $mode = $mode_new1 || $mode = $mode_old1 || $mode = $mode_test || $mode = 
 	# fi
 	# export LD_LIBRARY_PATH=$ompi_path_lib
     else
-        path_clang33=
+        path_clang33=/usr
     fi
     echo path_clang: $path_clang33
     export OMPI_CC=$path_clang33/bin/clang
     export OMPI_CXX="$path_clang33/bin/clang++ -I$path_clang33/include -stdlib=libc++"
+    echo clang version:
+    $OMPI_CC --version
     if  [[ $HOST == "tig-laptop3" ]]; then
 	path_clang33=/usr 
 	export OMPI_CC=$path_clang33/bin/clang
@@ -296,7 +298,7 @@ fi
 # Select OMPI_CXXFLAGS
 #debug
 #flags_O2="-std=c++11"
-flags_O2="-O2 -Wall -std=c++11 "
+flags_O2="-O2 -Wall -std=c++11 -stdlib=libc++"
 #flags_O2="-O2 -ftemplate-depth-30 -Wall -std=c++11"
 flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
 #flags_debug_gcc="-ftemplate-depth-30 -std=c++11  -da -Q"
@@ -305,7 +307,8 @@ flags_O3="-O3 -ffast-math -ftemplate-depth-30 -march=native -mtune=native -mfpma
 flags_with_google=" -Ofast -std=c++11 -lm -lrt /usr/lib/libtcmalloc_minimal.so.4 -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free -march=native -mtune=native -msse4.2"
 # TODO option -flto   -- Do we need it?
 #export OMPI_CXXFLAGS=$flags_debug_gcc
-export OMPI_CXXFLAGS=$flags_with_google
+export OMPI_CXXFLAGS=$flags_O2
+#export OMPI_CXXFLAGS=$flags_with_google
 
 if [[ $mode = $mode_new1 ]]; then
     export OMPI_CXXFLAGS=$flags_O2
@@ -331,7 +334,7 @@ function BuildJADE {
     #     echo ================ !ERROR! =================
     #     echo Config with cmake flags $flag_cmake_profile and $flag_cmake_pgo
     #     echo ================ !ERROR! =================
-    #     exit        
+    #     exit 1       
     # fi
     flag_cmake=
     # if [[ $flag_cmake_profile ]]; then
@@ -530,6 +533,17 @@ fi
 #     # rm -r $path_bin/tmpdir
 # fi
 #rm *.jade  >/dev/null  2>&1
+
+if [[ $mode = $mode_test ]]; then
+    echo Finished JADE++ test!
+    exit 0
+fi 
+if [[ $mode = $mode_single ]]; then
+    echo Finished JADE++ test for single function!
+    exit 0
+fi 
+
+
 cd bin
 rm *-nan-*
 

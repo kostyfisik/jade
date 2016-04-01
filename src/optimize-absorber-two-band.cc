@@ -95,9 +95,9 @@ std::vector< std::string> index_design_ = {"Si","Ag","Si", "Ag"};
 bool isFindMax = true;
 //bool isFindMax = false;
 // Set model: core->mid->shell
-const double max_r_ = 150.0; // nm
+const double max_r_ = 250.0; // nm
 // Set dispersion
-double at_wl_ = 550.0;
+double at_wl_ = 800.0;
 //double delta = 30;
 //double delta = 50;
 double delta = 75;
@@ -112,7 +112,7 @@ int plot_samples_ = 501;
 bool isQsca = false; //isQabs
 int total_generations_ = 150;
 int population_multiplicator_ =60;
-double step_r_ = 3.0; //max_r_ / 159.0;
+double step_r_ = 5.0; //max_r_ / 159.0;
 // ********************************************************************** //
 // ********************************************************************** //
 // ********************************************************************** //

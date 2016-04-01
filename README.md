@@ -1,3 +1,6 @@
+About
+----
+
 JADE++ is a high performance implementation of adaptive differential
 evolution optimization algorithm from Jingqiao Zhang and Arthur
 C. Sanderson book 'Adaptive Differential Evolution. A Robust Approach
@@ -8,23 +11,53 @@ multiprocessor systems, clusters and supercomputers with help of MPI.
 JADE++ needs MPI and Cmake installed to compile and run. It also needs
 C++11 compatible complier.
 
+Usage
+-----
+
 For Debian/Ubuntu systems single line install with
-# apt-get install openmpi-bin openmpi-doc libopenmpi-dev cmake
+
+    # apt-get install openmpi-bin openmpi-doc libopenmpi-dev cmake
+
+and to use LLVM Clang as a compiler
+
+    # apt-get install clang libc++-dev
+
+Use jade.cc and jade.h as a C++ library. 
+
+Papers
+------
+
+The optimaizer was used to obtain results in the following papers:
+
+1. "Reduction of scattering using thin all-dielectric shells designed by stochastic optimizer"
+   Konstantin Ladutenko, Ovidio Peña-Rodríguez, Irina Melchakova, Ilya
+   Yagupov, and Pavel Belov  J. Appl. Phys., vol. 116, pp. 184508,
+   2014 http://dx.doi.org/10.1063/1.4900529
+
+2. "Superabsorption of light by nanoparticles" Konstantin Ladutenko,
+   Pavel Belov, Ovidio Peña-Rodríguez, Ali Mirzaei, Andrey
+   E. Miroshnichenko and Ilya V. Shadrivov  Nanoscale, 2015,7,
+   18897-18901 http://dx.doi.org/10.1039/C5NR05468K
+
+Self-tests
+----------
 
 Edit go.sh to run JADE++ on your number of processes.
  
-./go.sh single
+    ./go.sh single
 
 normaly should compile JADE++ and run a single test with Rosenbrock
 function (f5). On success it will finish with (almost) zero mean value of
 global minima positioned at (1.0, 1.0, ..., 1.0) coordinate.
 https://en.wikipedia.org/wiki/Rosenbrock_function
+All individuals (candidate solutions) are shown as evaluated.
 
-./go.sh test
+     ./go.sh test
 
 to run optimization of all standard test functions (in 30D and 100D cases), will last much longer.
+Example for
 
-output example for ./go.sh test |grep runs
+    ./go.sh test |grep runs
 
 value of final best fitness function found - mean (stddev)
 30D
@@ -85,3 +118,5 @@ f10	gen500	1.9e-08 (6.6e-09) runs(60) at (-32,32)
 f11	gen500	6.6e-04 (2.2e-03) runs(60) at (-600,600)
 f12	gen500	1.7e-16 (1.6e-16) runs(60) at (-50,50)
 f13	gen500	9.5e-15 (1.7e-14) runs(60) at (-50,50)
+
+
