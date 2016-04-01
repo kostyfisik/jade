@@ -68,7 +68,29 @@ Example for
 
     ./go.sh test |grep runs
 
-value of final best fitness function found - mean (stddev)
+value of final best fitness function found - mean value (and
+stddev). Ideal value is to be zero and JADE is usually very
+close to it. However, some functions (like f6 and f8) are really hard
+to opimize.
+
+``` C++
+/// %brief Discontinuous step function
+double f6(std::vector<double> x) {
+  double sum = 0;
+  for (auto x_i : x) sum += pow2(floor(x_i + 0.5));
+  return sum;
+}
+
+double f8(std::vector<double> x) {
+  double sum = 0;
+  for (auto x_i : x) sum += -x_i * sin(sqrt(std::abs(x_i)));
+  double D = static_cast<double>(x.size()); 
+  return sum + D*418.98288727243369;
+}
+```
+
+Test results
+------------
 
 ```
 30D
