@@ -11,6 +11,9 @@ multiprocessor systems, clusters and supercomputers with help of MPI.
 JADE++ needs MPI and Cmake installed to compile and run. It also needs
 C++11 compatible complier.
 
+Feel free to contact me with questions about JADE++ via e-mail
+k.ladutenko@metalab.ifmo.ru!
+
 Usage
 -----
 
