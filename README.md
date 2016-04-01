@@ -50,7 +50,11 @@ normaly should compile JADE++ and run a single test with Rosenbrock
 function (f5). On success it will finish with (almost) zero mean value of
 global minima positioned at (1.0, 1.0, ..., 1.0) coordinate.
 https://en.wikipedia.org/wiki/Rosenbrock_function
-All individuals (candidate solutions) are shown as evaluated.
+All individuals (candidate solutions) are shown as
+evaluated.
+
+The souce code of this test can be used as a `Hello world` example
+with JADE++, you can find it in file [test-jade-single-function.cc](https://github.com/kostyfisik/jade/blob/master/src/test-jade-single-function.cc)
 
      ./go.sh test
 
