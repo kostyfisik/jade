@@ -1,7 +1,7 @@
 About
 ----
 
-JADE++ is a high performance implementation of adaptive differential
+JADE++ is a high performance C++ implementation of adaptive differential
 evolution optimization algorithm from Jingqiao Zhang and Arthur
 C. Sanderson book 'Adaptive Differential Evolution. A Robust Approach
 to Multimodal Problem Optimization' Springer, 2009.  JADE++ is
