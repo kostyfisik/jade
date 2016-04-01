@@ -69,6 +69,8 @@ Example for
     ./go.sh test |grep runs
 
 value of final best fitness function found - mean (stddev)
+
+```
 30D
 f1	gen1500	5.8e-53 (4.4e-52) runs(60) at (-100,100)
 f2	gen2000	6.6e-23 (4.4e-22) runs(60) at (-10,10)
@@ -127,5 +129,7 @@ f10	gen500	1.9e-08 (6.6e-09) runs(60) at (-32,32)
 f11	gen500	6.6e-04 (2.2e-03) runs(60) at (-600,600)
 f12	gen500	1.7e-16 (1.6e-16) runs(60) at (-50,50)
 f13	gen500	9.5e-15 (1.7e-14) runs(60) at (-50,50)
+
+```
 
 
