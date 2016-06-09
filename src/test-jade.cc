@@ -23,13 +23,39 @@
 /// @brief  Test of JADE++ lib, Doxygen mainpage description.
 #include <mpi.h>
 #include <vector>
+#include <string>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include "./jade.h"
+#include <stdarg.h>  // For va_start, etc.
+#include <memory>    // For std::unique_ptr
+
+std::string string_format(const std::string fmt_str, ...) {
+  // Erik Aronesty answer at
+  // http://stackoverflow.com/questions/2342162/stdstring-formatting-like-sprintf
+  int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+  std::string str;
+  std::unique_ptr<char[]> formatted;
+  va_list ap;
+  while(1) {
+    formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+    strcpy(&formatted[0], fmt_str.c_str());
+    va_start(ap, fmt_str);
+    final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
+    va_end(ap);
+    if (final_n < 0 || final_n >= n)
+      n += abs(final_n - n + 1);
+    else
+      break;
+  }
+  return std::string(formatted.get());
+}
+
 //const int x100 = 100;
 //debug
-const int x100 = 100;
-const int total_repeats = 50;
+const int x100 = 10;
+const int total_repeats = 10;
 template<class T> inline T pow2(const T value) {return value*value;}
 /// @brief Fitness test functions f1-f13 for benchmarks
 ///
@@ -158,11 +184,21 @@ std::vector<double> lbound =
 std::vector<double> ubound =
   { 100,  10,  100,  100,  30,  100,  1.28,  500,  5.12,  32,  600,  50,  50};
 /// @brief Generations for each test function
+//orig
 std::vector<long> gen30D =
   {15, 20, 50, 50, 30, 1, 30, 10, 10, 5, 5, 5, 5};
 std::vector<long> gen100D =
   {20, 30, 80, 150, 60, 1, 60, 10, 30, 5, 5, 5, 5};
+// //mod
+// std::vector<long> gen30D =
+//   {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+// std::vector<long> gen100D =
+//   {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+
 std::vector<std::vector <double> > fitness30D, fitness100D;
+std::vector<double> mean30D, mean100D;
+std::vector<double> sigma30D, sigma100D;
+
 /// @brief Run tests of JADE++.
 ///
 /// @param argc
@@ -177,13 +213,19 @@ int main(int argc, char *argv[]) {
   const int number_of_test_functions = 13;
   fitness30D.resize(number_of_test_functions);
   fitness100D.resize(number_of_test_functions);
+  mean30D.resize(number_of_test_functions);
+  mean100D.resize(number_of_test_functions);
+  sigma30D.resize(number_of_test_functions);
+  sigma100D.resize(number_of_test_functions);
    /// Settings for optimization algorithm;
   //int total_population = 3 * dimenstion;  /// Total number of individuals in population.
-  for (int counts = 0; counts < 50; ++counts) {
+  for (int counts = 0; counts < total_repeats; ++counts) {
     if (fitness30D[0].size() >= total_repeats) break;
     if (rank == 0) printf("30D\n");
-    int dimension = 30;  /// Number of parameters to optimize.
-    int total_population = 100;  /// Total number of individuals in population.
+    //int dimension = 30;  /// Number of parameters to optimize.
+    //int total_population = 100;  /// Total number of individuals in population.
+    int dimension = 3;  /// Number of parameters to optimize.
+    int total_population = 10;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
       // if (i != 1) continue;
       jade::SubPopulation sub_population;
@@ -217,15 +259,21 @@ int main(int argc, char *argv[]) {
         if (rank == 0)
           printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g) at (%g,%g)\n",
                  comment[i].c_str(), gen30D[i]*x100, mean,sigma,size, lbound[i], ubound[i]);
+	mean30D[i] = mean;
+	sigma30D[i] = sigma;
+
       } else {
         printf("Some error!\n");
       }
     }  // end of for all test functions
     if (rank == 0) printf("100D\n");
-    dimension = 100;  /// Number of parameters to optimize.
-    total_population = 400;  /// Total number of individuals in population.
+    //dimension = 100;  /// Number of parameters to optimize.
+    //total_population = 400;  /// Total number of individuals in population.
+    dimension = 5;  /// Number of parameters to optimize.
+    total_population = 40;  /// Total number of individuals in population.
+
     for (int i = 0; i < number_of_test_functions; ++i) {
-      // if (i != 1) continue;
+      //if (i != 1) continue;
       jade::SubPopulation sub_population;
       if (sub_population.Init(total_population, dimension) == jade::kDone) {
 
@@ -257,12 +305,43 @@ int main(int argc, char *argv[]) {
         if (rank == 0)
           printf("%s\tgen%li\t%4.1e (%4.1e) runs(%g) at (%g,%g)\n",
                  comment[i].c_str(), gen100D[i]*x100, mean,sigma,size, lbound[i], ubound[i]);
+	mean100D[i] = mean;
+	sigma100D[i] = sigma;
       } else {
         printf("Some error!\n");
       }
     }  // end of for all test functions
-    if (rank == 0) printf("\n");
-  }  // end of collecting runs 
+  }  // end of collecting runs
+  // Output
+  if (rank == 0) {
+    FILE *fp;
+    std::string fname = "test-jade.txt", out;
+    fp = fopen(fname.c_str(), "w");
+    double size = static_cast<double>(fitness30D[0].size());
+    out = "dim 30, repeats "+string_format("%g",size)+"\nfunc, gen, mean, (sigma)\n";
+    for (auto com : comment) out += string_format(" %7s  ",com.c_str());
+    out.pop_back();    out += "\n";
+    for (auto gen:gen30D) out += string_format(" %7li  ",gen*x100);
+    out.pop_back();    out += "\n";
+    for (auto mean:mean30D) out += string_format(" %4.1e  ",mean);
+    out.pop_back();    out += "\n";
+    for (auto sigma:sigma30D) out += string_format("(%4.1e) ",sigma);
+    out.pop_back();    out += "\n";
+    
+    size = static_cast<double>(fitness100D[0].size());
+    out += "\ndim 100, repeats "+string_format("%g",size)+"\nfunc, gen, mean, (sigma)\n";
+    for (auto com : comment) out += string_format(" %7s  ",com.c_str());
+    out.pop_back();    out += "\n";
+    for (auto gen:gen100D) out += string_format(" %7li  ",gen*x100);
+    out.pop_back();    out += "\n";
+    for (auto mean:mean100D) out += string_format(" %4.1e  ",mean);
+    out.pop_back();    out += "\n";
+    for (auto sigma:sigma100D) out += string_format("(%4.1e) ",sigma);
+    out.pop_back();    out += "\n";
+    printf("%s", out.c_str());
+    fprintf(fp, "%s", out.c_str());
+    fclose(fp);      
+  }
   MPI_Finalize();
   return done_status;
 }  // end of main

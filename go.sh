@@ -88,7 +88,7 @@ fi
 #jade_bin="run-optimize-scatter-Au-SiO2"
 #jade_bin="run-optimize-absorber-TiN"
 #jade_bin="run-optimize-absorber-TiN-wideband"
-jade_bin="run-optimize-absorber-two-band"
+#jade_bin="run-optimize-absorber-two-band"
 #jade_bin="run-optimize-alu"
 #jade_bin="run-optimize-absorber-TiN-bi"
 #jade_bin="run-optimize-ideal-bulk"
@@ -106,6 +106,7 @@ jade_bin="run-optimize-absorber-two-band"
 #jade_bin="run-optimize-meander-cloak-5layer"
 #jade_bin="run-quasi-pec-spectra"
 #jade_bin="run-jade-test-feed"
+jade_bin="run-jade-test"
 
 if [[ $mode = $mode_test ]]; then
     echo Run JADE++ test!
