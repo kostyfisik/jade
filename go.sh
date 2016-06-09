@@ -294,6 +294,9 @@ else
         export OMPI_CC=gcc
         export OMPI_CXX=g++
     fi
+    echo ompi_cc $OMPI_CC
+    echo ompi_cxx $OMPI_CXX
+
 fi 
 
 # Select OMPI_CXXFLAGS
@@ -394,7 +397,7 @@ function TuneJADEOptionsMPI {
     elif  [[ $HOST == "deb00" || $HOST == "dmmrkovich-birzha" ]]; then
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=4; fi            
     elif  [[ $HOST == "rh-lum.metalab.ifmo.ru" ]]; then
-        if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=12; fi            
+        if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=10; fi            
     else
         if [[ $JADE_MPI_size = "unset" ]]; then JADE_MPI_size=2; fi
     fi

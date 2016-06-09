@@ -54,8 +54,8 @@ std::string string_format(const std::string fmt_str, ...) {
 
 //const int x100 = 100;
 //debug
-const int x100 = 10;
-const int total_repeats = 10;
+const int x100 = 100;
+const int total_repeats = 50;
 template<class T> inline T pow2(const T value) {return value*value;}
 /// @brief Fitness test functions f1-f13 for benchmarks
 ///
@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
   for (int counts = 0; counts < total_repeats; ++counts) {
     if (fitness30D[0].size() >= total_repeats) break;
     if (rank == 0) printf("30D\n");
-    //int dimension = 30;  /// Number of parameters to optimize.
-    //int total_population = 100;  /// Total number of individuals in population.
-    int dimension = 3;  /// Number of parameters to optimize.
-    int total_population = 10;  /// Total number of individuals in population.
+    int dimension = 30;  /// Number of parameters to optimize.
+    int total_population = 100;  /// Total number of individuals in population.
+    // int dimension = 3;  /// Number of parameters to optimize.
+    // int total_population = 10;  /// Total number of individuals in population.
     for (int i = 0; i < number_of_test_functions; ++i) {
       // if (i != 1) continue;
       jade::SubPopulation sub_population;
@@ -267,10 +267,10 @@ int main(int argc, char *argv[]) {
       }
     }  // end of for all test functions
     if (rank == 0) printf("100D\n");
-    //dimension = 100;  /// Number of parameters to optimize.
-    //total_population = 400;  /// Total number of individuals in population.
-    dimension = 5;  /// Number of parameters to optimize.
-    total_population = 40;  /// Total number of individuals in population.
+    dimension = 100;  /// Number of parameters to optimize.
+    total_population = 400;  /// Total number of individuals in population.
+    // dimension = 5;  /// Number of parameters to optimize.
+    // total_population = 40;  /// Total number of individuals in population.
 
     for (int i = 0; i < number_of_test_functions; ++i) {
       //if (i != 1) continue;
