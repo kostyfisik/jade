@@ -244,6 +244,7 @@ int main(int argc, char *argv[]) {
         sub_population.SetBestShareP(0.05);
         sub_population.SetAdapitonFrequencyC(0.1);
         sub_population.SetDistributionLevel(0);
+	sub_population.SwitchOffPMCRADE();
         //sub_population.PrintParameters("f1");
         sub_population.RunOptimization();
         auto current = sub_population.GetFinalFitness();
@@ -290,6 +291,7 @@ int main(int argc, char *argv[]) {
         sub_population.SetBestShareP(0.05);
         sub_population.SetAdapitonFrequencyC(0.1);
         sub_population.SetDistributionLevel(0);
+	sub_population.SwitchOffPMCRADE();
         //sub_population.PrintParameters("f1");
         sub_population.RunOptimization();
         auto current = sub_population.GetFinalFitness();
