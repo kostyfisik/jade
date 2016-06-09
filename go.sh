@@ -299,7 +299,8 @@ fi
 # Select OMPI_CXXFLAGS
 #debug
 #flags_O2="-std=c++11"
-flags_O2="-O2 -Wall -std=c++11 -stdlib=libc++"
+flags_O2="-O2 -Wall -std=c++11"
+#flags_O2="-O2 -Wall -std=c++11 -stdlib=libc++"
 #flags_O2="-O2 -ftemplate-depth-30 -Wall -std=c++11"
 flags_debug="-ftemplate-depth-30 -Wall -std=c++11  -stdlib=libc++"
 #flags_debug_gcc="-ftemplate-depth-30 -std=c++11  -da -Q"
