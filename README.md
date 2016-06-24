@@ -8,7 +8,7 @@ C. Sanderson book 'Adaptive Differential Evolution. A Robust Approach
 to Multimodal Problem Optimization' Springer, 2009.  JADE++ is
 designed to run efficiently in parallel on multicore processors,
 multiprocessor systems, clusters and supercomputers with help of
-MPI. JADE++ has also an option to be switch on of impoved
+MPI. JADE++ has also an option to switch on the impoved
 cross-section rate PMCRADE (after Li et al. in the paper "Power Mean
 Based Crossover Rate Adaptive Differential Evolution"). The source
 code is licened under GPL v3+.
