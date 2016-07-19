@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 namespace jade {
-  /// @todo Replace all simple kError returns with something meangfull.
+  /// @todo Replace all simple kError returns with something meangfull. TODO change kError to throw exception
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
@@ -98,7 +98,7 @@ namespace jade {
       --size_A;
     }
     const long new_size_A = archived_best_A_.size();
-    if (new_size_A > subpopulation_) error_status_ = kError;
+    if (new_size_A > subpopulation_) error_status_ = kError; //TODO change kError to throw exception
     return kDone;
   } // end of int SubPopulation:: ArchiveCleanUp();
   // ********************************************************************** //
@@ -282,7 +282,7 @@ namespace jade {
   std::vector<double> SubPopulation::GetXpBestCurrent() {
     const long n_best_total = static_cast<long>
       (floor(subpopulation_ * best_share_p_ ));
-    if (n_best_total == subpopulation_) error_status_ = kError;
+    if (n_best_total == subpopulation_) error_status_ = kError; //TODO change kError to throw exception
     long best_n = randint(0, n_best_total);
     long best_n_index = -1, i = 0;
     for (auto x : evaluated_fitness_for_current_vectors_) {
@@ -322,7 +322,7 @@ namespace jade {
       }
       ++i;
     }  // end of selecting from archive
-    error_status_ = kError;
+    error_status_ = kError; //TODO change kError to throw exception
     std::vector<double> x;
     return x;    
   }  // end of std::vector<double> SubPopulation::GetXRandomArchiveAndCurrent()
@@ -528,7 +528,7 @@ namespace jade {
   int SubPopulation::SetAllBounds(double lbound, double ubound) {
     if (lbound >= ubound) {
       error_status_ = kError;
-      return kError;
+      return kError; //TODO change kError to throw exception
     }
     for (auto &x : x_lbound_) x = lbound;
     for (auto &x : x_ubound_) x = ubound;
@@ -607,7 +607,7 @@ namespace jade {
   int SubPopulation::SetBestShareP(double p) {
     if (p < 0 || p > 1) {
       error_status_ = kError;
-      return kError;
+      return kError; //TODO change kError to throw exception
     }
     best_share_p_ = p;
     return kDone;
@@ -618,7 +618,7 @@ namespace jade {
   int SubPopulation::SetAdapitonFrequencyC(double c) {
     if (c < 0 || c > 1) {
       error_status_ = kError;
-      return kError;
+      return kError; //TODO change kError to throw exception
     }
     adaptation_frequency_c_ = c;
     return kDone;

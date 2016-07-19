@@ -201,15 +201,16 @@ namespace jade {
        
     // @}
     /// @brief Subpopulation status. If non-zero than some error has appeared.
-    int error_status_ = 0;
+    int error_status_ = 0;  // @todo move to exceptions!
     int distribution_level_ = 0;
   };  // end of class SubPopulation
   // ********************************************************************** //
   // ********************************************************************** //
   // ********************************************************************** //
   /// @brief Error codes
-  ///
+  ///  
   /// Error codes used with jade
+  /// @todo move to exceptions!
   enum Errors {
     /// no error
     kDone = 0,
