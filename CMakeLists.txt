@@ -1,26 +1,83 @@
-project(JADE++)
-cmake_minimum_required(VERSION 2.8.8)
-set(CMAKE_MODULE_PATH ${JADE++_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
-include(MacroOutOfSourceBuild)
-macro_ensure_out_of_source_build("${PROJECT_NAME} requires an out of source build.")
-add_subdirectory(src)
-#EXEC_PROGRAM(executable [args ...])
+# The target of the library JADE++ is exported
+# as JADEXX::JADEXX to a package config file for JADE++
+#
+# usage:
+#     find_package(JADEXX)
+#     ...
+#     target_link_library(<target> JADEXX)
+#
+# the config file is generatet in the build and install directories
 
-# If doxygen exists, use the doc/CMakeLists.txt to generate code documentation.
-# find_package( Doxygen )
-# if( DOXYGEN_FOUND )
-#   # This is the directory that contains all the source files we want to have
-#   # documented.
-#   set( DOXYGEN_SOURCE_DIR ${OnzaFDTD_SOURCE_DIR} )
-#   # This is the directory that holds the doxygen doxyfile template (doxy.conf.in)
-#   set( DOXYGEN_INPUT_DIR  ${OnzaFDTD_SOURCE_DIR}/doc )
-#   # This is the directory where the generated code documentation goes.
-#   set( DOXYGEN_OUTPUT_DIR ${OnzaFDTD_BINARY_DIR}/doc )
-#   # It is possible to put adddditional CMake commands in sub-directory
-#   # CMakeLists.txt, but the add_subdirectory command must be used to specify
-#   # which sub-directories should be scanned.
-#   #add_subdirectory( doc )
-# else()
-#   message( WARNING "Doxygen not found - code documentation won't be created" )
-# endif()
+cmake_minimum_required(VERSION 3.16)
+project(JADEXX VERSION 0.1.0 LANGUAGES CXX)
 
+if(NOT CMAKE_CXX_EXTENSIONS)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+endif()
+
+# set export variables needed for building
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+set(NAMESPACE "${PROJECT_NAME}::")
+
+# generate the library and install instructions
+add_subdirectory(src/lib)
+
+# testing
+if(${PROJECT_SOURCE_DIR} STREQUAL ${CMAKE_SOURCE_DIR})
+    set(main_project TRUE)
+else()
+    set(main_project FALSE)
+endif()
+
+include(CMakeDependentOption)
+cmake_dependent_option(BUILD_TESTING_${PROJECT_NAME}
+     "Build the testing tree for project ${PROJECT_NAME}." OFF
+     "BUILD_TESTING;NOT main_project" OFF
+)
+
+if (main_project AND NOT DEFINED BUILD_TESTING)
+    set(BUILD_TESTING ON)
+endif()
+
+if((main_project AND BUILD_TESTING) OR BUILD_TESTING_${PROJECT_NAME})
+    enable_testing()
+    add_subdirectory(src/tests)
+endif()
+
+## generate package config files
+#include(GNUInstallDirs)
+#set(project_config "${PROJECT_NAME}Config.cmake")
+#set(cmake_files_dir "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles")
+#set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
+#set(config_build_dir "${CMAKE_CURRENT_BINARY_DIR}/${config_install_dir}")
+#
+## export targets for install
+#install(EXPORT ${TARGETS_EXPORT_NAME}
+#    NAMESPACE
+#        ${NAMESPACE}
+#    DESTINATION
+#        ${config_install_dir}
+#    COMPONENT Development
+#)
+#
+## export targets into build
+#export(EXPORT ${TARGETS_EXPORT_NAME}
+#    NAMESPACE
+#        ${NAMESPACE}
+#    FILE
+#        ${config_build_dir}/${TARGETS_EXPORT_NAME}.cmake
+#)
+#
+##create package config
+#include(CMakePackageConfigHelpers)
+#configure_package_config_file(cmake/PackageConfig.cmake.in ${cmake_files_dir}/${project_config}
+#    INSTALL_DESTINATION ${config_install_dir}
+#)
+#install(FILES ${cmake_files_dir}/${project_config}
+#    DESTINATION ${config_install_dir}
+#)
+#
+#configure_package_config_file(cmake/PackageConfig.cmake.in ${config_build_dir}/${project_config}
+#    INSTALL_DESTINATION ${config_build_dir}
+#    INSTALL_PREFIX ${CMAKE_CURRENT_BINARY_DIR}
+#)
