@@ -30,7 +30,7 @@ and to use LLVM Clang as a compiler
 
     # apt-get install clang libc++-dev
 
-Use jade.cc and jade.h as a C++ library.
+Use jade.cc and jade.h as a C++ library directly or add this repository with CMake add_subdirectory() and target_link_libraries() with JADEXX::JADEXX target.
 
 Download
 -------
