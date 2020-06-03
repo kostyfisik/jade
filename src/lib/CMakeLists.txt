@@ -23,24 +23,23 @@ IF(NOT MPI_CXX_FOUND)
         )
 endif()
 set(LIB JADEXX)
+set(HEADER_LIST "include/jade.h")
 add_library(${LIB}
-    jade.cc
-    jade.h
+        jade.cc
+        ${HEADER_LIST}
 )
 add_library(${NAMESPACE}${LIB} ALIAS ${LIB})
-target_include_directories(${LIB} PUBLIC ../lib)
+target_include_directories(${LIB} PUBLIC include)
 target_link_libraries(${LIB} PUBLIC MPI::MPI_CXX)
+target_compile_features(${LIB} PUBLIC cxx_std_11)
 
-
-# installation and export of targets
-install(DIRECTORY ${CMAKE_Fortran_MODULE_DIRECTORY}/
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-    COMPONENT Developement
-)
-
-install(TARGETS ${LIB} EXPORT ${TARGETS_EXPORT_NAME}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeLibraries
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
-)
+# IDEs should put the headers in a nice place
+source_group(TREE "${PROJECT_SOURCE_DIR}/src/lib/include" PREFIX "Header Files" FILES ${HEADER_LIST})
+## installation and export of targets
+#
+#install(TARGETS ${LIB} EXPORT ${TARGETS_EXPORT_NAME}
+#    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT Development
+#    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT RuntimeLibraries
+#    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT RuntimeLibraries
+#    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+#)
